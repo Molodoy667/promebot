@@ -246,12 +246,17 @@ export const PromoCodesManagement = () => {
                   <div>
                     <Label>Значення знижки *</Label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       placeholder={discountType === "percent" ? "20" : "100"}
                       value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      min="0"
-                      max={discountType === "percent" ? "100" : undefined}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          setDiscountValue(value);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                   </div>
                 </div>
@@ -260,11 +265,17 @@ export const PromoCodesManagement = () => {
                   <div>
                     <Label>Макс. використань</Label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="Необмежено"
                       value={maxUses}
-                      onChange={(e) => setMaxUses(e.target.value)}
-                      min="1"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          setMaxUses(value);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                   </div>
 

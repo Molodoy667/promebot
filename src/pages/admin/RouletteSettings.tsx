@@ -222,8 +222,15 @@ const RouletteSettingsPage = () => {
               <Input
                 id="spinDuration"
                 type="text"
+                inputMode="numeric"
                 value={spinDuration}
-                onChange={(e) => setSpinDuration(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setSpinDuration(value);
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="5000"
               />
             </div>
@@ -233,8 +240,15 @@ const RouletteSettingsPage = () => {
               <Input
                 id="cooldownHours"
                 type="text"
+                inputMode="decimal"
                 value={cooldownHours}
-                onChange={(e) => setCooldownHours(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setCooldownHours(value);
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="3"
               />
             </div>

@@ -515,9 +515,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="base_mining_power">Базова потужність майнінгу</Label>
                   <Input
                     id="base_mining_power"
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={settings.base_mining_power}
-                    onChange={(e) => updateSetting("base_mining_power", parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        updateSetting("base_mining_power", parseFloat(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Базова кількість монет за клік
@@ -528,10 +535,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="mining_multiplier">Множник майнінгу</Label>
                   <Input
                     id="mining_multiplier"
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={settings.mining_multiplier}
-                    onChange={(e) => updateSetting("mining_multiplier", parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        updateSetting("mining_multiplier", parseFloat(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Глобальний множник видобутку
@@ -542,9 +555,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="max_claim_hours">Макс. години накопичення (застаріле)</Label>
                   <Input
                     id="max_claim_hours"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.max_claim_hours}
-                    onChange={(e) => updateSetting("max_claim_hours", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("max_claim_hours", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                     disabled
                   />
                   <p className="text-xs text-muted-foreground">
@@ -561,9 +581,16 @@ export const MinerSettings = () => {
                     <Label htmlFor="storage_base_hours">Базова кількість годин (рівень 1)</Label>
                     <Input
                       id="storage_base_hours"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={settings.storage_base_hours}
-                      onChange={(e) => updateSetting("storage_base_hours", parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          updateSetting("storage_base_hours", parseInt(value) || 0);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                     <p className="text-xs text-muted-foreground">
                       Години накопичення на 1 рівні сховища
@@ -574,9 +601,16 @@ export const MinerSettings = () => {
                     <Label htmlFor="storage_hours_per_level">Години за рівень</Label>
                     <Input
                       id="storage_hours_per_level"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={settings.storage_hours_per_level}
-                      onChange={(e) => updateSetting("storage_hours_per_level", parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          updateSetting("storage_hours_per_level", parseInt(value) || 0);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                     <p className="text-xs text-muted-foreground">
                       +годин за кожен рівень покращення
@@ -587,9 +621,16 @@ export const MinerSettings = () => {
                     <Label htmlFor="storage_base_cost">Базова ціна покращення</Label>
                     <Input
                       id="storage_base_cost"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={settings.storage_base_cost}
-                      onChange={(e) => updateSetting("storage_base_cost", parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          updateSetting("storage_base_cost", parseInt(value) || 0);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                     <p className="text-xs text-muted-foreground">
                       Ціна першого покращення (1→2)
@@ -600,10 +641,16 @@ export const MinerSettings = () => {
                     <Label htmlFor="storage_cost_multiplier">Множник ціни</Label>
                     <Input
                       id="storage_cost_multiplier"
-                      type="number"
-                      step="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={settings.storage_cost_multiplier}
-                      onChange={(e) => updateSetting("storage_cost_multiplier", parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updateSetting("storage_cost_multiplier", parseFloat(value) || 0);
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
                     />
                     <p className="text-xs text-muted-foreground">
                       Множник для розрахунку ціни наступних рівнів
@@ -626,9 +673,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="auto_collect_interval">Інтервал авто-збору (хв)</Label>
                   <Input
                     id="auto_collect_interval"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.auto_collect_interval}
-                    onChange={(e) => updateSetting("auto_collect_interval", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("auto_collect_interval", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Як часто авто-збір перевіряє дохід (хвилини)
@@ -639,9 +693,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="auto_collect_energy_cost">Вартість авто-збору (енергія)</Label>
                   <Input
                     id="auto_collect_energy_cost"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.auto_collect_energy_cost}
-                    onChange={(e) => updateSetting("auto_collect_energy_cost", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("auto_collect_energy_cost", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Скільки енергії витрачається на авто-збір
@@ -767,10 +828,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="bot_upgrade_cost_multiplier">Множник вартості покращення</Label>
                   <Input
                     id="bot_upgrade_cost_multiplier"
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={settings.bot_upgrade_cost_multiplier}
-                    onChange={(e) => updateSetting("bot_upgrade_cost_multiplier", parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        updateSetting("bot_upgrade_cost_multiplier", parseFloat(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     На скільки зростає ціна з кожним рівнем (наприклад, 1.5 = +50%)
@@ -781,10 +848,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="bot_level_earning_multiplier">Множник доходу за рівень</Label>
                   <Input
                     id="bot_level_earning_multiplier"
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={settings.bot_level_earning_multiplier}
-                    onChange={(e) => updateSetting("bot_level_earning_multiplier", parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        updateSetting("bot_level_earning_multiplier", parseFloat(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     На скільки зростає дохід з кожним рівнем (наприклад, 1.2 = +20%)
@@ -821,9 +894,16 @@ export const MinerSettings = () => {
                       <Label htmlFor="daily_reward_base">Базова щоденна винагорода</Label>
                       <Input
                         id="daily_reward_base"
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={settings.daily_reward_base}
-                        onChange={(e) => updateSetting("daily_reward_base", parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            updateSetting("daily_reward_base", parseInt(value) || 0);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                       <p className="text-xs text-muted-foreground">
                         Базова кількість монет за щоденний вхід
@@ -834,9 +914,16 @@ export const MinerSettings = () => {
                       <Label htmlFor="daily_reward_streak_bonus">Бонус за серію днів</Label>
                       <Input
                         id="daily_reward_streak_bonus"
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={settings.daily_reward_streak_bonus}
-                        onChange={(e) => updateSetting("daily_reward_streak_bonus", parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            updateSetting("daily_reward_streak_bonus", parseInt(value) || 0);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                       <p className="text-xs text-muted-foreground">
                         Додаткові монети за кожен день підряд
@@ -852,9 +939,16 @@ export const MinerSettings = () => {
                       <Label htmlFor="starting_coins">Початкові монети</Label>
                       <Input
                         id="starting_coins"
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={settings.starting_coins}
-                        onChange={(e) => updateSetting("starting_coins", parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            updateSetting("starting_coins", parseInt(value) || 0);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                       <p className="text-xs text-muted-foreground">
                         Скільки монет отримає новий користувач
@@ -865,9 +959,16 @@ export const MinerSettings = () => {
                       <Label htmlFor="starting_energy">Початкова енергія</Label>
                       <Input
                         id="starting_energy"
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={settings.starting_energy}
-                        onChange={(e) => updateSetting("starting_energy", parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            updateSetting("starting_energy", parseInt(value) || 0);
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                       <p className="text-xs text-muted-foreground">
                         Початкова енергія для нових користувачів
@@ -951,9 +1052,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="bot_earnings">Дохід/год</Label>
                   <Input
                     id="bot_earnings"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={editingBot.earnings_per_hour}
-                    onChange={(e) => setEditingBot({ ...editingBot, earnings_per_hour: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        setEditingBot({ ...editingBot, earnings_per_hour: parseInt(value) || 0 });
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                 </div>
 
@@ -961,9 +1069,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="bot_cost">Ціна</Label>
                   <Input
                     id="bot_cost"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={editingBot.cost}
-                    onChange={(e) => setEditingBot({ ...editingBot, cost: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        setEditingBot({ ...editingBot, cost: parseInt(value) || 0 });
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                 </div>
 
@@ -971,9 +1086,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="bot_max_level">Макс. рівень</Label>
                   <Input
                     id="bot_max_level"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={editingBot.max_level}
-                    onChange={(e) => setEditingBot({ ...editingBot, max_level: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        setEditingBot({ ...editingBot, max_level: parseInt(value) || 0 });
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                 </div>
               </div>

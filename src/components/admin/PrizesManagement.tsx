@@ -129,13 +129,15 @@ export const PrizesManagement = () => {
           <Input
             id="spins-count"
             type="text"
+            inputMode="numeric"
             value={spinsCount}
             onChange={(e) => {
               const value = e.target.value;
-              if (value === '' || !isNaN(parseInt(value))) {
+              if (/^\d*$/.test(value)) {
                 setSpinsCount(parseInt(value) || 1);
               }
             }}
+            onFocus={(e) => e.target.select()}
             className="max-w-xs"
             placeholder="1"
           />
