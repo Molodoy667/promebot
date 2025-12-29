@@ -61,28 +61,41 @@ async function getVertexAIToken(serviceAccountJson: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  console.log('AI Chat Proxy - Request received');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader! },
         },
       }
     );
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError) {
+      console.error('Auth error:', authError.message);
+    }
+    
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.log('No user found, returning 401');
+      return new Response(JSON.stringify({ error: 'Unauthorized - please log in again' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    console.log('User authenticated:', user.id);
 
     const { messages } = await req.json();
 

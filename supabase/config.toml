@@ -3,6 +3,9 @@ project_id = "vtrkcgaajgtlkjqcnwxk"
 [functions.ai-bot-worker]
 verify_jwt = false
 
+[functions.ai-chat-proxy]
+verify_jwt = true
+
 [functions.check-bot-admin]
 verify_jwt = true
 
