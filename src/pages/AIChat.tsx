@@ -482,11 +482,12 @@ export default function AIChat() {
       };
 
       setMessages((prev) => [...prev, normalizedAssistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
+      const errorMessage = error?.message || "Не вдалося відправити повідомлення";
       toast({
         title: "Помилка",
-        description: "Не вдалося відправити повідомлення",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
