@@ -2414,6 +2414,16 @@ export type Database = {
         Args: { channel_identifier: string; current_user_id?: string }
         Returns: Json
       }
+      create_bot_error_notification: {
+        Args: {
+          p_bot_name: string
+          p_channel_name: string
+          p_error_message: string
+          p_service_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       create_bot_started_notification: {
         Args: {
           p_bot_name: string

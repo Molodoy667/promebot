@@ -221,19 +221,72 @@ Deno.serve(async (req) => {
         // Publish to Telegram
         let telegramResponse;
         if (postToPublish.image_url) {
-          // Send as photo with caption
-          telegramResponse = await fetch(
-            `https://api.telegram.org/bot${botData.bot_token}/sendPhoto`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: chatId,
-                photo: postToPublish.image_url,
-                caption: postToPublish.content,
-              }),
+          const imageUrl = postToPublish.image_url;
+          
+          // Check if it's a base64 data URL
+          if (imageUrl.startsWith('data:')) {
+            console.log('Detected base64 image, converting to file upload...');
+            
+            // Extract base64 data and mime type
+            const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (!matches) {
+              console.error('Invalid base64 image format');
+              // Fall back to text only
+              telegramResponse = await fetch(
+                `https://api.telegram.org/bot${botData.bot_token}/sendMessage`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: chatId,
+                    text: postToPublish.content,
+                  }),
+                }
+              );
+            } else {
+              const mimeType = matches[1];
+              const base64Data = matches[2];
+              
+              // Convert base64 to binary
+              const binaryString = atob(base64Data);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              
+              // Create form data with the file
+              const formData = new FormData();
+              const blob = new Blob([bytes], { type: mimeType });
+              const extension = mimeType.split('/')[1] || 'jpg';
+              formData.append('photo', blob, `image.${extension}`);
+              formData.append('chat_id', chatId);
+              if (postToPublish.content) {
+                formData.append('caption', postToPublish.content);
+              }
+              
+              telegramResponse = await fetch(
+                `https://api.telegram.org/bot${botData.bot_token}/sendPhoto`,
+                {
+                  method: 'POST',
+                  body: formData,
+                }
+              );
             }
-          );
+          } else {
+            // Regular URL - send via JSON
+            telegramResponse = await fetch(
+              `https://api.telegram.org/bot${botData.bot_token}/sendPhoto`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatId,
+                  photo: imageUrl,
+                  caption: postToPublish.content,
+                }),
+              }
+            );
+          }
         } else {
           // Send as text message
           telegramResponse = await fetch(
