@@ -644,45 +644,45 @@ export default function AIChat() {
   return (
     <div className="min-h-screen">
       <PageBreadcrumbs />
-      <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
+      <div className="container mx-auto px-3 md:px-4 py-2 md:py-3">
         {/* Compact header for chat */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => navigate("/tools")}
-              className="h-9 px-3"
+              className="h-8 px-2"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Назад</span>
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline text-sm">Назад</span>
             </Button>
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <MessageSquare className="h-4 w-4 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-base md:text-lg font-semibold leading-tight">AI Чат</h1>
-                <p className="text-[10px] md:text-xs text-muted-foreground">
-                  {sessionType === "free" ? "Безкоштовна сесія" : "Орендована сесія"}
+                <h1 className="text-sm md:text-base font-semibold leading-tight">AI Чат</h1>
+                <p className="text-[10px] text-muted-foreground">
+                  {sessionType === "free" ? "Безкоштовна" : "Оренда"}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 shadow-sm">
+          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-2 py-1.5 shadow-sm">
             <div className="text-right">
-              <p className="text-lg md:text-xl font-bold tabular-nums leading-none">{formatTime(timeLeft)}</p>
+              <p className="text-base md:text-lg font-bold tabular-nums leading-none">{formatTime(timeLeft)}</p>
               <p className="text-[10px] text-muted-foreground">{Math.ceil(timeLeft / 60)} / {sessionDuration} хв</p>
             </div>
           </div>
         </div>
 
         {/* Progress bar */}
-        <Progress value={progressValue} className="h-1.5 mb-4" />
+        <Progress value={progressValue} className="h-1 mb-2" />
 
         {/* Chat card */}
-        <Card className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 220px)', minHeight: '400px' }}>
+        <Card className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 140px)', minHeight: '450px' }}>
         <ScrollArea className="flex-1 p-3 md:p-4">
           <div className="space-y-3 md:space-y-4">
             {messages.map((message) => (
