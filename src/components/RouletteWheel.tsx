@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@supabase/supabase-js";
 import { BonusBalanceDisplay } from "./BonusBalanceDisplay";
-import { Play, Clock, TrendingUp, Gift } from "lucide-react";
+import { Play, Clock, TrendingUp, Gift, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -543,7 +543,8 @@ export const RouletteWheel = ({ user, onBalanceUpdate, currentBalance = 0, freeS
           {isVip && (
             <div className="mt-2 p-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg">
               <div className="flex items-center gap-2">
-                <span className="text-yellow-500 font-bold text-lg">⭐ VIP</span>
+                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                <span className="text-yellow-500 font-bold text-lg">VIP</span>
                 <span className="text-sm text-foreground">
                   Ваші призи збільшені вдвічі!
                 </span>
@@ -666,8 +667,8 @@ export const RouletteWheel = ({ user, onBalanceUpdate, currentBalance = 0, freeS
                   />
                 </p>
                 {isVip && (
-                  <p className="text-yellow-500 font-semibold text-lg mb-1">
-                    ⭐ VIP бонус x2!
+                  <p className="text-yellow-500 font-semibold text-lg mb-1 flex items-center gap-1 justify-center">
+                    <Star className="w-4 h-4 fill-yellow-500" /> VIP бонус x2!
                   </p>
                 )}
                 <p className="text-muted-foreground text-lg">Додано до бонусного балансу!</p>

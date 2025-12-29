@@ -695,9 +695,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
-        setVerificationProgress("✅ Крок 4/4: Завершення налаштування...");
+        setVerificationProgress("Крок 4/4: Завершення налаштування...");
         await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress("🎉 Успішно підключено!");
+        setVerificationProgress("Успішно підключено!");
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setChannelVerified(true);

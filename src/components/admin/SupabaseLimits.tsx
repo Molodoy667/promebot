@@ -638,7 +638,7 @@ export const SupabaseLimits = () => {
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-medium text-muted-foreground truncate">📁 {folder.path}</span>
+                                <span className="text-xs font-medium text-muted-foreground truncate flex items-center gap-1"><FolderX className="w-3 h-3" /> {folder.path}</span>
                                 <Badge variant="outline" className="text-xs">{folder.fileCount} файлів</Badge>
                                 {folder.oldFilesCount > 0 && (
                                   <Badge variant="destructive" className="text-xs">
@@ -816,8 +816,8 @@ export const SupabaseLimits = () => {
               <p className="text-xs text-muted-foreground">
                 {edgeFunctionsPercent.toFixed(2)}% від ліміту Free tier
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                💡 Оцінка базується на активності: пости (×3), тікети (×1), завдання (×2), лотерея (×1), реєстрації (×2)
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Оцінка базується на активності: пости (×3), тікети (×1), завдання (×2), лотерея (×1), реєстрації (×2)
               </p>
             </div>
 
@@ -887,8 +887,8 @@ export const SupabaseLimits = () => {
             <p className="text-xs text-muted-foreground">
               {((realtimeStats.currentConnections / realtimeStats.limit) * 100).toFixed(2)}% від ліміту Free tier
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              💡 Оцінка базується на кількості активних AI сервісів
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Zap className="w-3 h-3" /> Оцінка базується на кількості активних AI сервісів
             </p>
           </div>
 

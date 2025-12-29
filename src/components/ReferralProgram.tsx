@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Users, Coins, TrendingUp, Gift, Sparkles, User } from "lucide-react";
+import { Copy, Users, Coins, TrendingUp, Gift, Sparkles, User, Lightbulb } from "lucide-react";
 
 interface ReferralProgramProps {
   userId: string;
@@ -238,8 +238,8 @@ export const ReferralProgram = ({ userId, referralCode }: ReferralProgramProps) 
               </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            💡 Поділіться цим кодом зі своїми друзями. Після реєстрації вони введуть код і обидва отримаєте бонуси!
+          <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 flex-shrink-0" /> Поділіться цим кодом зі своїми друзями. Після реєстрації вони введуть код і обидва отримаєте бонуси!
           </p>
         </div>
 
