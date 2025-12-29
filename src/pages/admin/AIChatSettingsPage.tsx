@@ -177,13 +177,18 @@ export default function AIChatSettingsPage() {
                 <Input
                   id="rental_price"
                   type="text"
+                  inputMode="decimal"
                   value={settings.rental_price}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      rental_price: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setSettings({
+                        ...settings,
+                        rental_price: value,
+                      });
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="10"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -199,13 +204,18 @@ export default function AIChatSettingsPage() {
                 <Input
                   id="rental_duration"
                   type="text"
+                  inputMode="numeric"
                   value={settings.rental_duration_minutes}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      rental_duration_minutes: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*$/.test(value)) {
+                      setSettings({
+                        ...settings,
+                        rental_duration_minutes: value,
+                      });
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="60"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -237,13 +247,18 @@ export default function AIChatSettingsPage() {
                 <Input
                   id="free_duration"
                   type="text"
+                  inputMode="numeric"
                   value={settings.free_duration_minutes}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      free_duration_minutes: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*$/.test(value)) {
+                      setSettings({
+                        ...settings,
+                        free_duration_minutes: value,
+                      });
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="10"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -259,13 +274,18 @@ export default function AIChatSettingsPage() {
                 <Input
                   id="cooldown"
                   type="text"
+                  inputMode="numeric"
                   value={settings.free_cooldown_hours}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      free_cooldown_hours: e.target.value,
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*$/.test(value)) {
+                      setSettings({
+                        ...settings,
+                        free_cooldown_hours: value,
+                      });
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="6"
                 />
                 <p className="text-xs text-muted-foreground">

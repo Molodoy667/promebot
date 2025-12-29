@@ -308,6 +308,7 @@ export const StaticPagesManagement = () => {
                     setFormData({ ...formData, display_order: value === '' ? 0 : parseInt(value) });
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
 

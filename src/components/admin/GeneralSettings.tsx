@@ -646,6 +646,7 @@ export const GeneralSettings = () => {
                       setAiPricing({ ...aiPricing, imagePrice: value === '' ? 0 : parseFloat(value) });
                     }
                   }}
+                  onFocus={(e) => e.target.select()}
                 />
               </div>
 
@@ -663,6 +664,7 @@ export const GeneralSettings = () => {
                       setAiPricing({ ...aiPricing, postTextPrice: value === '' ? 0 : parseFloat(value) });
                     }
                   }}
+                  onFocus={(e) => e.target.select()}
                 />
               </div>
 
@@ -680,6 +682,7 @@ export const GeneralSettings = () => {
                       setAiPricing({ ...aiPricing, postImagePrice: value === '' ? 0 : parseFloat(value) });
                     }
                   }}
+                  onFocus={(e) => e.target.select()}
                 />
               </div>
             </div>

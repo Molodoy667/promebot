@@ -279,6 +279,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
                           field.onChange(clampedValue);
                         }
                       }}
+                      onFocus={(e) => e.target.select()}
                     />
                   </FormControl>
                   <FormMessage />
