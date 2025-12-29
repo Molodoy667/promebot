@@ -451,6 +451,43 @@ Deno.serve(async (req) => {
 
         console.log(`Successfully published post ${postToPublish.id} (message_id: ${messageId}) for service ${service.id}`);
 
+        // Generate new post after successful publication to maintain queue
+        const { count: afterPublishCount } = await supabase
+          .from('ai_generated_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('ai_bot_service_id', service.id)
+          .eq('status', 'scheduled');
+
+        if ((afterPublishCount || 0) < 10) {
+          try {
+            console.log(`Service ${service.id}: generating 1 new post after publication (${afterPublishCount}/10)`);
+
+            const generateResponse = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+                },
+                body: JSON.stringify({
+                  serviceId: service.id,
+                  count: 1,
+                }),
+              }
+            );
+
+            if (generateResponse.ok) {
+              console.log(`Successfully generated new post for service ${service.id}`);
+            } else {
+              const errorText = await generateResponse.text();
+              console.error(`Failed to generate new post for service ${service.id}:`, errorText);
+            }
+          } catch (generateError) {
+            console.error(`Error generating new post for service ${service.id}:`, generateError);
+          }
+        }
+
         results.push({
           serviceId: service.id,
           postId: postToPublish.id,
