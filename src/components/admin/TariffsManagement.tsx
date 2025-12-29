@@ -30,6 +30,7 @@ interface Tariff {
   sources_limit?: number;
   features: string[] | null;
   is_active: boolean;
+  is_trial?: boolean;
   bots_limit?: number;
   duration_days?: number | null;
   allow_media?: boolean;
@@ -76,6 +77,7 @@ export const TariffsManagement = ({
     bots_limit: "",
     duration_days: "",
     is_active: true,
+    is_trial: false,
     allow_media: true,
     allow_new_posts_only: true,
     allow_keyword_filter: true,
@@ -124,6 +126,7 @@ export const TariffsManagement = ({
         bots_limit: editingTariff.bots_limit?.toString() || "1",
         duration_days: editingTariff.duration_days?.toString() || "",
         is_active: editingTariff.is_active,
+        is_trial: editingTariff.is_trial ?? false,
         allow_media: editingTariff.allow_media ?? true,
         allow_new_posts_only: editingTariff.allow_new_posts_only ?? true,
         allow_keyword_filter: editingTariff.allow_keyword_filter ?? true,
@@ -149,6 +152,7 @@ export const TariffsManagement = ({
       bots_limit: "",
       duration_days: "",
       is_active: true,
+      is_trial: false,
       allow_media: true,
       allow_new_posts_only: true,
       allow_keyword_filter: true,
@@ -176,6 +180,7 @@ export const TariffsManagement = ({
         bots_limit: parseInt(formData.bots_limit) || 1,
         duration_days: formData.duration_days ? parseInt(formData.duration_days) : null,
         is_active: formData.is_active,
+        is_trial: formData.is_trial,
         allow_media: formData.allow_media,
         allow_new_posts_only: formData.allow_new_posts_only,
         allow_keyword_filter: formData.allow_keyword_filter,
@@ -227,6 +232,7 @@ export const TariffsManagement = ({
           bots_limit: parseInt(formData.bots_limit) || 1,
           duration_days: formData.duration_days ? parseInt(formData.duration_days) : null,
           is_active: formData.is_active,
+          is_trial: formData.is_trial,
           allow_media: formData.allow_media,
           allow_new_posts_only: formData.allow_new_posts_only,
           allow_keyword_filter: formData.allow_keyword_filter,
@@ -591,6 +597,22 @@ export const TariffsManagement = ({
           </div>
           
           <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-base">Налаштування тарифу</h3>
+            
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <Label htmlFor="is_trial" className="cursor-pointer font-medium">Пробний тариф</Label>
+                <p className="text-xs text-muted-foreground">Користувач може купити лише 1 раз</p>
+              </div>
+              <Switch
+                id="is_trial"
+                checked={formData.is_trial}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_trial: checked })
+                }
+              />
+            </div>
+            
             <div className="flex items-center space-x-2">
               <Switch
                 id="active"
