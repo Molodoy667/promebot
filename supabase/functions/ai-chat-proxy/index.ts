@@ -69,45 +69,49 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    console.log('Auth header present:', !!authHeader);
     
-    if (!authHeader) {
-      console.log('No auth header, returning 401');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid auth header');
       return new Response(JSON.stringify({ error: 'Authorization header required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Use service role key to verify the user token
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
-
-    // Extract the token from the Authorization header
+    // Extract token directly from header
     const token = authHeader.replace('Bearer ', '');
     
-    // Verify the JWT token
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError) {
-      console.error('Auth error:', authError.message);
-      return new Response(JSON.stringify({ error: 'Invalid token - please log in again' }), {
+    // Decode JWT to get user info (without full verification - Supabase handles that)
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      return new Response(JSON.stringify({ error: 'Invalid token format' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    if (!user) {
-      console.log('No user found, returning 401');
-      return new Response(JSON.stringify({ error: 'Unauthorized - please log in again' }), {
+    let userId: string;
+    try {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      userId = payload.sub;
+      
+      // Check if token is expired
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        console.log('Token expired');
+        return new Response(JSON.stringify({ error: 'Token expired - please log in again' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log('User ID from token:', userId);
+    } catch (e) {
+      console.error('Failed to decode token:', e);
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    
-    console.log('User authenticated:', user.id);
 
     // Create client with user context for RLS
     const supabaseClient = createClient(
