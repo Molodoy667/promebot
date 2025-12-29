@@ -109,20 +109,63 @@ Deno.serve(async (req) => {
     if (imageUrl) {
       console.log('Sending photo to Telegram...');
       
-      // Telegram API sendPhoto accepts URL directly in JSON body
-      telegramResponse = await fetch(
-        `https://api.telegram.org/bot${finalBotToken}/sendPhoto`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: finalChatId,
-            photo: imageUrl,
-            caption: text || undefined,
-            parse_mode: 'HTML',
-          }),
+      // Check if it's a base64 data URL
+      if (imageUrl.startsWith('data:')) {
+        console.log('Detected base64 image, converting to file upload...');
+        
+        // Extract base64 data and mime type
+        const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) {
+          return new Response(JSON.stringify({ error: 'Invalid image data format' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
-      );
+        
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        
+        // Convert base64 to binary
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Create form data with the file
+        const formData = new FormData();
+        const blob = new Blob([bytes], { type: mimeType });
+        const extension = mimeType.split('/')[1] || 'jpg';
+        formData.append('photo', blob, `image.${extension}`);
+        formData.append('chat_id', finalChatId);
+        if (text) {
+          formData.append('caption', text);
+          formData.append('parse_mode', 'HTML');
+        }
+        
+        telegramResponse = await fetch(
+          `https://api.telegram.org/bot${finalBotToken}/sendPhoto`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+      } else {
+        // Regular URL - send via JSON
+        telegramResponse = await fetch(
+          `https://api.telegram.org/bot${finalBotToken}/sendPhoto`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: finalChatId,
+              photo: imageUrl,
+              caption: text || undefined,
+              parse_mode: 'HTML',
+            }),
+          }
+        );
+      }
     } else {
       console.log('Sending text message to Telegram...');
       // Send text only
