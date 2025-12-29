@@ -233,6 +233,14 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
+    
+    // Redirect to settings security tab for login notifications
+    if (notification.type === "account_login") {
+      navigate("/settings?tab=security");
+      setOpen(false);
+      return;
+    }
+    
     if (notification.link) {
       navigate(notification.link);
       setOpen(false);
