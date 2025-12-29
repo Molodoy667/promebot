@@ -1126,44 +1126,116 @@ const MyChannels = () => {
             return (
               <Card 
                 key={group.service.id} 
-                className="p-6 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-shadow"
+                className="p-4 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-shadow"
               >
-                {/* Header with Channel Info */}
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
-                  <div className="flex-1 w-full">
-                    <div className="flex items-center gap-3 mb-2">
-                      {group.channelInfo?.photo_url ? (
-                        <img 
-                          src={group.channelInfo.photo_url} 
-                          alt={group.channelInfo.title}
-                          className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow flex-shrink-0">
-                          <Bot className="w-6 h-6 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-xl font-bold truncate">
-                          {group.channelInfo?.title || group.service.target_channel}
-                        </h3>
-                        {group.channelInfo?.username && (
-                          <a 
-                            href={`https://t.me/${group.channelInfo.username}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline truncate block"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            @{group.channelInfo.username}
-                          </a>
-                        )}
-                      </div>
+                {/* Compact Header - Always Visible */}
+                <div className="flex items-center gap-3">
+                  {group.channelInfo?.photo_url ? (
+                    <img 
+                      src={group.channelInfo.photo_url} 
+                      alt={group.channelInfo.title}
+                      className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow flex-shrink-0">
+                      <Bot className="w-7 h-7 text-primary-foreground" />
                     </div>
-                    
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold truncate">
+                      {group.channelInfo?.title || group.service.target_channel}
+                    </h3>
+                    {group.channelInfo?.username && (
+                      <a 
+                        href={`https://t.me/${group.channelInfo.username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline truncate block"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        @{group.channelInfo.username}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Status Badges - Always Visible */}
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <Badge variant={group.service.is_running ? "default" : "secondary"}>
+                    {group.service.is_running ? "Активний" : "Не активний"}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1">
+                    {group.type === 'ai' ? (
+                      <>
+                        <Sparkles className="w-3 h-3" />
+                        AI Бот
+                      </>
+                    ) : (
+                      <>
+                        <Bot className="w-3 h-3" />
+                        Плагіатор
+                      </>
+                    )}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1">
+                    {group.channelInfo?.username ? (
+                      <>
+                        <Globe className="w-3 h-3 text-green-500" />
+                        Публічний
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3 h-3 text-amber-500" />
+                        Приватний
+                      </>
+                    )}
+                  </Badge>
+                  {group.type === 'plagiarist' && (
+                    <Badge variant="outline">
+                      {group.sourceChannels?.filter(ch => ch.is_active).length || 0} джерел
+                    </Badge>
+                  )}
+                  {group.type === 'ai' && (
+                    <Badge variant="outline">
+                      {group.categories?.length || 0} категорій
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Collapsible Extended Content */}
+                <Collapsible
+                  open={isExpanded}
+                  onOpenChange={(open) => {
+                    setExpandedChannels(prev => {
+                      const newSet = new Set(prev);
+                      if (open) {
+                        newSet.add(group.service.id);
+                      } else {
+                        newSet.delete(group.service.id);
+                      }
+                      return newSet;
+                    });
+                  }}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-between mt-3"
+                      size="sm"
+                    >
+                      <span className="text-sm">{isExpanded ? 'Згорнути' : 'Розгорнути'}</span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="pt-4 space-y-4">
                     {/* Tariff Info */}
                     {group.service.subscription?.tariff && (
-                      <div className="mt-3 p-3 bg-primary/5 border border-primary/10 rounded-lg">
+                      <div className="p-3 bg-primary/5 border border-primary/10 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
                             <TrendingUp className="w-4 h-4 text-primary" />
@@ -1189,57 +1261,10 @@ const MyChannels = () => {
                         </div>
                       </div>
                     )}
-                    
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge variant={group.service.is_running ? "default" : "secondary"}>
-                        {group.service.is_running ? "Активний" : "Не активний"}
-                      </Badge>
-                      <Badge variant="outline" className="gap-1">
-                        {group.type === 'ai' ? (
-                          <>
-                            <Sparkles className="w-3 h-3" />
-                            AI Бот
-                          </>
-                        ) : (
-                          <>
-                            <Bot className="w-3 h-3" />
-                            Плагіатор
-                          </>
-                        )}
-                      </Badge>
-                      <Badge variant="outline" className="gap-1">
-                        {group.channelInfo?.username ? (
-                          <>
-                            <Globe className="w-3 h-3 text-green-500" />
-                            Публічний
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-3 h-3 text-amber-500" />
-                            Приватний
-                          </>
-                        )}
-                      </Badge>
-                      {group.type === 'plagiarist' && (
-                        <Badge variant="outline">
-                          {group.sourceChannels?.filter(ch => ch.is_active).length || 0} джерел
-                        </Badge>
-                      )}
-                      {group.type === 'ai' && (
-                        <Badge variant="outline">
-                          {group.categories?.length || 0} категорій
-                        </Badge>
-                      )}
-                      {group.type === 'plagiarist' && group.service.keywords_filter && Array.isArray(group.service.keywords_filter) && group.service.keywords_filter.length > 0 && (
-                        <Badge variant="outline" className="gap-1">
-                          🔍 Фільтр ({group.service.keywords_filter.length} слів)
-                        </Badge>
-                      )}
-                    </div>
 
                     {/* Bot Info */}
                     {group.bot && (
-                      <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                      <div className="p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <Bot className="w-4 h-4 text-primary" />
@@ -1286,9 +1311,9 @@ const MyChannels = () => {
                       </div>
                     )}
 
-                    {/* Settings Info */}
+                    {/* Settings Info - Plagiarist */}
                     {group.type === 'plagiarist' && (
-                      <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-border/30">
+                      <div className="p-3 bg-accent/30 rounded-lg border border-border/30">
                         <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
                           <Settings className="w-3.5 h-3.5" />
                           Налаштування публікації
@@ -1332,7 +1357,7 @@ const MyChannels = () => {
 
                     {/* AI Bot Settings Info */}
                     {group.type === 'ai' && (
-                      <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-border/30">
+                      <div className="p-3 bg-accent/30 rounded-lg border border-border/30">
                         <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5" />
                           Налаштування публікації
@@ -1391,185 +1416,154 @@ const MyChannels = () => {
                       </div>
                     )}
 
-                  </div>
-                </div>
-
-                <Separator className="mb-4" />
-
-                {/* Start/Stop Button */}
-                <Button
-                  onClick={() => {
-                    console.log('🖱️ Button clicked!', group.service.id);
-                    handleToggleBotStatus(group);
-                  }} 
-                  size="default" 
-                  variant={group.service.is_running ? "destructive" : "default"} 
-                  className="gap-2 w-full mb-4"
-                  disabled={cooldowns[group.service.id] > 0}
-                >
-                  {cooldowns[group.service.id] > 0 ? (
-                    <>
-                      <Clock className="w-4 h-4" />
-                      <span>Зачекайте {cooldowns[group.service.id]} сек</span>
-                    </>
-                  ) : group.service.is_running ? (
-                    <>
-                      <Pause className="w-4 h-4" />
-                      <span>Зупинити бота</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4" />
-                      <span>Запустити бота</span>
-                    </>
-                  )}
-                </Button>
-
-                {/* Content based on type */}
-                {group.type === 'plagiarist' && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold">Джерельні канали</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {group.sourceChannels?.filter(ch => ch.is_active).length || 0} активних
-                      </Badge>
-                    </div>
-
-                    {group.sourceChannels && group.sourceChannels.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {group.sourceChannels.slice(0, 5).map((channel) => (
-                          <Badge key={channel.id} variant="secondary" className="text-xs">
-                            {channel.channel_username}
+                    {/* Source Channels / Categories */}
+                    {group.type === 'plagiarist' && (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold">Джерельні канали</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {group.sourceChannels?.filter(ch => ch.is_active).length || 0} активних
                           </Badge>
-                        ))}
-                        {group.sourceChannels.length > 5 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{group.sourceChannels.length - 5} більше
-                          </Badge>
+                        </div>
+
+                        {group.sourceChannels && group.sourceChannels.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {group.sourceChannels.slice(0, 5).map((channel) => (
+                              <Badge key={channel.id} variant="secondary" className="text-xs">
+                                {channel.channel_username}
+                              </Badge>
+                            ))}
+                            {group.sourceChannels.length > 5 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{group.sourceChannels.length - 5} більше
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <Alert className="py-2">
+                            <Info className="w-4 h-4" />
+                            <AlertDescription className="text-xs">
+                              Немає джерельних каналів
+                            </AlertDescription>
+                          </Alert>
                         )}
                       </div>
-                    ) : (
-                      <Alert className="py-2">
-                        <Info className="w-4 h-4" />
-                        <AlertDescription className="text-xs">
-                          Немає джерельних каналів
-                        </AlertDescription>
-                      </Alert>
                     )}
-                  </div>
-                )}
 
-                {group.type === 'ai' && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold">
-                        {(group.service as AIBotService).publishing_settings?.use_custom_prompt ? 'Власний промпт' : 'Категорії постів'}
-                      </h4>
-                      <Badge variant="outline" className="text-xs">
-                        {(group.service as AIBotService).publishing_settings?.use_custom_prompt 
-                          ? 'Кастомний' 
-                          : `${group.categories?.length || 0} категорій`}
-                      </Badge>
-                    </div>
-
-                    {(group.service as AIBotService).publishing_settings?.use_custom_prompt ? (
-                      <div className="p-3 bg-muted/50 rounded-lg border border-border/30">
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {(group.service as AIBotService).publishing_settings?.custom_prompt || 'Власний промпт налаштовано'}
-                        </p>
-                      </div>
-                    ) : group.categories && group.categories.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {group.categories.map((category, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs gap-1 items-center">
-                            {getCategoryIcon(category.emoji, "w-3.5 h-3.5")}
-                            <span>{category.name}</span>
+                    {group.type === 'ai' && (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold">
+                            {(group.service as AIBotService).publishing_settings?.use_custom_prompt ? 'Власний промпт' : 'Категорії постів'}
+                          </h4>
+                          <Badge variant="outline" className="text-xs">
+                            {(group.service as AIBotService).publishing_settings?.use_custom_prompt 
+                              ? 'Кастомний' 
+                              : `${group.categories?.length || 0} категорій`}
                           </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <Alert className="py-2">
-                        <Info className="w-4 h-4" />
-                        <AlertDescription className="text-xs">
-                          Не вибрано категорій
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
+                        </div>
 
-                {/* Collapsible Actions */}
-                <Collapsible
-                  open={isExpanded}
-                  onOpenChange={(open) => {
-                    setExpandedChannels(prev => {
-                      const newSet = new Set(prev);
-                      if (open) {
-                        newSet.add(group.service.id);
-                      } else {
-                        newSet.delete(group.service.id);
-                      }
-                      return newSet;
-                    });
-                  }}
-                >
-                  <CollapsibleTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-between"
-                      size="sm"
+                        {(group.service as AIBotService).publishing_settings?.use_custom_prompt ? (
+                          <div className="p-3 bg-muted/50 rounded-lg border border-border/30">
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {(group.service as AIBotService).publishing_settings?.custom_prompt || 'Власний промпт налаштовано'}
+                            </p>
+                          </div>
+                        ) : group.categories && group.categories.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {group.categories.map((category, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs gap-1 items-center">
+                                {getCategoryIcon(category.emoji, "w-3.5 h-3.5")}
+                                <span>{category.name}</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <Alert className="py-2">
+                            <Info className="w-4 h-4" />
+                            <AlertDescription className="text-xs">
+                              Не вибрано категорій
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    {/* Start/Stop Button */}
+                    <Button
+                      onClick={() => {
+                        console.log('🖱️ Button clicked!', group.service.id);
+                        handleToggleBotStatus(group);
+                      }} 
+                      size="default" 
+                      variant={group.service.is_running ? "destructive" : "default"} 
+                      className="gap-2 w-full"
+                      disabled={cooldowns[group.service.id] > 0}
                     >
-                      <span className="text-sm">Налаштування каналу</span>
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4" />
+                      {cooldowns[group.service.id] > 0 ? (
+                        <>
+                          <Clock className="w-4 h-4" />
+                          <span>Зачекайте {cooldowns[group.service.id]} сек</span>
+                        </>
+                      ) : group.service.is_running ? (
+                        <>
+                          <Pause className="w-4 h-4" />
+                          <span>Зупинити бота</span>
+                        </>
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <>
+                          <Play className="w-4 h-4" />
+                          <span>Запустити бота</span>
+                        </>
                       )}
                     </Button>
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-4 space-y-2">
-                    <Button 
-                      onClick={() => {
-                        navigate("/channel-stats", { 
-                          state: { 
-                            serviceId: group.service.id,
-                            serviceType: group.type,
-                            channelName: group.service.target_channel
-                          } 
-                        });
-                      }}
-                      variant="default"
-                      className="w-full"
-                    >
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                      Статистика каналу
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => {
-                        if (group.type === 'plagiarist') {
-                          navigate("/bot-setup", { state: { botServiceId: group.service.id } });
-                        } else {
-                          const aiService = group.service as AIBotService;
-                          navigate("/ai-bot-config", { state: { botId: aiService.bot_id, aiServiceId: aiService.id } });
-                        }
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Редагувати налаштування
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => handleDeleteChannel(group)}
-                      variant="destructive"
-                      className="w-full"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Видалити канал
-                    </Button>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={() => {
+                          navigate("/channel-stats", { 
+                            state: { 
+                              serviceId: group.service.id,
+                              serviceType: group.type,
+                              channelName: group.service.target_channel
+                            } 
+                          });
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Статистика каналу
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => {
+                          if (group.type === 'plagiarist') {
+                            navigate("/bot-setup", { state: { botServiceId: group.service.id } });
+                          } else {
+                            const aiService = group.service as AIBotService;
+                            navigate("/ai-bot-config", { state: { botId: aiService.bot_id, aiServiceId: aiService.id } });
+                          }
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Редагувати налаштування
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => handleDeleteChannel(group)}
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Видалити канал
+                      </Button>
+                    </div>
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
