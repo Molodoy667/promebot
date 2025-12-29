@@ -398,49 +398,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update service last publish time
-        await supabase
-          .from('ai_bot_services')
-          .update({ last_published_at: new Date().toISOString() })
-          .eq('id', service.id);
-
-        // Generate 1 new post after publishing (to maintain queue of 10)
-        const { count: currentCount } = await supabase
-          .from('ai_generated_posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('ai_bot_service_id', service.id)
-          .eq('status', 'scheduled');
-        
-        if ((currentCount || 0) < 10) {
-          console.log(`Service ${service.id} - generating 1 post after publish to maintain queue`);
-          
-          try {
-            const generateResponse = await fetch(
-              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                },
-                body: JSON.stringify({
-                  serviceId: service.id,
-                  count: 1,
-                }),
-              }
-            );
-            
-            if (generateResponse.ok) {
-              console.log(`Generated 1 post for service ${service.id}`);
-            } else {
-              const errorText = await generateResponse.text();
-              console.error(`Failed to generate post: ${errorText}`);
-            }
-          } catch (genError) {
-            console.error(`Error generating post:`, genError);
-          }
-        }
-
         // Extract message_id from Telegram response
         const messageId = telegramResult.result?.message_id;
 
@@ -454,9 +411,15 @@ Deno.serve(async (req) => {
           })
           .eq('id', postToPublish.id);
 
+        // Update service last publish time
+        await supabase
+          .from('ai_bot_services')
+          .update({ last_published_at: new Date().toISOString() })
+          .eq('id', service.id);
+
         console.log(`Successfully published post ${postToPublish.id} (message_id: ${messageId}) for service ${service.id}`);
 
-        // Після публікації генеруємо новий пост якщо менше 10
+        // Generate 1 new post after publishing (to maintain queue of 10)
         const { count: afterPublishCount } = await supabase
           .from('ai_generated_posts')
           .select('*', { count: 'exact', head: true })
