@@ -939,7 +939,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
       if (contentSettingsChanged) {
         toast({
           title: "Успішно",
-          description: "Налаштування збережено. Пости згенеруються при запуску бота.",
+          description: "Зміни були успішно збережені, поверніться в Мої канали та запустіть бота",
         });
       } else {
         toast({
