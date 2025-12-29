@@ -1,0 +1,4 @@
+prompts:
+  - name: PROMT 1
+    description: Работа с файлами
+    content_file: promt-1.md

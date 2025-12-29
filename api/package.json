@@ -1,0 +1,11 @@
+{
+  "name": "userbot-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "telegram": "^2.22.2"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  }
+}

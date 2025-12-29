@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splash Screen Preview - PromoBot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4f46e5 60%, #7c3aed 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(79, 70, 229, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.3) 0%, transparent 50%);
+            animation: backgroundMove 10s ease-in-out infinite;
+        }
+
+        @keyframes backgroundMove {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .splash-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeIn 0.6s ease-in;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .robot-icon {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 24px;
+            animation: scaleIn 0.8s ease-out, floatRobot 3s ease-in-out infinite 0.8s;
+            filter: drop-shadow(0 10px 30px rgba(124, 58, 237, 0.5));
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0.5) translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes floatRobot {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+            }
+            25% {
+                transform: translateY(-10px) scale(1.02);
+            }
+            50% {
+                transform: translateY(0px) scale(1);
+            }
+            75% {
+                transform: translateY(-5px) scale(0.98);
+            }
+        }
+
+        .app-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 12px;
+            font-family: sans-serif;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+            animation: textGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes textGlow {
+            0%, 100% { 
+                text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+            }
+            50% { 
+                text-shadow: 0 0 40px rgba(168, 85, 247, 0.8), 0 0 60px rgba(99, 102, 241, 0.4);
+            }
+        }
+
+        /* Typing text */
+        .typing-text {
+            font-size: 16px;
+            color: #e0d5ff;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 48px;
+            min-height: 24px;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            opacity: 1;
+            text-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 18px;
+            background: #a855f7;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(168, 85, 247, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Orbiting circles */
+        .orbit-container {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .orbit-circle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.8) 0%, rgba(99, 102, 241, 0.4) 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.8);
+        }
+
+        .orbit-circle:nth-child(1) {
+            animation: orbit1 3s linear infinite;
+        }
+
+        .orbit-circle:nth-child(2) {
+            animation: orbit2 3s linear infinite;
+            animation-delay: -1s;
+        }
+
+        .orbit-circle:nth-child(3) {
+            animation: orbit3 3s linear infinite;
+            animation-delay: -2s;
+        }
+
+        @keyframes orbit1 {
+            from {
+                transform: rotate(0deg) translateX(100px) rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg) translateX(100px) rotate(-360deg);
+            }
+        }
+
+        @keyframes orbit2 {
+            from {
+                transform: rotate(120deg) translateX(100px) rotate(-120deg);
+            }
+            to {
+                transform: rotate(480deg) translateX(100px) rotate(-480deg);
+            }
+        }
+
+        @keyframes orbit3 {
+            from {
+                transform: rotate(240deg) translateX(100px) rotate(-240deg);
+            }
+            to {
+                transform: rotate(600deg) translateX(100px) rotate(-600deg);
+            }
+        }
+
+        .progress-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 320px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 999px;
+            overflow: visible;
+            position: relative;
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                #4f46e5 0%, 
+                #6366f1 25%, 
+                #7c3aed 50%, 
+                #a855f7 75%, 
+                #c084fc 100%
+            );
+            border-radius: 999px;
+            width: 0%;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 0 30px rgba(124, 58, 237, 0.8),
+                0 0 60px rgba(99, 102, 241, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.4) 50%, 
+                transparent 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: radial-gradient(circle, 
+                rgba(255, 255, 255, 0.8) 0%, 
+                rgba(168, 85, 247, 0.4) 50%, 
+                transparent 100%
+            );
+            border-radius: 50%;
+            filter: blur(4px);
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 200%;
+            }
+        }
+
+        /* Progress segments */
+        .progress-segments {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 4px;
+            padding: 0 2px;
+        }
+
+        .progress-segment {
+            flex: 1;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .progress-percentage {
+            text-align: center;
+            margin-top: 14px;
+            color: #c084fc;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 
+                0 0 10px rgba(168, 85, 247, 0.8),
+                0 0 20px rgba(99, 102, 241, 0.4);
+            animation: percentagePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes percentagePulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        /* Loading dots animation */
+        .loading-dots {
+            display: inline-block;
+            margin-left: 4px;
+        }
+
+        .loading-dots span {
+            animation: dotPulse 1.4s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotPulse {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-4px);
+            }
+        }
+
+        .loading-text {
+            position: fixed;
+            bottom: 36px;
+            color: #c4b5fd;
+            font-size: 14px;
+            opacity: 0.7;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        }
+
+        /* Robot SVG styles */
+        .robot-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.5) 0%, rgba(99, 102, 241, 0.2) 50%, transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 0.5;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.3) rotate(180deg);
+                opacity: 0.8;
+            }
+        }
+
+        /* Energy rings */
+        .energy-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px solid rgba(168, 85, 247, 0.3);
+            animation: ringExpand 2s ease-out infinite;
+        }
+
+        .energy-ring:nth-child(1) {
+            width: 140px;
+            height: 140px;
+            animation-delay: 0s;
+        }
+
+        .energy-ring:nth-child(2) {
+            width: 140px;
+            height: 140px;
+            animation-delay: 0.6s;
+        }
+
+        .energy-ring:nth-child(3) {
+            width: 140px;
+            height: 140px;
+            animation-delay: 1.2s;
+        }
+
+        @keyframes ringExpand {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Orbiting circles -->
+    <div class="orbit-container">
+        <div class="orbit-circle"></div>
+        <div class="orbit-circle"></div>
+        <div class="orbit-circle"></div>
+    </div>
+
+    <div class="splash-container">
+        <div class="robot-container">
+            <div class="energy-ring"></div>
+            <div class="energy-ring"></div>
+            <div class="energy-ring"></div>
+            <div class="glow"></div>
+            <svg class="robot-icon" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background gradient circles -->
+                <circle cx="60" cy="60" r="57" fill="#c084fc" opacity="0.15"/>
+                <circle cx="60" cy="60" r="51" fill="#a855f7" opacity="0.2"/>
+                <circle cx="60" cy="60" r="45" fill="#9333ea" opacity="0.25"/>
+                
+                <!-- Main circle -->
+                <circle cx="60" cy="60" r="42" fill="#7c3aed"/>
+                
+                <!-- Shine effect -->
+                <path d="M60,18 A42,42 0,0,1 60,102 A42,42 0,0,1 60,18 Z" fill="#ffffff" opacity="0.12"/>
+                
+                <!-- Robot head -->
+                <rect x="39" y="42" width="42" height="36" fill="#ffffff" rx="2"/>
+                <rect x="39" y="42" width="42" height="36" fill="#e9d5ff" opacity="0.3"/>
+                
+                <!-- Left eye -->
+                <circle cx="47" cy="57" r="6" fill="#d8b4fe" opacity="0.4"/>
+                <circle cx="47" cy="57" r="5" fill="#a855f7"/>
+                <circle cx="47" cy="57" r="3.5" fill="#7c3aed"/>
+                <circle cx="46" cy="55" r="1.5" fill="#ffffff" opacity="0.9"/>
+                
+                <!-- Right eye -->
+                <circle cx="73" cy="57" r="6" fill="#d8b4fe" opacity="0.4"/>
+                <circle cx="73" cy="57" r="5" fill="#a855f7"/>
+                <circle cx="73" cy="57" r="3.5" fill="#7c3aed"/>
+                <circle cx="72" cy="55" r="1.5" fill="#ffffff" opacity="0.9"/>
+                
+                <!-- Antenna -->
+                <rect x="57" y="33" width="6" height="9" fill="#ffffff" opacity="0.95"/>
+                <circle cx="60" cy="33" r="3.5" fill="#fcd34d" opacity="0.7"/>
+                <circle cx="60" cy="33" r="3" fill="#fbbf24"/>
+                <circle cx="60" cy="32" r="1.2" fill="#fef08a" opacity="0.9"/>
+                
+                <!-- Smile -->
+                <path d="M48,66 Q60,71 72,66" stroke="#a855f7" stroke-width="2" fill="none" stroke-linecap="round"/>
+                
+                <!-- Sparkles -->
+                <polygon points="18,30 20,34 22,30 20,26" fill="#fbbf24" opacity="0.85"/>
+                <polygon points="99,27 100.5,30 102,27 100.5,24" fill="#fbbf24" opacity="0.85"/>
+                <polygon points="15,87 16.5,90 18,87 16.5,84" fill="#fbbf24" opacity="0.85"/>
+                <polygon points="102,93 103.5,96 105,93 103.5,90" fill="#fbbf24" opacity="0.85"/>
+                
+                <!-- Small stars -->
+                <circle cx="30" cy="21" r="1.5" fill="#ffffff" opacity="0.7"/>
+                <circle cx="93" cy="96" r="1.5" fill="#ffffff" opacity="0.7"/>
+                <circle cx="27" cy="99" r="1.5" fill="#ffffff" opacity="0.7"/>
+            </svg>
+        </div>
+        
+        <div class="app-name">PromoBot</div>
+        <div class="typing-text">
+            <span id="typingText"></span><span class="typing-cursor"></span>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar-bg">
+                <div class="progress-segments">
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                    <div class="progress-segment"></div>
+                </div>
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <div class="progress-percentage">
+                <span id="progressText">0</span>%<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            </div>
+        </div>
+        
+        <div class="loading-text">Завантаження додатку...</div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particleCount = 30;
+            const body = document.body;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.width = particle.style.height = (Math.random() * 4 + 2) + 'px';
+                body.appendChild(particle);
+            }
+        }
+        
+        createParticles();
+        
+        // Typing text animation
+        const typingText = document.getElementById('typingText');
+        const text = '🚀 Автоматизація та просування Telegram-каналів';
+        let charIndex = 0;
+        
+        function typeText() {
+            if (charIndex < text.length) {
+                typingText.textContent += text.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeText, 35 + Math.random() * 25); // Faster: 35-60ms per char
+            }
+        }
+        
+        // Start typing immediately after fade-in (400ms)
+        setTimeout(typeText, 400);
+        
+        // Progress bar animation
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        let progress = 0;
+        
+        const interval = setInterval(() => {
+            progress += 2;
+            if (progress <= 100) {
+                progressBar.style.width = progress + '%';
+                progressText.textContent = progress;
+            }
+            
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.body.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: white; font-family: sans-serif; flex-direction: column; animation: fadeIn 0.5s ease-in;">
+                            <style>@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }</style>
+                            <h1 style="font-size: 2rem; margin-bottom: 1rem; background: linear-gradient(90deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">✅ Splash Screen Complete</h1>
+                            <p style="opacity: 0.7;">В реальному додатку тут буде WebView</p>
+                            <p style="opacity: 0.5; margin-top: 2rem; font-size: 0.9rem;">Тривалість: 3 секунди</p>
+                        </div>
+                    `;
+                }, 200);
+            }
+        }, 60);
+    </script>
+</body>
+</html>

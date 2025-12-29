@@ -1,0 +1,21 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.aab
+
+# Allow debug.keystore for CI/CD
+!app/debug.keystore
+*.keystore
+*.keystore.base64
+*.jks
+GITHUB_SECRETS_VALUES.txt
+generate-keystore.ps1
+generate-keystore.sh

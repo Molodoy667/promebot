@@ -1,0 +1,539 @@
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Eye, Edit, XCircle, Wallet } from "lucide-react";
+import { useState } from "react";
+import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
+import { EditTaskDialog } from "./EditTaskDialog";
+import { TaskBudgetDialog } from "./TaskBudgetDialog";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const statusLabels: Record<string, { label: string; variant: any; color?: string }> = {
+  pending_moderation: { label: "На модерації", variant: "secondary" },
+  approved: { label: "Схвалено", variant: "default", color: "bg-green-500 text-white" },
+  active: { label: "Активне", variant: "default", color: "bg-blue-500 text-white" },
+  inactive: { label: "Не активне", variant: "outline", color: "bg-gray-500 text-white" },
+  rejected: { label: "Відхилено", variant: "destructive" },
+  completed: { label: "Завершено", variant: "outline" },
+  cancelled: { label: "Скасовано", variant: "outline" },
+};
+
+export const MyTasksList = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<any>(null);
+  const [cancellingTask, setCancellingTask] = useState<any>(null);
+  const [budgetTask, setBudgetTask] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("all");
+  const [sortBy, setSortBy] = useState<"date" | "budget" | "executions">("date");
+
+  const { data: tasks, isLoading } = useQuery({
+    queryKey: ["my-tasks"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          task_submissions (
+            id,
+            status,
+            user_id
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: userProfile } = useQuery({
+    queryKey: ["user-profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("balance, bonus_balance")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const cancelTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: "cancelled" })
+        .eq("id", taskId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Успішно",
+        description: "Завдання скасовано",
+      });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      setCancellingTask(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message || "Не вдалось скасувати завдання",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const activateTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: "active" })
+        .eq("id", taskId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Завдання активовано",
+        description: "Завдання тепер доступне для виконання!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["available-tasks"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message || "Не вдалось активувати завдання",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deactivateTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: "inactive" })
+        .eq("id", taskId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Завдання деактивовано",
+        description: "Завдання переміщено в 'Не активні'",
+      });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["available-tasks"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message || "Не вдалось деактивувати завдання",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const canEdit = (status: string) => 
+    ["pending_moderation", "rejected", "needs_revision"].includes(status);
+  
+  const canCancel = (status: string) => 
+    ["active", "approved"].includes(status);
+
+  if (isLoading) {
+    return <div className="text-center py-8">Завантаження...</div>;
+  }
+
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Ви ще не створили жодного завдання</p>
+      </div>
+    );
+  }
+
+  // Filter and sort tasks by tab
+  const filteredTasks = tasks
+    .filter((task: any) => {
+      if (activeTab === "all") return true;
+      if (activeTab === "pending") return task.status === "pending_moderation";
+      if (activeTab === "approved") return task.status === "approved";
+      if (activeTab === "active") return task.status === "active";
+      if (activeTab === "inactive") return task.status === "inactive";
+      if (activeTab === "rejected") return task.status === "rejected";
+      if (activeTab === "cancelled") return task.status === "cancelled";
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      if (sortBy === "date") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (sortBy === "budget") {
+        return (b.budget || 0) - (a.budget || 0);
+      } else if (sortBy === "executions") {
+        return (b.available_executions || 0) - (a.available_executions || 0);
+      }
+      return 0;
+    });
+
+  const renderTaskCard = (task: any) => {
+    const submissionsCount = task.task_submissions?.length || 0;
+    const submittedCount = task.task_submissions?.filter(
+      (s: any) => s.status === "submitted"
+    ).length || 0;
+
+    return (
+      <Card key={task.id}>
+        <CardHeader>
+          <div className="flex justify-between items-start mb-2">
+            <Badge 
+              variant={statusLabels[task.status]?.variant || "outline"}
+              className={statusLabels[task.status]?.color || ""}
+            >
+              {statusLabels[task.status]?.label || task.status}
+            </Badge>
+            <Badge variant={task.task_type === "vip" ? "default" : "secondary"}>
+              {task.task_type === "vip" ? "VIP" : "Бонусне"}
+            </Badge>
+          </div>
+          <CardTitle className="line-clamp-2">{task.title}</CardTitle>
+          <CardDescription className="line-clamp-2">
+            Винагорода: {task.reward_amount.toFixed(2)} ₴
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>Виконань: {submissionsCount}</p>
+            {submittedCount > 0 && (
+              <p className="text-orange-600 font-medium">
+                Нових звітів: {submittedCount}
+              </p>
+            )}
+            
+            {/* Budget info for approved, active and inactive tasks */}
+            {(task.status === "approved" || task.status === "active" || task.status === "inactive") && (
+              <div className="pt-2 mt-2 border-t">
+                <div className="flex justify-between">
+                  <span>Бюджет:</span>
+                  <span className="font-medium">{task.budget?.toFixed(2) || "0.00"} ₴</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Доступно виконань:</span>
+                  <span className={`font-medium ${(task.available_executions || 0) === 0 ? "text-destructive" : ""}`}>
+                    {task.available_executions || 0}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex gap-2 flex-wrap">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => setSelectedTask(task)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Переглянути
+          </Button>
+          
+          {task.status === "approved" && (
+            <>
+              <Button 
+                variant="outline"
+                size="icon"
+                onClick={() => setBudgetTask(task)}
+                title="Поповнити бюджет"
+                className={(task.available_executions || 0) === 0 ? "border-orange-500 text-orange-500 hover:bg-orange-50" : ""}
+              >
+                <Wallet className="h-4 w-4" />
+              </Button>
+              
+              {(task.budget || 0) > 0 && (
+                <Button 
+                  variant="default"
+                  className="bg-blue-500 hover:bg-blue-600"
+                  onClick={() => activateTaskMutation.mutate(task.id)}
+                  disabled={activateTaskMutation.isPending}
+                >
+                  {activateTaskMutation.isPending ? "Активація..." : "Активувати"}
+                </Button>
+              )}
+            </>
+          )}
+          
+          {task.status === "active" && (
+            <>
+              <Button 
+                variant="outline"
+                size="icon"
+                onClick={() => setBudgetTask(task)}
+                title="Поповнити бюджет"
+                className={(task.available_executions || 0) === 0 ? "border-orange-500 text-orange-500 hover:bg-orange-50" : ""}
+              >
+                <Wallet className="h-4 w-4" />
+              </Button>
+              
+              <Button 
+                variant="outline"
+                className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                onClick={() => deactivateTaskMutation.mutate(task.id)}
+                disabled={deactivateTaskMutation.isPending}
+              >
+                {deactivateTaskMutation.isPending ? "Деактивація..." : "Деактивувати"}
+              </Button>
+            </>
+          )}
+          
+          {task.status === "inactive" && (
+            <>
+              <Button 
+                variant="outline"
+                size="icon"
+                onClick={() => setBudgetTask(task)}
+                title="Поповнити бюджет"
+                className={(task.available_executions || 0) === 0 ? "border-orange-500 text-orange-500 hover:bg-orange-50" : ""}
+              >
+                <Wallet className="h-4 w-4" />
+              </Button>
+              
+              {(task.budget || 0) > 0 && (
+                <Button 
+                  variant="default"
+                  className="bg-blue-500 hover:bg-blue-600"
+                  onClick={() => activateTaskMutation.mutate(task.id)}
+                  disabled={activateTaskMutation.isPending}
+                >
+                  {activateTaskMutation.isPending ? "Активація..." : "Активувати"}
+                </Button>
+              )}
+            </>
+          )}
+          
+          {canEdit(task.status) && (
+            <Button 
+              variant="outline"
+              size="icon"
+              onClick={() => setEditingTask(task)}
+              title="Редагувати"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {canCancel(task.status) && (
+            <Button 
+              variant="outline"
+              size="icon"
+              onClick={() => setCancellingTask(task)}
+              title="Скасувати"
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    );
+  };
+
+  // Calculate task counts by status
+  const taskCounts = {
+    all: tasks?.length || 0,
+    pending: tasks?.filter((t: any) => t.status === "pending_moderation").length || 0,
+    approved: tasks?.filter((t: any) => t.status === "approved").length || 0,
+    active: tasks?.filter((t: any) => t.status === "active").length || 0,
+    inactive: tasks?.filter((t: any) => t.status === "inactive").length || 0,
+    rejected: tasks?.filter((t: any) => t.status === "rejected").length || 0,
+    cancelled: tasks?.filter((t: any) => t.status === "cancelled").length || 0,
+  };
+
+  return (
+    <>
+      {/* Status Filters */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Button
+          size="sm"
+          variant={activeTab === "all" ? "default" : "outline"}
+          onClick={() => setActiveTab("all")}
+          className={activeTab === "all" ? "bg-gradient-primary" : ""}
+        >
+          Всі <Badge variant="secondary" className="ml-2">{taskCounts.all}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "pending" ? "default" : "outline"}
+          onClick={() => setActiveTab("pending")}
+          className={activeTab === "pending" ? "bg-gradient-primary" : ""}
+        >
+          На модерації <Badge variant="secondary" className="ml-2">{taskCounts.pending}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "approved" ? "default" : "outline"}
+          onClick={() => setActiveTab("approved")}
+          className={activeTab === "approved" ? "bg-gradient-primary" : ""}
+        >
+          Схвалені <Badge variant="secondary" className="ml-2">{taskCounts.approved}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "active" ? "default" : "outline"}
+          onClick={() => setActiveTab("active")}
+          className={activeTab === "active" ? "bg-gradient-primary" : ""}
+        >
+          Активні <Badge variant="secondary" className="ml-2">{taskCounts.active}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "inactive" ? "default" : "outline"}
+          onClick={() => setActiveTab("inactive")}
+          className={activeTab === "inactive" ? "bg-gradient-primary" : ""}
+        >
+          Не активні <Badge variant="secondary" className="ml-2">{taskCounts.inactive}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "rejected" ? "default" : "outline"}
+          onClick={() => setActiveTab("rejected")}
+          className={activeTab === "rejected" ? "bg-gradient-primary" : ""}
+        >
+          Відхилені <Badge variant="secondary" className="ml-2">{taskCounts.rejected}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "cancelled" ? "default" : "outline"}
+          onClick={() => setActiveTab("cancelled")}
+          className={activeTab === "cancelled" ? "bg-gradient-primary" : ""}
+        >
+          Скасовані <Badge variant="secondary" className="ml-2">{taskCounts.cancelled}</Badge>
+        </Button>
+      </div>
+
+      <div className="mt-6">
+        {filteredTasks.length > 0 && (
+          <div className="flex gap-2 mb-4">
+              <Button
+                variant={sortBy === "date" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy("date")}
+              >
+                За датою
+              </Button>
+              {(activeTab === "approved" || activeTab === "active" || activeTab === "inactive") && (
+                <>
+                  <Button
+                    variant={sortBy === "budget" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSortBy("budget")}
+                  >
+                    За бюджетом
+                  </Button>
+                  <Button
+                    variant={sortBy === "executions" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSortBy("executions")}
+                  >
+                    За виконаннями
+                  </Button>
+                </>
+              )}
+          </div>
+        )}
+        
+        {filteredTasks.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              {activeTab === "all" && "Ви ще не створили жодного завдання"}
+              {activeTab === "pending" && "Немає завдань на модерації"}
+              {activeTab === "approved" && "Немає схвалених завдань"}
+              {activeTab === "active" && "Немає активних завдань"}
+              {activeTab === "inactive" && "Немає не активних завдань"}
+              {activeTab === "rejected" && "Немає відхилених завдань"}
+              {activeTab === "cancelled" && "Немає скасованих завдань"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTasks.map((task: any) => renderTaskCard(task))}
+          </div>
+        )}
+      </div>
+
+      <div className="hidden">
+        {tasks.map((task: any) => {
+          return null;
+        })}
+      </div>
+
+      {selectedTask && (
+        <MyTaskDetailsDialog
+          task={selectedTask}
+          open={!!selectedTask}
+          onOpenChange={(open) => !open && setSelectedTask(null)}
+        />
+      )}
+
+      {editingTask && (
+        <EditTaskDialog
+          task={editingTask}
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+        />
+      )}
+
+      {budgetTask && userProfile && (
+        <TaskBudgetDialog
+          task={budgetTask}
+          open={!!budgetTask}
+          onOpenChange={(open) => !open && setBudgetTask(null)}
+          userBalance={userProfile.balance || 0}
+          userBonusBalance={userProfile.bonus_balance || 0}
+        />
+      )}
+
+      <AlertDialog open={!!cancellingTask} onOpenChange={(open) => !open && setCancellingTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Скасувати завдання?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете скасувати завдання "{cancellingTask?.title}"? 
+              Ця дія не може бути скасована. Завдання більше не буде доступне для виконання.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Ні, залишити</AlertDialogCancel>
+            <AlertDialogAction onClick={() => cancelTaskMutation.mutate(cancellingTask?.id)}>
+              Так, скасувати
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};

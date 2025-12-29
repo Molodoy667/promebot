@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.promobot.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.promobot.app"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            // Use debug keystore for now (for CircleCI builds)
+            // For production, replace with your release keystore
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+            
+            // Enable v1 and v2 signing for better compatibility
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ""
+            signingConfig signingConfigs.release
+            debuggable false // Disable debug mode to reduce Play Protect warnings
+        }
+        release {
+            minifyEnabled false // Disable minification to reduce Play Protect warnings
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+    
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "promobot.apk"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+}

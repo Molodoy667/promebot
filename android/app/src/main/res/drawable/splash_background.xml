@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Blue-purple gradient background -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="135"
+                android:startColor="#1e1b4b"
+                android:centerColor="#312e81"
+                android:endColor="#7c3aed"
+                android:type="linear"/>
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,58 @@
+project_id = "vtrkcgaajgtlkjqcnwxk"
+
+[functions.ai-bot-worker]
+verify_jwt = false
+
+[functions.check-bot-admin]
+verify_jwt = true
+
+[functions.check-private-channel]
+verify_jwt = true
+
+[functions.check-telegram-channel]
+verify_jwt = true
+
+[functions.cleanup-old-files]
+verify_jwt = false
+
+[functions.expire-subscriptions]
+verify_jwt = false
+
+[functions.generate-ai-posts]
+verify_jwt = true
+
+[functions.generate-image]
+verify_jwt = true
+
+[functions.generate-post]
+verify_jwt = true
+
+[functions.lottery-draw]
+verify_jwt = false
+
+[functions.miner-auto-collect]
+verify_jwt = false
+
+[functions.publish-to-telegram]
+verify_jwt = true
+
+[functions.send-password-reset]
+verify_jwt = false
+
+[functions.telegram-auth]
+verify_jwt = false
+
+[functions.telegram-login]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
+
+[functions.test-telegram-bot]
+verify_jwt = true
+
+[functions.validate-telegram-channel]
+verify_jwt = true
+
+[functions.verify-email]
+verify_jwt = false

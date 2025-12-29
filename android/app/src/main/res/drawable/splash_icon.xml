@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Main circle with glow -->
+    <path
+        android:name="outerGlow"
+        android:fillColor="#a855f7"
+        android:pathData="M60,60m-58,0a58,58 0,1,1 116,0a58,58 0,1,1 -116,0"
+        android:fillAlpha="0.3"/>
+    
+    <path
+        android:name="mainCircle"
+        android:fillColor="#7c3aed"
+        android:pathData="M60,60m-50,0a50,50 0,1,1 100,0a50,50 0,1,1 -100,0"/>
+    
+    <!-- Robot head -->
+    <path
+        android:name="robotHead"
+        android:fillColor="#ffffff"
+        android:pathData="M35,40 L85,40 L85,75 L35,75 Z"/>
+    
+    <!-- Eyes -->
+    <path
+        android:name="leftEye"
+        android:fillColor="#a855f7"
+        android:pathData="M48,55 a5,5 0,1,0 -10,0 a5,5 0,1,0 10,0"/>
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M46,53 a2,2 0,1,0 -4,0 a2,2 0,1,0 4,0"
+        android:fillAlpha="0.9"/>
+    
+    <path
+        android:name="rightEye"
+        android:fillColor="#a855f7"
+        android:pathData="M82,55 a5,5 0,1,0 -10,0 a5,5 0,1,0 10,0"/>
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M80,53 a2,2 0,1,0 -4,0 a2,2 0,1,0 4,0"
+        android:fillAlpha="0.9"/>
+    
+    <!-- Antenna -->
+    <path
+        android:name="antenna"
+        android:fillColor="#ffffff"
+        android:pathData="M57,30 L63,30 L63,40 L57,40 Z"/>
+    <path
+        android:name="antennaBulb"
+        android:fillColor="#fbbf24"
+        android:pathData="M63,30 a3,3 0,1,0 -6,0 a3,3 0,1,0 6,0"/>
+    
+    <!-- Smile -->
+    <path
+        android:name="smile"
+        android:pathData="M45,65 Q60,70 75,65"
+        android:strokeColor="#a855f7"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"/>
+</vector>
