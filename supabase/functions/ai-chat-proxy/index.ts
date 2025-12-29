@@ -71,20 +71,32 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     console.log('Auth header present:', !!authHeader);
     
-    const supabaseClient = createClient(
+    if (!authHeader) {
+      console.log('No auth header, returning 401');
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Use service role key to verify the user token
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Extract the token from the Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError) {
       console.error('Auth error:', authError.message);
+      return new Response(JSON.stringify({ error: 'Invalid token - please log in again' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     if (!user) {
@@ -96,6 +108,17 @@ Deno.serve(async (req) => {
     }
     
     console.log('User authenticated:', user.id);
+
+    // Create client with user context for RLS
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
 
     const { messages } = await req.json();
 
