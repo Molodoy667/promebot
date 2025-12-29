@@ -55,6 +55,14 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
     setSoundEnabled(true);
   }, []);
 
+  // Update unread count when notifications change
+  useEffect(() => {
+    if (onCountChange) {
+      const unread = notifications.filter(n => !n.is_read).length;
+      onCountChange(unread);
+    }
+  }, [notifications, onCountChange]);
+
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -78,13 +86,7 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
               if (prev.some(n => n.id === newNotification.id)) {
                 return prev;
               }
-              const updated = [newNotification, ...prev];
-              // Оновлюємо лічильник непрочитаних
-              if (onCountChange) {
-                const unread = updated.filter(n => !n.is_read).length;
-                onCountChange(unread);
-              }
-              return updated;
+              return [newNotification, ...prev];
             });
             
             if (soundEnabled && audioRef.current) {
@@ -113,16 +115,6 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
             setNotifications((prev) =>
               prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
             );
-            
-            // Оновлюємо лічильник при зміні статусу прочитання
-            if (onCountChange) {
-              setNotifications((current) => {
-                const updated = current.map((n) => (n.id === updatedNotification.id ? updatedNotification : n));
-                const unread = updated.filter(n => !n.is_read).length;
-                onCountChange(unread);
-                return updated;
-              });
-            }
           }
         )
         .on(
@@ -136,16 +128,6 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
           (payload) => {
             const deletedId = (payload.old as any).id;
             setNotifications((prev) => prev.filter((n) => n.id !== deletedId));
-            
-            // Оновлюємо лічильник після видалення
-            if (onCountChange) {
-              setNotifications((current) => {
-                const filtered = current.filter((n) => n.id !== deletedId);
-                const unread = filtered.filter(n => !n.is_read).length;
-                onCountChange(unread);
-                return filtered;
-              });
-            }
           }
         )
         .subscribe();
