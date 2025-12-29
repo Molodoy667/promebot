@@ -173,6 +173,27 @@ const MyChannels = () => {
   const [tariff, setTariff] = useState<any>(null);
   const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
 
+  // Load cooldowns from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('bot_cooldowns');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Record<string, number>;
+        const now = Date.now();
+        const restored: Record<string, number> = {};
+        for (const [key, endTime] of Object.entries(parsed)) {
+          const remaining = Math.ceil((endTime - now) / 1000);
+          if (remaining > 0) {
+            restored[key] = remaining;
+          }
+        }
+        setCooldowns(restored);
+      } catch (e) {
+        console.error('Failed to parse cooldowns from localStorage:', e);
+      }
+    }
+  }, []);
+
   // Cooldown timer effect
   useEffect(() => {
     const interval = setInterval(() => {
@@ -180,9 +201,25 @@ const MyChannels = () => {
         const updated: Record<string, number> = {};
         let hasChanges = false;
         for (const [key, value] of Object.entries(prev)) {
-          if (value > 0) {
+          if (value > 1) {
             updated[key] = value - 1;
             hasChanges = true;
+          } else if (value === 1) {
+            hasChanges = true;
+            // Don't add to updated - cooldown finished
+          }
+        }
+        // Update localStorage
+        if (hasChanges) {
+          const endTimes: Record<string, number> = {};
+          const now = Date.now();
+          for (const [key, seconds] of Object.entries(updated)) {
+            endTimes[key] = now + seconds * 1000;
+          }
+          if (Object.keys(endTimes).length > 0) {
+            localStorage.setItem('bot_cooldowns', JSON.stringify(endTimes));
+          } else {
+            localStorage.removeItem('bot_cooldowns');
           }
         }
         return hasChanges ? updated : prev;
@@ -785,8 +822,17 @@ const MyChannels = () => {
           : g
       ));
 
-      // Start 60 second cooldown
-      setCooldowns(prev => ({ ...prev, [group.service.id]: 60 }));
+      // Start 60 second cooldown and save to localStorage
+      const endTime = Date.now() + 60 * 1000;
+      setCooldowns(prev => {
+        const updated = { ...prev, [group.service.id]: 60 };
+        // Save to localStorage
+        const stored = localStorage.getItem('bot_cooldowns');
+        const endTimes = stored ? JSON.parse(stored) : {};
+        endTimes[group.service.id] = endTime;
+        localStorage.setItem('bot_cooldowns', JSON.stringify(endTimes));
+        return updated;
+      });
 
       toast({
         title: newStatus ? "Бот запущено" : "Бот зупинено",
