@@ -1561,12 +1561,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
               </div>
             )}
 
-            {(userTariff?.allow_ai_images !== false) && (
-              <div className={`flex items-center justify-between p-3 rounded-lg ${
-                userTariff?.allow_ai_images !== false
-                  ? 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20'
-                  : ''
-              }`}>
+            {userTariff?.allow_ai_images === true && (
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
                 <div>
                   <Label htmlFor="include-media" className="font-medium">Публікації з зображенням</Label>
                   <p className="text-sm text-muted-foreground">
