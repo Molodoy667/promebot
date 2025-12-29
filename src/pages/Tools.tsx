@@ -1372,6 +1372,76 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
           </Card>
         </div>
       )}
+
+      {/* Channel Selection Dialog for Post Generation */}
+      <Dialog open={showChannelDialog} onOpenChange={setShowChannelDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Виберіть канал для публікації</DialogTitle>
+            <DialogDescription>
+              Оберіть канал в який хочете опублікувати згенерований пост
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px] pr-4">
+            {userChannels.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <p>У вас немає доданих каналів</p>
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setShowChannelDialog(false);
+                    navigate("/my-channels");
+                  }}
+                  className="mt-2"
+                >
+                  Додати канал
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {userChannels.map((channel) => {
+                  const info = channelInfo[channel.id];
+                  return (
+                    <Button
+                      key={channel.id}
+                      variant="outline"
+                      className="w-full justify-start text-left h-auto py-3 px-3"
+                      onClick={() => publishToChannel(channel)}
+                      disabled={isPublishing}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {info?.photo ? (
+                            <img src={info.photo} alt={info.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xl font-bold text-primary">
+                              {(info?.title || channel.target_channel).charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Channel Info */}
+                        <div className="flex flex-col items-start flex-1 min-w-0">
+                          <span className="font-semibold text-sm truncate w-full">
+                            {info?.title || channel.target_channel}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate w-full">
+                            @{info?.username || channel.target_channel.replace('@', '')}
+                          </span>
+                        </div>
+
+                        {/* Arrow Icon */}
+                        <Send className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
       </div>
     );
   }
