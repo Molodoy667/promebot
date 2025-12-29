@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.log('No valid auth header');
       return new Response(JSON.stringify({ error: 'Authorization header required' }), {
@@ -79,39 +79,8 @@ Deno.serve(async (req) => {
     }
 
     // Extract token directly from header
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Decode JWT to get user info (without full verification - Supabase handles that)
-    const tokenParts = token.split('.');
-    if (tokenParts.length !== 3) {
-      return new Response(JSON.stringify({ error: 'Invalid token format' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    let userId: string;
-    try {
-      const payload = JSON.parse(atob(tokenParts[1]));
-      userId = payload.sub;
-      
-      // Check if token is expired
-      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-        console.log('Token expired');
-        return new Response(JSON.stringify({ error: 'Token expired - please log in again' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      console.log('User ID from token:', userId);
-    } catch (e) {
-      console.error('Failed to decode token:', e);
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const token = authHeader.slice('Bearer '.length).trim();
+    console.log('Token received (len):', token.length);
 
     // Create client with user context for RLS
     const supabaseClient = createClient(
@@ -123,6 +92,20 @@ Deno.serve(async (req) => {
         },
       }
     );
+
+    // Verify token by fetching the user from Supabase Auth
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error('Auth error:', authError?.message || 'No user');
+      return new Response(JSON.stringify({ error: 'Unauthorized - please log in again' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('User authenticated:', user.id);
+
 
     const { messages } = await req.json();
 
