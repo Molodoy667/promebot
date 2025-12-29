@@ -276,7 +276,7 @@ ${withTags ? '- З релевантними хештегами в кінці' : 
     // Modify prompt based on withTags setting
     if (withTags) {
       // Add explicit instruction to include hashtags
-      textPrompt += `\n\nВАЖЛИВО: Обов'язково додай 5-10 релевантних хештегів (#) в кінці посту! Наприклад: #тема #категорія #цікаво`;
+      textPrompt += `\n\nДодай рівно 5 релевантних хештегів (#) в кінці посту.`;
     } else {
       // Remove hashtag instructions from category prompts and add explicit instruction to NOT use hashtags
       textPrompt = textPrompt
