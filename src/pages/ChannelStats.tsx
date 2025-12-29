@@ -716,7 +716,7 @@ export default function ChannelStats() {
       }
 
       toast({
-        title: data.updated > 0 ? "Статистика оновлена ✅" : "Статистика актуальна",
+        title: data.updated > 0 ? "Статистика оновлена" : "Статистика актуальна",
         description: data.updated > 0 
           ? `Оновлено ${data.updated} з ${data.total} постів${data.subscribersCount ? ` • ${data.subscribersCount.toLocaleString()} підписників` : ''}`
           : `Перевірено ${data.total} постів. Немає змін.${data.subscribersCount ? ` • ${data.subscribersCount.toLocaleString()} підписників` : ''}`,

@@ -148,7 +148,7 @@ export default function LotteryPage() {
       const result = data as { success: boolean; error?: string; winner_id?: string; prize?: number };
 
       if (result.success) {
-        showToast("🎉 Розіграш проведено!", `Переможець отримав ${result.prize?.toFixed(2)}₴`);
+        showToast("Розіграш проведено!", `Переможець отримав ${result.prize?.toFixed(2)}₴`);
         fetchData();
       } else {
         showToast("Помилка", result.error || "Не вдалося провести розіграш", "destructive");

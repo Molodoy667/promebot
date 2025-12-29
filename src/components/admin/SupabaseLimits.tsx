@@ -15,7 +15,8 @@ import {
   CheckCircle,
   X,
   Trash2,
-  FolderX
+  FolderX,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -923,30 +924,30 @@ export const SupabaseLimits = () => {
             <AlertCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="space-y-3 flex-1">
               <div>
-                <p className="text-sm font-semibold mb-2">📊 Ліміти Free Tier Plan</p>
+                <p className="text-sm font-semibold mb-2 flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Ліміти Free Tier Plan</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">💾 Storage</p>
+                    <p className="font-medium flex items-center gap-1"><HardDrive className="w-3 h-3" /> Storage</p>
                     <p className="text-muted-foreground">1 GB файлового сховища</p>
                   </div>
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">🗄️ Database</p>
+                    <p className="font-medium flex items-center gap-1"><Database className="w-3 h-3" /> Database</p>
                     <p className="text-muted-foreground">500 MB PostgreSQL</p>
                   </div>
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">👥 Auth Users</p>
+                    <p className="font-medium flex items-center gap-1"><Users className="w-3 h-3" /> Auth Users</p>
                     <p className="text-muted-foreground">50,000 користувачів</p>
                   </div>
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">⚡ Edge Functions</p>
+                    <p className="font-medium flex items-center gap-1"><Zap className="w-3 h-3" /> Edge Functions</p>
                     <p className="text-muted-foreground">500K викликів/місяць</p>
                   </div>
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">🔄 Realtime</p>
+                    <p className="font-medium flex items-center gap-1"><Activity className="w-3 h-3" /> Realtime</p>
                     <p className="text-muted-foreground">200 з'єднань одночасно</p>
                   </div>
                   <div className="p-2 rounded bg-background/50">
-                    <p className="font-medium">📡 Bandwidth</p>
+                    <p className="font-medium flex items-center gap-1"><Activity className="w-3 h-3" /> Bandwidth</p>
                     <p className="text-muted-foreground">5 GB на місяць</p>
                   </div>
                 </div>

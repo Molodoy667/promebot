@@ -793,7 +793,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
       setShowChannelDialog(false);
       
       toast({
-        title: "✅ Успішно опубліковано",
+        title: "Успішно опубліковано",
         description: `Пост опубліковано в канал ${targetChannel} через бота @${botUsername || 'вашого бота'}`,
       });
 
@@ -818,7 +818,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
       }
 
       toast({
-        title: "❌ Помилка публікації",
+        title: "Помилка публікації",
         description: errorMessage,
         variant: "destructive",
       });

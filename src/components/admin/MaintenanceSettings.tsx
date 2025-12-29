@@ -176,8 +176,8 @@ export const MaintenanceSettings = () => {
 
         {settings.enabled && (
           <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-            <p className="text-sm text-destructive font-semibold">
-              ⚠️ Увага! Режим тех. робіт активний
+            <p className="text-sm text-destructive font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Увага! Режим тех. робіт активний
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Користувачі не зможуть користуватись сайтом (крім адмінів/модерів якщо дозволено)

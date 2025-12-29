@@ -13,7 +13,11 @@ import {
   Bug,
   Info,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  FolderOpen,
+  Globe,
+  User,
+  Monitor
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
@@ -458,23 +462,23 @@ ${'═'.repeat(64)}
                           </p>
                           <div className="mt-1 space-y-0.5">
                             {error.url && (
-                              <p className="text-xs text-muted-foreground">
-                                📁 {error.url}:{error.line}:{error.column}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <FolderOpen className="w-3 h-3" /> {error.url}:{error.line}:{error.column}
                               </p>
                             )}
                             {error.pathname && (
-                              <p className="text-xs text-muted-foreground">
-                                🌐 {error.pathname}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Globe className="w-3 h-3" /> {error.pathname}
                               </p>
                             )}
                             {error.userId && (
-                              <p className="text-xs text-muted-foreground">
-                                👤 User: {error.userId.substring(0, 8)}...
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <User className="w-3 h-3" /> User: {error.userId.substring(0, 8)}...
                               </p>
                             )}
                             {error.windowSize && (
-                              <p className="text-xs text-muted-foreground">
-                                📐 {error.windowSize}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Monitor className="w-3 h-3" /> {error.windowSize}
                               </p>
                             )}
                           </div>

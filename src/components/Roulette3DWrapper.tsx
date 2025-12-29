@@ -120,7 +120,7 @@ export function Roulette3DWrapper({ userId, currentBalance, onBalanceUpdate, bet
       onBalanceUpdate();
 
       toast({
-        title: "💰 Ставку зроблено",
+        title: "Ставку зроблено",
         description: `Списано ${betAmount} бонусів`,
         variant: "default",
       });
@@ -160,7 +160,7 @@ export function Roulette3DWrapper({ userId, currentBalance, onBalanceUpdate, bet
         playSound('win');
         
         toast({
-          title: "🎉 Виграш!",
+          title: "Виграш!",
           description: `Ви виграли ${winAmount} бонусів!`,
         });
 

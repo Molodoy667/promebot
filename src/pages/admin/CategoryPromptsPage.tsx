@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Save, RefreshCw, Plus, Trash2, Edit2 } from "lucide-react";
+import { Loader2, Save, RefreshCw, Plus, Trash2, Edit2, AlertTriangle } from "lucide-react";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import {
   Dialog,
@@ -277,8 +277,8 @@ export default function CategoryPromptsPage() {
                       Ключ: <code className="bg-muted px-1 py-0.5 rounded">{prompt.category_key}</code>
                     </p>
                   ) : (
-                    <p className="text-xs text-destructive mt-1">
-                      ⚠️ Відсутній ключ категорії
+                    <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Відсутній ключ категорії
                     </p>
                   )}
                 </div>
