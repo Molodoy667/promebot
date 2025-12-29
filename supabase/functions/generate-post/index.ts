@@ -275,10 +275,15 @@ ${withTags ? '- З релевантними хештегами в кінці' : 
 
     // Modify prompt based on withTags setting
     if (!withTags) {
-      // Remove hashtag instructions from category prompts
+      // Remove hashtag instructions from category prompts and add explicit instruction to NOT use hashtags
       textPrompt = textPrompt
-        .replace(/- З хештегами.*в кінці\n?/gi, '- БЕЗ хештегів\n')
-        .replace(/- З релевантними хештегами.*\n?/gi, '- БЕЗ хештегів\n');
+        .replace(/- З хештегами.*в кінці\n?/gi, '')
+        .replace(/- З релевантними хештегами.*\n?/gi, '')
+        .replace(/хештег[иіа]?/gi, '')
+        .replace(/#\w+/g, '');
+      
+      // Add explicit instruction at the end to ensure no hashtags
+      textPrompt += `\n\nВАЖЛИВО: НЕ ВИКОРИСТОВУЙ ЖОДНИХ ХЕШТЕГІВ (#) у відповіді! Текст має бути без хештегів!`;
     }
 
     console.log('Using AI service:', textService.provider, 'Model:', textService.model_name);
