@@ -288,8 +288,33 @@ export default function AIChat() {
 
       if (error) throw error;
 
+      // Додаємо привітальне повідомлення
+      const welcomeMessage = "Привіт! Радий вітати тебе 👋 Я твій AI-асистент і готовий допомогти з будь-якими питаннями. Чим можу бути корисним?";
+      
+      const { error: msgError } = await supabase
+        .from("ai_chat_messages")
+        .insert({
+          session_id: session.id,
+          user_id: user.user.id,
+          role: "assistant",
+          content: welcomeMessage,
+        });
+
+      if (msgError) {
+        console.error("Error inserting welcome message:", msgError);
+      }
+
       setSessionId(session.id);
       setExpiresAt(new Date(session.expires_at));
+      
+      // Встановлюємо привітальне повідомлення в стейт
+      setMessages([{
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: welcomeMessage,
+        created_at: new Date().toISOString(),
+      }]);
+      
       setStep("chat");
 
       toast({
