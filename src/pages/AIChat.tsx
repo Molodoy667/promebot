@@ -642,33 +642,47 @@ export default function AIChat() {
   const progressValue = totalSeconds > 0 ? (timeLeft / totalSeconds) * 100 : 0;
 
   return (
-    <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex flex-col min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/tools")} className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <h1 className="text-base md:text-lg font-semibold">AI Чат</h1>
+    <div className="min-h-screen">
+      <PageBreadcrumbs />
+      <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
+        {/* Compact header for chat */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/tools")}
+              className="h-9 px-3"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Назад</span>
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center">
+                <MessageSquare className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-base md:text-lg font-semibold leading-tight">AI Чат</h1>
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  {sessionType === "free" ? "Безкоштовна сесія" : "Орендована сесія"}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 shadow-sm">
+            <div className="text-right">
+              <p className="text-lg md:text-xl font-bold tabular-nums leading-none">{formatTime(timeLeft)}</p>
+              <p className="text-[10px] text-muted-foreground">{Math.ceil(timeLeft / 60)} / {sessionDuration} хв</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {sessionType === "free" ? "Безкоштовна" : "Оренда"}
-          </span>
-          <span className="text-sm md:text-base font-semibold tabular-nums">{formatTime(timeLeft)}</span>
-        </div>
-      </div>
 
-      <div className="mb-2">
-        <Progress value={progressValue} className="h-1.5" />
-        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 text-right">
-          {Math.ceil(timeLeft / 60)} / {sessionDuration} хв
-        </p>
-      </div>
+        {/* Progress bar */}
+        <Progress value={progressValue} className="h-1.5 mb-4" />
 
-      <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        {/* Chat card */}
+        <Card className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 220px)', minHeight: '400px' }}>
         <ScrollArea className="flex-1 p-3 md:p-4">
           <div className="space-y-3 md:space-y-4">
             {messages.map((message) => (
@@ -777,7 +791,8 @@ export default function AIChat() {
             </Button>
           </div>
         </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
