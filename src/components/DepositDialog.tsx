@@ -119,6 +119,7 @@ export const DepositDialog = ({ open, onOpenChange, userId, currentBalance, onSu
                   setAmount(value);
                 }
               }}
+              onFocus={(e) => e.target.select()}
             />
           </div>
 
