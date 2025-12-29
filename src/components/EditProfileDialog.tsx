@@ -76,10 +76,21 @@ export const EditProfileDialog = ({
       const fileExt = compressedImage.name.split(".").pop();
       const filePath = `${userId}/avatar.${fileExt}`;
 
-      // Delete old avatar if exists
+      // Delete old avatar from storage if it was uploaded to the avatars bucket
       if (profile?.avatar_url) {
-        const oldPath = profile.avatar_url.split("/").pop();
-        await supabase.storage.from("avatars").remove([`${userId}/${oldPath}`]);
+        const marker = "/avatars/";
+        const idx = profile.avatar_url.indexOf(marker);
+        const oldStoragePath = idx !== -1 ? profile.avatar_url.slice(idx + marker.length) : null;
+
+        if (oldStoragePath) {
+          const { error: removeError } = await supabase.storage
+            .from("avatars")
+            .remove([oldStoragePath]);
+
+          if (removeError) {
+            console.warn("Error deleting old avatar:", removeError);
+          }
+        }
       }
 
       const { error: uploadError } = await supabase.storage
