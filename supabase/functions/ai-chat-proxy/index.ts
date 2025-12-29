@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiUrl = aiService.api_endpoint;
+    let apiUrl = aiService.api_endpoint;
     const isVertexAI = aiService.provider?.toLowerCase().includes('vertex') || 
                        apiUrl.includes('aiplatform.googleapis.com');
 
@@ -141,6 +141,12 @@ Deno.serve(async (req) => {
     };
 
     if (isVertexAI) {
+      // Fix deprecated models - replace gemini-1.5-flash with gemini-2.0-flash-001
+      if (apiUrl.includes('gemini-1.5-flash')) {
+        apiUrl = apiUrl.replace('gemini-1.5-flash', 'gemini-2.0-flash-001');
+        console.log('Replaced deprecated gemini-1.5-flash with gemini-2.0-flash-001');
+      }
+      
       // Vertex AI Gemini format
       console.log('Using Vertex AI, generating token...');
       const accessToken = await getVertexAIToken(aiService.api_key);
