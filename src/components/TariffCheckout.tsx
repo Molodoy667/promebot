@@ -170,6 +170,25 @@ export const TariffCheckout = ({
 
       const hadActiveSubscription = !!existingSub;
 
+      // Deactivate existing subscription if exists
+      if (existingSub) {
+        const { error: deactivateError } = await supabase
+          .from('subscriptions')
+          .update({ status: 'cancelled' })
+          .eq('id', existingSub.id);
+        
+        if (deactivateError) throw deactivateError;
+      }
+
+      // Deduct balance first
+      const { error: balanceError } = await supabase.rpc('deduct_balance', {
+        user_id: session.user.id,
+        amount: finalPrice,
+        balance_type: balanceType
+      });
+
+      if (balanceError) throw balanceError;
+
       // Create subscription
       const startedAt = new Date();
       const expiresAt = tariff.duration_days 
@@ -186,18 +205,8 @@ export const TariffCheckout = ({
 
       if (subError) throw subError;
 
-      // Deduct balance
-      const balanceField = balanceType === "main" ? 'balance' : 'bonus_balance';
-      const { error: balanceError } = await supabase.rpc('deduct_balance', {
-        user_id: session.user.id,
-        amount: finalPrice,
-        balance_type: balanceType
-      });
-
-      if (balanceError) throw balanceError;
-
       // Create transaction
-      await supabase.from('transactions').insert({
+      const { error: txError } = await supabase.from('transactions').insert({
         user_id: session.user.id,
         amount: -finalPrice,
         type: 'tariff_purchase',
@@ -209,6 +218,11 @@ export const TariffCheckout = ({
           promo_discount: promoDiscount
         }
       });
+
+      if (txError) {
+        console.error("Transaction error:", txError);
+        // Transaction is non-critical, continue
+      }
 
       // Create system notification about tariff activation / change
       const formattedExpiry = expiresAt

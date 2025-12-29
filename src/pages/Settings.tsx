@@ -116,7 +116,7 @@ const Settings = () => {
           if (oldPath) {
             await supabase.storage
               .from("avatars")
-              .remove([`avatars/${oldPath}`]);
+              .remove([oldPath]);
           }
         } catch (err) {
           console.error("Error deleting old avatar:", err);
