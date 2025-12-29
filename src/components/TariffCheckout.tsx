@@ -228,7 +228,7 @@ export const TariffCheckout = ({
 
       if (subError) throw subError;
 
-      // Create transaction
+      // Create transaction with tariff_price for bonus trigger
       const { error: txError } = await supabase.from('transactions').insert({
         user_id: session.user.id,
         amount: -finalPrice,
@@ -237,6 +237,7 @@ export const TariffCheckout = ({
         status: 'completed',
         metadata: {
           tariff_id: tariff.id,
+          tariff_price: finalPrice,
           balance_type: balanceType,
           promo_discount: promoDiscount
         }
