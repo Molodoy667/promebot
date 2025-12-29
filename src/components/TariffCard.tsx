@@ -22,6 +22,7 @@ interface Tariff {
   duration_days: number | null;
   features_list: TariffFeature[];
   is_trial: boolean;
+  allow_ai_images?: boolean;
 }
 
 interface TariffCardProps {
@@ -85,6 +86,11 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
               на {tariff.duration_days} {tariff.duration_days === 1 ? 'день' : tariff.duration_days < 5 ? 'дні' : 'днів'}
             </p>
           )}
+          {tariff.is_trial && (
+            <Badge variant="secondary" className="mt-2 text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400">
+              Пробний період
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -109,6 +115,22 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
               <span className="text-xl sm:text-2xl font-bold">{tariff.sources_limit}</span>
               <span className="text-[10px] sm:text-xs text-muted-foreground">Джерел</span>
             </div>
+          </div>
+          
+          {/* AI Images Feature */}
+          <div className={`flex items-center gap-2 p-2 rounded-lg ${
+            tariff.allow_ai_images !== false
+              ? 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20'
+              : 'bg-muted/30 border border-muted'
+          }`}>
+            {tariff.allow_ai_images !== false ? (
+              <Check className="w-4 h-4 text-purple-600 flex-shrink-0" />
+            ) : (
+              <X className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            )}
+            <span className={`text-xs sm:text-sm ${tariff.allow_ai_images !== false ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+              Зображення до АІ публікацій
+            </span>
           </div>
         </div>
 

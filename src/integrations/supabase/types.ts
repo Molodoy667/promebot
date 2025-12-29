@@ -1670,6 +1670,7 @@ export type Database = {
       }
       tariffs: {
         Row: {
+          allow_ai_images: boolean | null
           allow_auto_delete: boolean | null
           allow_custom_watermark: boolean | null
           allow_edit_before_post: boolean | null
@@ -1701,6 +1702,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allow_ai_images?: boolean | null
           allow_auto_delete?: boolean | null
           allow_custom_watermark?: boolean | null
           allow_edit_before_post?: boolean | null
@@ -1732,6 +1734,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allow_ai_images?: boolean | null
           allow_auto_delete?: boolean | null
           allow_custom_watermark?: boolean | null
           allow_edit_before_post?: boolean | null

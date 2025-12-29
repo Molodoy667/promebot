@@ -68,6 +68,10 @@ interface ChannelInfo {
   members_count?: number;
 }
 
+interface UserTariff {
+  allow_ai_images?: boolean;
+}
+
 export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: AIBotSetupProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -99,6 +103,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [generateTags, setGenerateTags] = useState(false);
+  const [userTariff, setUserTariff] = useState<UserTariff | null>(null);
   
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -110,6 +115,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
 
   useEffect(() => {
     const initializeData = async () => {
+      await loadUserTariff();
       await loadCategories();
       await loadAIBotService();
     };
@@ -137,6 +143,35 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
       supabase.removeChannel(channel);
     };
   }, [botId, userId, serviceId]);
+
+  const loadUserTariff = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select(`
+          tariffs (
+            allow_ai_images
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading user tariff:', error);
+        return;
+      }
+
+      if (data?.tariffs) {
+        setUserTariff(data.tariffs as unknown as UserTariff);
+        console.log('User tariff loaded:', data.tariffs);
+      }
+    } catch (error) {
+      console.error('Error loading user tariff:', error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -1526,14 +1561,25 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="include-media">Публікації з зображенням</Label>
-              <Switch
-                id="include-media"
-                checked={includeMedia}
-                onCheckedChange={setIncludeMedia}
-              />
-            </div>
+            {(userTariff?.allow_ai_images !== false) && (
+              <div className={`flex items-center justify-between p-3 rounded-lg ${
+                userTariff?.allow_ai_images !== false
+                  ? 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20'
+                  : ''
+              }`}>
+                <div>
+                  <Label htmlFor="include-media" className="font-medium">Публікації з зображенням</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Генерувати зображення для постів через AI
+                  </p>
+                </div>
+                <Switch
+                  id="include-media"
+                  checked={includeMedia}
+                  onCheckedChange={setIncludeMedia}
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <div>

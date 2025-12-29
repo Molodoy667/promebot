@@ -43,6 +43,7 @@ interface Tariff {
   allow_link_preview?: boolean;
   allow_forward_tag?: boolean;
   allow_edit_before_post?: boolean;
+  allow_ai_images?: boolean;
 }
 
 interface TariffsManagementProps {
@@ -88,6 +89,7 @@ export const TariffsManagement = ({
     allow_link_preview: true,
     allow_forward_tag: false,
     allow_edit_before_post: false,
+    allow_ai_images: true,
   });
 
   // Real-time updates for tariffs
@@ -137,6 +139,7 @@ export const TariffsManagement = ({
         allow_link_preview: editingTariff.allow_link_preview ?? true,
         allow_forward_tag: editingTariff.allow_forward_tag ?? false,
         allow_edit_before_post: editingTariff.allow_edit_before_post ?? false,
+        allow_ai_images: editingTariff.allow_ai_images ?? true,
       });
     }
   }, [mode, editingTariff]);
@@ -163,6 +166,7 @@ export const TariffsManagement = ({
       allow_link_preview: true,
       allow_forward_tag: false,
       allow_edit_before_post: false,
+      allow_ai_images: true,
     });
   };
 
@@ -191,6 +195,7 @@ export const TariffsManagement = ({
         allow_link_preview: formData.allow_link_preview,
         allow_forward_tag: formData.allow_forward_tag,
         allow_edit_before_post: formData.allow_edit_before_post,
+        allow_ai_images: formData.allow_ai_images,
       });
 
       if (error) throw error;
@@ -243,6 +248,7 @@ export const TariffsManagement = ({
           allow_link_preview: formData.allow_link_preview,
           allow_forward_tag: formData.allow_forward_tag,
           allow_edit_before_post: formData.allow_edit_before_post,
+          allow_ai_images: formData.allow_ai_images,
         })
         .eq("id", editingTariff.id);
 
@@ -596,6 +602,20 @@ export const TariffsManagement = ({
                   checked={formData.allow_edit_before_post}
                   onCheckedChange={(checked) =>
                     setFormData({ ...formData, allow_edit_before_post: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+                <div>
+                  <Label htmlFor="allow_ai_images" className="cursor-pointer font-medium">Зображення до АІ публікацій</Label>
+                  <p className="text-xs text-muted-foreground">Генерація зображень для AI ботів</p>
+                </div>
+                <Switch
+                  id="allow_ai_images"
+                  checked={formData.allow_ai_images}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, allow_ai_images: checked })
                   }
                 />
               </div>

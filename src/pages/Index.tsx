@@ -238,7 +238,8 @@ const Index = () => {
                           sources_limit: tariff.sources_limit || 0,
                           duration_days: tariff.duration_days,
                           features_list: (tariff.features_list as any as TariffFeature[]) || [],
-                          is_trial: tariff.is_trial || false
+                          is_trial: tariff.is_trial || false,
+                          allow_ai_images: tariff.allow_ai_images ?? true
                         }}
                         isCurrentTariff={false}
                         onSelect={handleSelectTariff}
