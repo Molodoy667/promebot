@@ -122,6 +122,38 @@ Deno.serve(async (req) => {
 
         console.log(`Service ${service.id} - ${currentScheduled}/${maxScheduled} scheduled posts`);
 
+        // Always try to generate posts if queue is not full (independent of publication)
+        if (currentScheduled < maxScheduled) {
+          const postsToGenerate = Math.min(maxScheduled - currentScheduled, 3); // Generate up to 3 at a time
+          console.log(`Service ${service.id}: queue not full, generating ${postsToGenerate} posts (${currentScheduled}/${maxScheduled})`);
+          
+          try {
+            const generateResponse = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+                },
+                body: JSON.stringify({
+                  serviceId: service.id,
+                  count: postsToGenerate,
+                }),
+              }
+            );
+
+            if (generateResponse.ok) {
+              console.log(`Successfully generated ${postsToGenerate} posts for service ${service.id}`);
+            } else {
+              const errorText = await generateResponse.text();
+              console.error(`Failed to generate posts for service ${service.id}:`, errorText);
+            }
+          } catch (generateError) {
+            console.error(`Error generating posts for service ${service.id}:`, generateError);
+          }
+        }
+
         // Get oldest scheduled post
         const { data: postToCheck, error: postCheckError } = await supabase
           .from('ai_generated_posts')
@@ -418,45 +450,6 @@ Deno.serve(async (req) => {
           .eq('id', service.id);
 
         console.log(`Successfully published post ${postToPublish.id} (message_id: ${messageId}) for service ${service.id}`);
-
-        // Generate 1 new post after publishing (to maintain queue of 10)
-        const { count: afterPublishCount } = await supabase
-          .from('ai_generated_posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('ai_bot_service_id', service.id)
-          .eq('status', 'scheduled');
-
-        if ((afterPublishCount || 0) < 10) {
-          try {
-            console.log(`Service ${service.id}: generating 1 new post after publication (${afterPublishCount}/10)`);
-
-            const generateResponse = await fetch(
-              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                },
-                body: JSON.stringify({
-                  serviceId: service.id,
-                  count: 1,
-                }),
-              }
-            );
-
-            if (generateResponse.ok) {
-              console.log(`Successfully generated new post for service ${service.id}`);
-            } else {
-              const errorText = await generateResponse.text();
-              console.error(`Failed to generate new post for service ${service.id}:`, errorText);
-            }
-          } catch (generateError) {
-            console.error(`Error generating new post for service ${service.id}:`, generateError);
-          }
-        } else {
-          console.log(`Service ${service.id}: queue is full (10/10), skipping generation`);
-        }
 
         results.push({
           serviceId: service.id,

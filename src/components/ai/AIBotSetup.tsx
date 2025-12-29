@@ -1459,15 +1459,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
                     }
                   }}
                   onBlur={(e) => {
-                    const value = parseInt(e.target.value) || 60;
-                    setPostInterval(Math.max(60, Math.min(300, value)));
+                    const value = parseInt(e.target.value) || 10;
+                    setPostInterval(Math.max(10, Math.min(300, value)));
                   }}
                   onFocus={(e) => e.target.select()}
                   disabled={!enableTimerPublish}
-                  placeholder="60"
+                  placeholder="10"
                 />
                 <p className="text-sm text-muted-foreground">
-                  {postInterval === 60 ? 'За замовчуванням' : `${postInterval} хвилин`} (від 60 до 300 хвилин)
+                  {postInterval === 10 ? 'Мінімум' : postInterval === 60 ? 'За замовчуванням' : `${postInterval} хвилин`} (від 10 до 300 хвилин)
                 </p>
               </div>
             )}
