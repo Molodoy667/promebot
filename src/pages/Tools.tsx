@@ -59,6 +59,7 @@ export default function Tools() {
   const [postTopic, setPostTopic] = useState<string>("");
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [withImage, setWithImage] = useState(false);
+  const [withTags, setWithTags] = useState(true);
   const [isGeneratingPost, setIsGeneratingPost] = useState(false);
   const [generatingPostProgress, setGeneratingPostProgress] = useState("");
   const [generatedPost, setGeneratedPost] = useState<{ text: string; imageUrl?: string } | null>(null);
@@ -496,11 +497,11 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
 
     try {
       // Спочатку генеруємо текст посту
-      console.log("Calling generate-post function...", { prompt, withImage: false });
+      console.log("Calling generate-post function...", { prompt, withImage: false, withTags });
       
       // Генеруємо тільки текст (без зображення)
       const { data, error } = await supabase.functions.invoke("generate-post", {
-        body: { prompt, withImage: false },
+        body: { prompt, withImage: false, withTags },
       });
 
       console.log("Function response:", { data, error });
@@ -602,6 +603,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
     setPostTopic("");
     setCustomPrompt("");
     setWithImage(false);
+    setWithTags(true);
   };
 
   const copyPostText = () => {
@@ -1166,6 +1168,16 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
                     id="with-image"
                     checked={withImage}
                     onCheckedChange={setWithImage}
+                    disabled={isGeneratingPost}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="with-tags">Генерувати теги (хештеги)</Label>
+                  <Switch
+                    id="with-tags"
+                    checked={withTags}
+                    onCheckedChange={setWithTags}
                     disabled={isGeneratingPost}
                   />
                 </div>

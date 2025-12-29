@@ -91,8 +91,8 @@ serve(async (req) => {
   console.log('Generate post function called');
 
   try {
-    const { prompt, withImage } = await req.json();
-    console.log('Prompt:', prompt, 'With image:', withImage);
+    const { prompt, withImage, withTags = true } = await req.json();
+    console.log('Prompt:', prompt, 'With image:', withImage, 'With tags:', withTags);
 
     if (!prompt) {
       console.error('No prompt provided');
@@ -485,7 +485,7 @@ serve(async (req) => {
       prompt.toLowerCase().includes(key)
     );
     
-    const textPrompt = categoryKey && categoryPrompts[categoryKey] 
+    let textPrompt = categoryKey && categoryPrompts[categoryKey] 
       ? categoryPrompts[categoryKey]
       : `${prompt}
 
@@ -494,9 +494,17 @@ serve(async (req) => {
 - З реалістичним та захоплюючим контентом
 - 350-500 символів
 - З відповідними емодзі для привабливості
-- З релевантними хештегами в кінці
+${withTags ? '- З релевантними хештегами в кінці' : '- БЕЗ хештегів'}
 - Українською мовою
 Формат має бути готовим до публікації без жодних додаткових роз'яснень.`;
+
+    // Modify prompt based on withTags setting
+    if (!withTags) {
+      // Remove hashtag instructions from category prompts
+      textPrompt = textPrompt
+        .replace(/- З хештегами.*в кінці\n?/gi, '- БЕЗ хештегів\n')
+        .replace(/- З релевантними хештегами.*\n?/gi, '- БЕЗ хештегів\n');
+    }
 
     console.log('Using AI service:', textService.provider, 'Model:', textService.model_name);
 
