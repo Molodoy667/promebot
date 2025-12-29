@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Users, Camera, AlertCircle } from "lucide-react";
+import { Clock, DollarSign, Users, Camera, AlertCircle, ClipboardList, BarChart3 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TaskDetailsDialogProps {
@@ -86,12 +86,12 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
 
         <div className="space-y-4">
           <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-            <h4 className="font-semibold mb-2 text-lg">📋 Опис завдання:</h4>
+            <h4 className="font-semibold mb-2 text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Опис завдання:</h4>
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-base">📊 Умови виконання:</h4>
+            <h4 className="font-semibold text-base flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Умови виконання:</h4>
             <div className="grid gap-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

@@ -787,9 +787,9 @@ const BotSetup = () => {
         });
 
         if (data.isAdmin && data.isMember) {
-          setVerificationProgress("✅ Крок 4/4: Завершення налаштування...");
+          setVerificationProgress("Крок 4/4: Завершення налаштування...");
           await new Promise(resolve => setTimeout(resolve, 800));
-          setVerificationProgress("🎉 Успішно підключено!");
+          setVerificationProgress("Успішно підключено!");
           await new Promise(resolve => setTimeout(resolve, 600));
           
           setBotVerified(true);

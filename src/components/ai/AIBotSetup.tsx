@@ -641,9 +641,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
-        setVerificationProgress("✅ Крок 4/4: Завершення налаштування...");
+        setVerificationProgress("Крок 4/4: Завершення налаштування...");
         await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress("🎉 Успішно підключено!");
+        setVerificationProgress("Успішно підключено!");
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setChannelVerified(true);
@@ -654,7 +654,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
           duration: 3000,
         });
       } else {
-        setVerificationProgress("🌐 Крок 2/4: Перевірка публічного каналу...");
+        setVerificationProgress("Крок 2/4: Перевірка публічного каналу...");
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {

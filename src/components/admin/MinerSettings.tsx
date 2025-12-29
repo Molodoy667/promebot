@@ -526,7 +526,7 @@ export const MinerSettings = () => {
 
                 <Separator />
 
-                <h3 className="font-semibold text-lg">⚙️ Налаштування Сховища</h3>
+                <h3 className="font-semibold text-lg flex items-center gap-2"><SettingsIcon className="w-5 h-5" /> Налаштування Сховища</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">

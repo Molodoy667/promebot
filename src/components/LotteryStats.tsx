@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, TrendingUp, Users, DollarSign, Clock, Award, Crown } from "lucide-react";
+import { Trophy, TrendingUp, Users, DollarSign, Clock, Award, Crown, BarChart3 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -95,7 +95,7 @@ export const LotteryStats = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>📊 Статистика лотереї</CardTitle>
+          <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Статистика лотереї</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">

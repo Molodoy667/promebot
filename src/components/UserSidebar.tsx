@@ -20,7 +20,9 @@ import {
   DollarSign,
   FileText,
   Star,
-  Settings
+  Settings,
+  Check,
+  Clock
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -276,9 +278,9 @@ export function UserSidebar({ profile, userRole, canSpin, onLogout, hasUnreadTic
               <span className="flex-1 text-left truncate">Розваги</span>
               <Badge 
                 variant="secondary" 
-                className={`ml-2 text-[10px] px-2 py-0.5 ${rouletteAvailable ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' : 'bg-gray-500/20 text-gray-600 border-gray-500/30'}`}
+                className={`ml-2 text-[10px] px-2 py-0.5 flex items-center gap-1 ${rouletteAvailable ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' : 'bg-gray-500/20 text-gray-600 border-gray-500/30'}`}
               >
-                {rouletteAvailable ? "✅" : "⏰"}
+                {rouletteAvailable ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
               </Badge>
             </Button>
 

@@ -114,12 +114,12 @@ export function ItchioGame({ userId, currentBalance, onBalanceUpdate }: ItchioGa
         });
 
         toast({
-          title: "🎉 Перемога!",
+          title: "Перемога!",
           description: `Ви виграли ${winAmount} бонусів! (x${multiplier})`,
         });
       } else {
         toast({
-          title: "😢 Програш",
+          title: "Програш",
           description: "Спробуйте ще раз!",
           variant: "destructive",
         });

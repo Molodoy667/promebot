@@ -77,14 +77,14 @@ const MINER_BOTS: MinerBot[] = [
   {
     id: "basic_miner",
     type: "basic",
-    name: "🤖 Базовий Майнер",
+    name: "Базовий Майнер",
     description: "Простий бот для початківців",
     level: 1,
     earnings_per_hour: 5,
     cost: 150,
     owned: 0,
     max_level: 10,
-    image: "🤖"
+    image: "bot"
   },
   {
     id: "turbo_miner",

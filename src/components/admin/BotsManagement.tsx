@@ -269,7 +269,7 @@ export const BotsManagement = () => {
 
     if (!apiIdValid || !apiHashValid) {
       toast({
-        title: "❌ Невірний формат",
+        title: "Невірний формат",
         description: "Перевірте API ID (тільки цифри) та API Hash (32 символи)",
         variant: "destructive",
         duration: 3000,
@@ -280,7 +280,7 @@ export const BotsManagement = () => {
     // Check if already authorized
     if (spy.is_authorized && spy.session_string) {
       toast({
-        title: "✅ Шпигун авторизований",
+        title: "Шпигун авторизований",
         description: `Шпигун "${spy.name}" готовий до роботи`,
         duration: 3000,
       });
@@ -960,8 +960,8 @@ export const BotsManagement = () => {
             </div>
             
             <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm text-foreground font-medium">
-                ✨ Webhook встановлюється автоматично
+              <p className="text-sm text-foreground font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" /> Webhook встановлюється автоматично
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Після додавання бота система автоматично налаштує webhook для отримання повідомлень
@@ -1245,7 +1245,7 @@ export const BotsManagement = () => {
           onSuccess={async () => {
             await loadSpies();
             toast({
-              title: "🎉 Готово!",
+              title: "Готово!",
               description: "Userbot авторизовано та готовий до роботи",
               duration: 3000,
             });

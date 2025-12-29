@@ -116,7 +116,7 @@ export const UserbotAuthDialog = ({
       }
 
       toast({
-        title: "🎉 Авторизація успішна!",
+        title: "Авторизація успішна!",
         description: `Userbot "${spyName}" готовий до роботи`,
         duration: 3000,
       });
