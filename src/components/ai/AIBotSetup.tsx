@@ -1138,8 +1138,41 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
 
   if (!channelVerified) {
     return (
-      <Card className="p-8">
-        <div className="space-y-6">
+      <>
+        {isCheckingBot && (
+          <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Card className="w-[90%] max-w-md border-2 shadow-2xl">
+              <div className="p-6">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                    <Sparkles className="w-12 h-12 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                  </div>
+                  
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-semibold">Перевірка AI бота...</h3>
+                    <p className="text-muted-foreground text-sm">
+                      {verificationProgress || "Перевіряємо підключення до каналу"}
+                    </p>
+                  </div>
+                  
+                  <div className="w-full space-y-2">
+                    <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
+                      />
+                    </div>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Будь ласка, зачекайте...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+        <Card className="p-8">
+          <div className="space-y-6">
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-gradient-primary mx-auto mb-4 flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-white" />
@@ -1242,41 +1275,10 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
               )}
             </Button>
             
-            {isCheckingBot && (
-              <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
-                <Card className="w-[90%] max-w-md border-2 shadow-2xl">
-                  <div className="p-6">
-                    <div className="flex flex-col items-center space-y-6">
-                      <div className="relative">
-                        <div className="w-24 h-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                        <Sparkles className="w-12 h-12 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-                      </div>
-                      
-                      <div className="text-center space-y-2">
-                        <h3 className="text-xl font-semibold">Перевірка AI бота...</h3>
-                        <p className="text-muted-foreground text-sm">
-                          {verificationProgress || "Перевіряємо підключення до каналу"}
-                        </p>
-                      </div>
-                      
-                      <div className="w-full space-y-2">
-                        <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
-                          <div 
-                            className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
-                          />
-                        </div>
-                        <p className="text-xs text-center text-muted-foreground">
-                          Будь ласка, зачекайте...
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            )}
           </div>
         </div>
-      </Card>
+        </Card>
+      </>
     );
   }
 
