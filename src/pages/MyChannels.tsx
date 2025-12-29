@@ -171,6 +171,25 @@ const MyChannels = () => {
     posts_month: number;
   } | null>(null);
   const [tariff, setTariff] = useState<any>(null);
+  const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
+
+  // Cooldown timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCooldowns(prev => {
+        const updated: Record<string, number> = {};
+        let hasChanges = false;
+        for (const [key, value] of Object.entries(prev)) {
+          if (value > 0) {
+            updated[key] = value - 1;
+            hasChanges = true;
+          }
+        }
+        return hasChanges ? updated : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -766,6 +785,9 @@ const MyChannels = () => {
           : g
       ));
 
+      // Start 60 second cooldown
+      setCooldowns(prev => ({ ...prev, [group.service.id]: 60 }));
+
       toast({
         title: newStatus ? "Бот запущено" : "Бот зупинено",
         description: newStatus 
@@ -1337,8 +1359,14 @@ const MyChannels = () => {
                   size="default" 
                   variant={group.service.is_running ? "destructive" : "default"} 
                   className="gap-2 w-full mb-4"
+                  disabled={cooldowns[group.service.id] > 0}
                 >
-                  {group.service.is_running ? (
+                  {cooldowns[group.service.id] > 0 ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      <span>Зачекайте {cooldowns[group.service.id]} сек</span>
+                    </>
+                  ) : group.service.is_running ? (
                     <>
                       <Pause className="w-4 h-4" />
                       <span>Зупинити бота</span>
