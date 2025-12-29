@@ -640,22 +640,47 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
   };
 
   const loadUserChannels = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) return [];
 
-    // Отримати канали з підключеними ботами
-    const { data } = await supabase
-      .from('bot_services')
-      .select(`
-        id, 
-        target_channel, 
-        bot_id,
-        telegram_bots!inner(id, bot_token, bot_username, is_active)
-      `)
-      .eq('user_id', profile.id)
-      .not('bot_id', 'is', null);
+    // Отримати канали з підключеними ботами (plagiarist та AI)
+    const [plagiaristResult, aiResult] = await Promise.all([
+      supabase
+        .from('bot_services')
+        .select(`
+          id, 
+          target_channel, 
+          bot_id,
+          telegram_bots!inner(id, bot_token, bot_username, is_active)
+        `)
+        .eq('user_id', profile.id)
+        .not('bot_id', 'is', null),
+      supabase
+        .from('ai_bot_services')
+        .select(`
+          id, 
+          target_channel, 
+          bot_id,
+          telegram_bots!inner(id, bot_token, bot_username, is_active)
+        `)
+        .eq('user_id', profile.id)
+        .not('bot_id', 'is', null)
+    ]);
 
-    setUserChannels(data || []);
-    return data || [];
+    const plagiaristChannels = (plagiaristResult.data || []).map(c => ({ ...c, serviceType: 'plagiarist' }));
+    const aiChannels = (aiResult.data || []).map(c => ({ ...c, serviceType: 'ai' }));
+    
+    // Фільтруємо дублі за target_channel
+    const channelMap = new Map();
+    [...plagiaristChannels, ...aiChannels].forEach(channel => {
+      const key = channel.target_channel.toLowerCase().replace('@', '');
+      if (!channelMap.has(key)) {
+        channelMap.set(key, channel);
+      }
+    });
+    
+    const channels = Array.from(channelMap.values());
+    setUserChannels(channels);
+    return channels;
   };
 
   const openPublishDialog = async () => {
@@ -670,25 +695,50 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
 
     if (!profile?.id) return;
 
-    // Завантажити канали з ботами
-    const { data } = await supabase
-      .from('bot_services')
-      .select(`
-        id, 
-        target_channel, 
-        bot_id,
-        telegram_bots!inner(id, bot_token, bot_username, is_active)
-      `)
-      .eq('user_id', profile.id)
-      .not('bot_id', 'is', null);
+    // Завантажити канали з ботами (plagiarist та AI)
+    const [plagiaristResult, aiResult] = await Promise.all([
+      supabase
+        .from('bot_services')
+        .select(`
+          id, 
+          target_channel, 
+          bot_id,
+          telegram_bots!inner(id, bot_token, bot_username, is_active)
+        `)
+        .eq('user_id', profile.id)
+        .not('bot_id', 'is', null),
+      supabase
+        .from('ai_bot_services')
+        .select(`
+          id, 
+          target_channel, 
+          bot_id,
+          telegram_bots!inner(id, bot_token, bot_username, is_active)
+        `)
+        .eq('user_id', profile.id)
+        .not('bot_id', 'is', null)
+    ]);
 
-    const channels = data || [];
+    // Об'єднати канали з обох таблиць, уникаючи дублів за target_channel
+    const plagiaristChannels = (plagiaristResult.data || []).map(c => ({ ...c, serviceType: 'plagiarist' }));
+    const aiChannels = (aiResult.data || []).map(c => ({ ...c, serviceType: 'ai' }));
+    
+    // Фільтруємо дублі за target_channel (пріоритет AI ботам)
+    const channelMap = new Map();
+    [...plagiaristChannels, ...aiChannels].forEach(channel => {
+      const key = channel.target_channel.toLowerCase().replace('@', '');
+      if (!channelMap.has(key)) {
+        channelMap.set(key, channel);
+      }
+    });
+    
+    const channels = Array.from(channelMap.values());
     setUserChannels(channels);
 
     if (channels.length === 0) {
       toast({
         title: "Канал не налаштований",
-        description: "Спочатку додайте канал з підключеним ботом в розділі 'Налаштування ботів'",
+        description: "Спочатку додайте канал з підключеним ботом в розділі 'Мої канали'",
         variant: "destructive",
       });
       return;

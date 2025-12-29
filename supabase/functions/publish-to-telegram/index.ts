@@ -96,22 +96,24 @@ Deno.serve(async (req) => {
     let telegramResponse;
     
     if (imageUrl) {
-      // Send photo with caption
-      const formData = new FormData();
-      formData.append('chat_id', finalChatId);
-      formData.append('photo', imageUrl);
-      if (text) {
-        formData.append('caption', text);
-      }
-
+      console.log('Sending photo to Telegram...');
+      
+      // Telegram API sendPhoto accepts URL directly in JSON body
       telegramResponse = await fetch(
         `https://api.telegram.org/bot${finalBotToken}/sendPhoto`,
         {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: finalChatId,
+            photo: imageUrl,
+            caption: text || undefined,
+            parse_mode: 'HTML',
+          }),
         }
       );
     } else {
+      console.log('Sending text message to Telegram...');
       // Send text only
       telegramResponse = await fetch(
         `https://api.telegram.org/bot${finalBotToken}/sendMessage`,
@@ -121,6 +123,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             chat_id: finalChatId,
             text: text,
+            parse_mode: 'HTML',
           }),
         }
       );
