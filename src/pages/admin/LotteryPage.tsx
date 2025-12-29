@@ -234,10 +234,15 @@ export default function LotteryPage() {
               <Input
                 id="ticket_price"
                 type="text"
+                inputMode="decimal"
                 value={settings.ticket_price}
-                onChange={(e) =>
-                  setSettings({ ...settings, ticket_price: parseFloat(e.target.value) || 0 })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*\.?\d*$/.test(value)) {
+                    setSettings({ ...settings, ticket_price: parseFloat(value) || 0 });
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="10"
               />
             </div>
@@ -251,10 +256,15 @@ export default function LotteryPage() {
               <Input
                 id="draw_interval"
                 type="text"
+                inputMode="numeric"
                 value={settings.draw_interval_hours}
-                onChange={(e) =>
-                  setSettings({ ...settings, draw_interval_hours: parseInt(e.target.value) || 0 })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setSettings({ ...settings, draw_interval_hours: parseInt(value) || 0 });
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="24"
               />
               <p className="text-xs text-muted-foreground">
@@ -270,10 +280,15 @@ export default function LotteryPage() {
               <Input
                 id="double_threshold"
                 type="text"
+                inputMode="numeric"
                 value={settings.double_prize_threshold}
-                onChange={(e) =>
-                  setSettings({ ...settings, double_prize_threshold: parseInt(e.target.value) || 0 })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setSettings({ ...settings, double_prize_threshold: parseInt(value) || 0 });
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="5"
               />
               <p className="text-xs text-muted-foreground">
