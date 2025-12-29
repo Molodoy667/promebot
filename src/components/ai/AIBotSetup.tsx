@@ -1026,63 +1026,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
 
       if (error) throw error;
 
-      // Створюємо сповіщення через прямий INSERT
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔔 AI Bot notification - User:', user?.id);
-      if (user) {
-        console.log('🤖 Service name:', service.name, 'Channel:', service.channel_name);
-        
-        // Перевіряємо налаштування
-        const { data: settings } = await supabase
-          .from('notification_settings')
-          .select('bot_status_enabled')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        const isEnabled = settings?.bot_status_enabled ?? true;
-        
-        if (isEnabled) {
-          if (newRunningState) {
-            // Бот запущено
-            console.log('▶️ Creating bot_started for AI via INSERT...');
-            await supabase.from('notifications').insert({
-              user_id: user.id,
-              type: 'bot_started',
-              title: 'Бот запущено',
-              message: `Бот "${service.name || 'AI Бот'}" прив'язаний до каналу "${service.channel_name}" розпочав свою роботу`,
-              link: '/my-channels'
-            });
-            console.log('✅ AI notification created');
-          } else {
-            // Бот зупинено
-            console.log('⏸️ Creating bot_stopped for AI via INSERT...');
-            const runtimeHours = service.started_at 
-              ? (Date.now() - new Date(service.started_at).getTime()) / (1000 * 60 * 60)
-              : 0;
-            console.log('⏱️ AI Runtime hours:', runtimeHours);
-            
-            let runtimeText;
-            if (runtimeHours >= 24) {
-              runtimeText = `${Math.floor(runtimeHours / 24)} днів ${Math.floor(runtimeHours % 24)} годин`;
-            } else if (runtimeHours >= 1) {
-              runtimeText = `${Math.floor(runtimeHours)} годин ${Math.round((runtimeHours % 1) * 60)} хвилин`;
-            } else {
-              runtimeText = `${Math.round(runtimeHours * 60)} хвилин`;
-            }
-            
-            await supabase.from('notifications').insert({
-              user_id: user.id,
-              type: 'bot_stopped',
-              title: 'Бот зупинено',
-              message: `Бот "${service.name || 'AI Бот'}" прив'язаний до каналу "${service.channel_name}" припинив свою роботу, пропрацювавши ${runtimeText}`,
-              link: '/my-channels'
-            });
-            console.log('✅ AI notification created');
-          }
-        }
-      } else {
-        console.warn('⚠️ AI Bot: User not found, cannot create notification');
-      }
+      // Сповіщення створюється через MyChannels.tsx при запуску/зупинці бота
 
       setService({ ...service, is_running: newRunningState, started_at: newRunningState ? now : service.started_at });
       

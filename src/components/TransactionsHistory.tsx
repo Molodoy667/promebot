@@ -67,7 +67,7 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
   };
 
   const getTransactionIcon = (type: string) => {
-    const incomeTypes = ["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "roulette_win", "task_reward", "reward"];
+    const incomeTypes = ["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "purchase_bonus", "roulette_win", "task_reward", "reward"];
     
     if (type === "ai_image_generation") {
       return <Sparkles className="w-5 h-5 text-primary" />;
@@ -80,7 +80,7 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
   };
 
   const getTransactionColor = (type: string) => {
-    const incomeTypes = ["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "roulette_win", "task_reward", "reward"];
+    const incomeTypes = ["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "purchase_bonus", "roulette_win", "task_reward", "reward"];
     return incomeTypes.includes(type) ? "text-success" : "text-destructive";
   };
 
@@ -98,7 +98,7 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
     const fromBonus = transaction.metadata && typeof transaction.metadata === 'object' && 'from_bonus' in transaction.metadata && transaction.metadata.from_bonus;
     
     // Всі транзакції які стосуються бонусного рахунку
-    const bonusTransactionTypes = ['reward', 'referral_bonus', 'referral_commission', 'roulette_win', 'task_reward', 'bonus'];
+    const bonusTransactionTypes = ['reward', 'referral_bonus', 'referral_commission', 'purchase_bonus', 'roulette_win', 'task_reward', 'bonus'];
     const isBonusTransaction = bonusTransactionTypes.includes(transaction.type) || fromBonus;
     
     return (
@@ -207,7 +207,7 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
                         {getTransactionDescription(transaction)}
                       </p>
                       <p className={`font-bold text-sm whitespace-nowrap ${getTransactionColor(transaction.type)}`}>
-                        {["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "roulette_win", "task_reward", "reward"].includes(transaction.type) ? "+" : "-"}
+                        {["deposit", "refund", "bonus", "referral_bonus", "referral_commission", "purchase_bonus", "roulette_win", "task_reward", "reward"].includes(transaction.type) ? "+" : "-"}
                         {Math.abs(transaction.amount).toFixed(2)} ₴
                       </p>
                     </div>
