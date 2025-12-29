@@ -202,7 +202,12 @@ export const TariffCheckout = ({
         amount: -finalPrice,
         type: 'tariff_purchase',
         description: `Покупка тарифу: ${tariff.name}`,
-        balance_type: balanceType
+        status: 'completed',
+        metadata: {
+          tariff_id: tariff.id,
+          balance_type: balanceType,
+          promo_discount: promoDiscount
+        }
       });
 
       // Create system notification about tariff activation / change
