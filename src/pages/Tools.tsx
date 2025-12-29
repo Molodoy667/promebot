@@ -515,7 +515,9 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
         throw new Error(data.error);
       }
 
-      if (!data?.post) {
+      const postText: string | undefined = data?.post ?? data?.text;
+
+      if (!postText) {
         console.error("No post in response:", data);
         throw new Error("Відповідь не містить згенерованого тексту");
       }
@@ -528,7 +530,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
         
         try {
           // Створюємо промпт для зображення на основі тексту посту
-          const imagePrompt = data.post.substring(0, 200); // Перші 200 символів як промпт
+          const imagePrompt = postText.substring(0, 200); // Перші 200 символів як промпт
           
           const { data: imageData, error: imageError } = await supabase.functions.invoke("generate-image", {
             body: { prompt: imagePrompt },
@@ -549,7 +551,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
         }
       }
 
-      setGeneratedPost({ text: data.post, imageUrl });
+      setGeneratedPost({ text: postText, imageUrl });
       setShowPostResult(true);
       
       await loadProfile();
