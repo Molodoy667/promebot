@@ -438,8 +438,19 @@ export default function AIChat() {
 
       // Use Edge Function proxy for automatic token generation
       const messageContent = imageUrl ? `${input}\n[Image: ${imageUrl}]` : input;
-      
+
+      // Передаємо access_token явно (у деяких середовищах invoke може не підхопити сесію)
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Сесію авторизації не знайдено. Будь ласка, увійдіть знову.");
+      }
+
       const response = await supabase.functions.invoke('ai-chat-proxy', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: {
           messages: [
             ...messages.map((m) => ({
