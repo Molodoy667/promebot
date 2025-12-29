@@ -5,13 +5,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function base64UrlDecode(input: string): string {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  return atob(padded);
+}
+
 function getUserFromToken(authHeader: string | null): string | null {
   if (!authHeader) return null;
+
   try {
-    const token = authHeader.replace('Bearer ', '');
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.sub;
-  } catch {
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) return null;
+
+    const payload = JSON.parse(base64UrlDecode(payloadPart));
+    return payload?.sub ?? null;
+  } catch (error) {
+    console.error('Error decoding token:', error);
     return null;
   }
 }
@@ -156,7 +167,6 @@ Deno.serve(async (req) => {
                 started_at: null,
                 last_error: result.description || 'Failed to publish to Telegram',
                 last_error_at: new Date().toISOString(),
-                error_count: supabase.rpc('increment', { x: 1, y: 1 })
               })
               .eq('id', botServiceId);
             

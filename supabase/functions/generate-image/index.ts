@@ -66,15 +66,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function base64UrlDecode(input: string): string {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  return atob(padded);
+}
+
 // Helper function to get user from JWT
 function getUserFromToken(authHeader: string | null): string | null {
   if (!authHeader) return null;
-  
+
   try {
-    const token = authHeader.replace('Bearer ', '');
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
-    return decoded.sub || null;
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) return null;
+
+    const decoded = JSON.parse(base64UrlDecode(payloadPart));
+    return decoded?.sub || null;
   } catch (error) {
     console.error('Error decoding token:', error);
     return null;
