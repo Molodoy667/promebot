@@ -1277,7 +1277,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             
           </div>
         </div>
-        </Card>
+      </Card>
       </>
     );
   }
