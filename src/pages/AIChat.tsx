@@ -349,28 +349,33 @@ export default function AIChat() {
     if (!sessionId) return;
 
     try {
-      await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Закриваємо сесію лише якщо вона ще активна (щоб не дублювати сповіщення)
+      const { data: endedRows, error: endError } = await supabase
         .from("ai_chat_sessions")
         .update({ is_active: false })
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .eq("is_active", true)
+        .select("id");
+
+      if (endError) throw endError;
 
       // Створюємо системне сповіщення про закінчення сесії
-      const { data: user } = await supabase.auth.getUser();
-      if (user?.user) {
+      if (user && endedRows && endedRows.length > 0) {
         const sessionLabel = sessionType === "free" ? "безкоштовна" : "орендована";
         try {
-          await supabase.rpc('create_notification', {
-            p_user_id: user.user.id,
-            p_type: 'system',
-            p_title: 'AI Чат: сесія завершена',
+          await supabase.rpc("create_notification", {
+            p_user_id: user.id,
+            p_type: "system",
+            p_title: "AI Чат: сесія завершена",
             p_message: `Ваша ${sessionLabel} сесія AI чату завершилась. Час вичерпано. Ви можете розпочати нову сесію в інструментах.`,
-            p_link: '/tools'
+            p_link: "/tools",
           });
         } catch (notifError) {
           console.error("Could not create session expiration notification:", notifError);
         }
       }
-
       toast({
         title: "Сесія завершена",
         description: "Час вичерпано",
