@@ -45,6 +45,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 interface BotService {
   id: string;
@@ -134,12 +135,17 @@ interface ChannelInfo {
   photo_url?: string;
 }
 
+interface CategoryInfo {
+  emoji: string;
+  name: string;
+}
+
 interface ChannelGroup {
   type: 'plagiarist' | 'ai';
   service: BotService | AIBotService;
   bot: TelegramBot | null;
   sourceChannels?: SourceChannel[];
-  categories?: string[];
+  categories?: CategoryInfo[];
   channelInfo: ChannelInfo | null;
 }
 
@@ -586,10 +592,12 @@ const MyChannels = () => {
             .map(s => s.category)
             .filter((v, i, a) => a.indexOf(v) === i) || [];
 
-          // Map category keys to names
-          const categories = categoryKeys.map(key => {
+          // Map category keys to CategoryInfo objects
+          const categories: CategoryInfo[] = categoryKeys.map(key => {
             const catInfo = categoryMap.get(key);
-            return catInfo ? `${catInfo.emoji} ${catInfo.name}` : key;
+            return catInfo 
+              ? { emoji: catInfo.emoji || '📝', name: catInfo.name } 
+              : { emoji: '📝', name: key };
           });
 
           const settings = settingsMap.get(service.id);
@@ -1398,9 +1406,10 @@ const MyChannels = () => {
                       </div>
                     ) : group.categories && group.categories.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {group.categories.map((category) => (
-                          <Badge key={category} variant="secondary" className="text-xs">
-                            {category}
+                        {group.categories.map((category, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs gap-1 items-center">
+                            {getCategoryIcon(category.emoji, "w-3.5 h-3.5")}
+                            <span>{category.name}</span>
                           </Badge>
                         ))}
                       </div>

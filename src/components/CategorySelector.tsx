@@ -87,9 +87,7 @@ export function CategorySelector({
             className="w-full justify-between h-auto py-3 px-4"
           >
             <div className="flex items-center gap-2">
-              {selectedCategory?.emoji && (
-                <span className="text-xl">{selectedCategory.emoji}</span>
-              )}
+              {selectedCategory && getCategoryIcon(selectedCategory.emoji, "w-5 h-5")}
               {SelectedIcon && <SelectedIcon className="w-5 h-5" />}
               <span className={cn(!selectedCategory && "text-muted-foreground")}>
                 {selectedCategory?.label || placeholder}
@@ -121,16 +119,14 @@ export function CategorySelector({
           variant="outline"
           disabled={disabled}
           className="w-full justify-between h-auto py-3 px-4"
-        >
-          <div className="flex items-center gap-2">
-            {selectedCategory?.emoji && (
-              <span className="text-xl">{selectedCategory.emoji}</span>
-            )}
-            {SelectedIcon && <SelectedIcon className="w-5 h-5" />}
-            <span className={cn(!selectedCategory && "text-muted-foreground")}>
-              {selectedCategory?.label || placeholder}
-            </span>
-          </div>
+          >
+            <div className="flex items-center gap-2">
+              {selectedCategory && getCategoryIcon(selectedCategory.emoji, "w-5 h-5")}
+              {SelectedIcon && <SelectedIcon className="w-5 h-5" />}
+              <span className={cn(!selectedCategory && "text-muted-foreground")}>
+                {selectedCategory?.label || placeholder}
+              </span>
+            </div>
           <ChevronDown className="w-4 h-4 opacity-50" />
         </Button>
       </PopoverTrigger>

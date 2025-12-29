@@ -1385,8 +1385,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             {selectedCategoryObjects.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {selectedCategoryObjects.map((cat) => (
-                  <Badge key={cat.value} variant="secondary" className="gap-1">
-                    <span>{cat.emoji}</span>
+                  <Badge key={cat.value} variant="secondary" className="gap-1 items-center">
+                    {getCategoryIcon(cat.emoji, "w-3.5 h-3.5")}
                     <span>{cat.label}</span>
                     <X
                       className="w-3 h-3 cursor-pointer hover:text-destructive"
