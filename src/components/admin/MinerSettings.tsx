@@ -430,9 +430,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="max_energy">Максимальна енергія</Label>
                   <Input
                     id="max_energy"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.max_energy}
-                    onChange={(e) => updateSetting("max_energy", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("max_energy", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Максимальна кількість енергії користувача
@@ -443,9 +450,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="energy_per_tap">Енергія за клік</Label>
                   <Input
                     id="energy_per_tap"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.energy_per_tap}
-                    onChange={(e) => updateSetting("energy_per_tap", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("energy_per_tap", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Скільки енергії витрачається за один клік
@@ -456,9 +470,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="energy_regen_rate">Швидкість відновлення</Label>
                   <Input
                     id="energy_regen_rate"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.energy_regen_rate}
-                    onChange={(e) => updateSetting("energy_regen_rate", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("energy_regen_rate", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Кількість енергії за інтервал
@@ -469,9 +490,16 @@ export const MinerSettings = () => {
                   <Label htmlFor="energy_regen_interval">Інтервал відновлення (сек)</Label>
                   <Input
                     id="energy_regen_interval"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={settings.energy_regen_interval}
-                    onChange={(e) => updateSetting("energy_regen_interval", parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        updateSetting("energy_regen_interval", parseInt(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                   />
                   <p className="text-xs text-muted-foreground">
                     Як часто відновлюється енергія (секунди)

@@ -304,8 +304,19 @@ const RouletteSettingsPage = () => {
                     <Label>Сума призу</Label>
                     <Input
                       type="text"
+                      inputMode="decimal"
                       value={prizes[selectedPrizeIndex].amount}
-                      onChange={(e) => updatePrize(selectedPrizeIndex, "amount", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updatePrize(selectedPrizeIndex, "amount", value === '' ? '' : parseFloat(value));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        updatePrize(selectedPrizeIndex, "amount", Math.max(0, value));
+                      }}
+                      onFocus={(e) => e.target.select()}
                       placeholder="0"
                     />
                   </div>
@@ -314,8 +325,19 @@ const RouletteSettingsPage = () => {
                     <Label>Ймовірність (0-1)</Label>
                     <Input
                       type="text"
+                      inputMode="decimal"
                       value={prizes[selectedPrizeIndex].probability}
-                      onChange={(e) => updatePrize(selectedPrizeIndex, "probability", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updatePrize(selectedPrizeIndex, "probability", value === '' ? '' : parseFloat(value));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        updatePrize(selectedPrizeIndex, "probability", Math.max(0, Math.min(1, value)));
+                      }}
+                      onFocus={(e) => e.target.select()}
                       placeholder="0.05"
                     />
                   </div>
