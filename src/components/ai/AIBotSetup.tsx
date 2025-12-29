@@ -1503,15 +1503,20 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
                 <Input
                   id="post-interval"
                   type="text"
+                  inputMode="numeric"
                   value={postInterval}
                   onChange={(e) => {
                     const value = e.target.value;
-                    if (value === '' || !isNaN(parseInt(value))) {
-                      const numValue = parseInt(value) || 60;
-                      setPostInterval(Math.max(60, Math.min(300, numValue)));
+                    if (value === '' || /^\d*$/.test(value)) {
+                      setPostInterval(value === '' ? '' : parseInt(value));
                       setHasUnsavedChanges(true);
                     }
                   }}
+                  onBlur={(e) => {
+                    const value = parseInt(e.target.value) || 60;
+                    setPostInterval(Math.max(60, Math.min(300, value)));
+                  }}
+                  onFocus={(e) => e.target.select()}
                   disabled={!enableTimerPublish}
                   placeholder="60"
                 />
