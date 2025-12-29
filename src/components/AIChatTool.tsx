@@ -36,6 +36,7 @@ export function AIChatTool({ open, onOpenChange }: AIChatToolProps) {
   const [nextFreeTime, setNextFreeTime] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionType, setSessionType] = useState<"free" | "rental">("free");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -80,6 +81,7 @@ export function AIChatTool({ open, onOpenChange }: AIChatToolProps) {
   const resetState = () => {
     setStep("initial");
     setSessionId(null);
+    setSessionType("free");
     setMessages([]);
     setInput("");
     setImageFile(null);
@@ -185,9 +187,9 @@ export function AIChatTool({ open, onOpenChange }: AIChatToolProps) {
       if (error) throw error;
 
       setSessionId(session.id);
+      setSessionType(type);
       setExpiresAt(new Date(session.expires_at));
       setStep("chat");
-
       toast({
         title: "Сесію розпочато",
         description: `У вас є ${durationMinutes} хвилин для спілкування з AI`,
@@ -206,10 +208,33 @@ export function AIChatTool({ open, onOpenChange }: AIChatToolProps) {
     if (!sessionId) return;
 
     try {
-      await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Закриваємо сесію лише якщо вона ще активна (щоб не дублювати сповіщення)
+      const { data: endedRows, error: endError } = await supabase
         .from("ai_chat_sessions")
         .update({ is_active: false })
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .eq("is_active", true)
+        .select("id");
+
+      if (endError) throw endError;
+
+      if (user && endedRows && endedRows.length > 0) {
+        const sessionLabel = sessionType === "free" ? "безкоштовна" : "орендована";
+
+        try {
+          await supabase.rpc("create_notification", {
+            p_user_id: user.id,
+            p_type: "system",
+            p_title: "AI Чат: сесія завершена",
+            p_message: `Ваша ${sessionLabel} сесія AI чату завершилась. Час вичерпано. Ви можете розпочати нову сесію в інструментах.`,
+            p_link: "/tools",
+          });
+        } catch (notifError) {
+          console.error("Could not create session expiration notification:", notifError);
+        }
+      }
 
       toast({
         title: "Сесія завершена",
