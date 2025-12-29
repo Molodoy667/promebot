@@ -274,7 +274,10 @@ ${withTags ? '- З релевантними хештегами в кінці' : 
 Формат має бути готовим до публікації без жодних додаткових роз'яснень.`;
 
     // Modify prompt based on withTags setting
-    if (!withTags) {
+    if (withTags) {
+      // Add explicit instruction to include hashtags
+      textPrompt += `\n\nВАЖЛИВО: Обов'язково додай 5-10 релевантних хештегів (#) в кінці посту! Наприклад: #тема #категорія #цікаво`;
+    } else {
       // Remove hashtag instructions from category prompts and add explicit instruction to NOT use hashtags
       textPrompt = textPrompt
         .replace(/- З хештегами.*в кінці\n?/gi, '')

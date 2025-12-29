@@ -59,7 +59,7 @@ export default function Tools() {
   const [postTopic, setPostTopic] = useState<string>("");
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [withImage, setWithImage] = useState(false);
-  const [withTags, setWithTags] = useState(true);
+  const [withTags, setWithTags] = useState(false);
   const [isGeneratingPost, setIsGeneratingPost] = useState(false);
   const [generatingPostProgress, setGeneratingPostProgress] = useState("");
   const [generatedPost, setGeneratedPost] = useState<{ text: string; imageUrl?: string } | null>(null);
@@ -603,7 +603,7 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
     setPostTopic("");
     setCustomPrompt("");
     setWithImage(false);
-    setWithTags(true);
+    setWithTags(false);
   };
 
   const copyPostText = () => {
