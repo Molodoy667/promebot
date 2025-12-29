@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Sparkles, Save, Loader2, CheckCircle2, Info, HelpCircle, Bot, Play, Square, X, ChevronDown, ChevronUp, Pause } from "lucide-react";
+import { Sparkles, Save, Loader2, CheckCircle2, Info, HelpCircle, Bot, Play, Square, X, ChevronDown, ChevronUp, Pause, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import addBotInstruction from "@/assets/add-bot-instruction.jpg";
@@ -791,60 +791,10 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
 
     const anySettingsChanged = contentSettingsChanged || otherSettingsChanged;
 
-    // Show warning if content settings changed and there are scheduled posts
-    if (contentSettingsChanged && service?.id && generatedPosts.length > 0) {
-      const confirmed = window.confirm(
-        "⚠️ Увага!\n\nПри зміні категорій або власного промпта всі вже згенеровані пости будуть очищені.\n\nПродовжити?"
-      );
-      
-      if (!confirmed) {
-        // Restore original settings on cancel
-        setSelectedCategories(originalSettings.categories);
-        const categoryObjs = postCategories.filter(c => originalSettings.categories.includes(c.value));
-        setSelectedCategoryObjects(categoryObjs);
-        setUseCustomPrompt(originalSettings.useCustomPrompt);
-        setCustomPrompt(originalSettings.customPrompt);
-        setEnableTimeFilter(originalSettings.enableTimeFilter);
-        setTimeFrom(originalSettings.timeFrom);
-        setTimeTo(originalSettings.timeTo);
-        setPostInterval(originalSettings.postInterval);
-        setIncludeMedia(originalSettings.includeMedia);
-        setGenerateTags(originalSettings.generateTags);
-        setHasUnsavedChanges(false);
-        return;
-      }
-    }
-
-    // Show warning if bot is running and any settings changed
-    if (service?.is_running && anySettingsChanged) {
-      const confirmed = window.confirm(
-        "⚠️ Увага!\n\nБот зараз активний. При зміні налаштувань бот буде зупинено" + 
-        (contentSettingsChanged ? " і всі згенеровані пости будуть очищені" : "") + 
-        ".\n\nПродовжити?"
-      );
-      
-      if (!confirmed) {
-        // Restore original settings on cancel
-        setSelectedCategories(originalSettings.categories);
-        const categoryObjs = postCategories.filter(c => originalSettings.categories.includes(c.value));
-        setSelectedCategoryObjects(categoryObjs);
-        setUseCustomPrompt(originalSettings.useCustomPrompt);
-        setCustomPrompt(originalSettings.customPrompt);
-        setEnableTimeFilter(originalSettings.enableTimeFilter);
-        setTimeFrom(originalSettings.timeFrom);
-        setTimeTo(originalSettings.timeTo);
-        setPostInterval(originalSettings.postInterval);
-        setIncludeMedia(originalSettings.includeMedia);
-        setGenerateTags(originalSettings.generateTags);
-        setHasUnsavedChanges(false);
-        return;
-      }
-    }
-
     try {
       setIsSaving(true);
 
-      // Clear scheduled posts ONLY when categories or prompt changed
+      // Clear scheduled posts when content settings changed
       if (contentSettingsChanged && service?.id) {
         await supabase
           .from("ai_generated_posts")
@@ -984,11 +934,33 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         includeMedia: includeMedia,
         generateTags: generateTags,
       });
-      
-      toast({
-        title: "Успішно",
-        description: "Налаштування збережено",
-      });
+
+      // If content settings changed, regenerate posts
+      if (contentSettingsChanged && serviceId) {
+        console.log('Content settings changed - regenerating 5 initial posts');
+        try {
+          await supabase.functions.invoke("generate-ai-posts", {
+            body: { serviceId: serviceId, count: 5 },
+          });
+          toast({
+            title: "Успішно",
+            description: "Налаштування збережено. Генеруємо нові публікації...",
+          });
+          // Reload posts after a short delay
+          setTimeout(() => loadGeneratedPosts(), 2000);
+        } catch (genError) {
+          console.error("Error regenerating posts:", genError);
+          toast({
+            title: "Успішно",
+            description: "Налаштування збережено. Пости згенеруються при запуску бота.",
+          });
+        }
+      } else {
+        toast({
+          title: "Успішно",
+          description: "Налаштування збережено",
+        });
+      }
     } catch (error: any) {
       console.error("Error saving settings:", error);
       toast({
@@ -1369,6 +1341,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
 
           <CollapsibleContent className="mt-4">
             <div className="space-y-6">
+          
+          {/* Warning alert about settings changes */}
+          <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-sm">
+              При зміні категорій або промта всі згенеровані публікації будуть очищені та згенеровані заново з новими налаштуваннями.
+            </AlertDescription>
+          </Alert>
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
