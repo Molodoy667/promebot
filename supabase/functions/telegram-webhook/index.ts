@@ -449,6 +449,8 @@ async function handleChannelPost(
           } else {
             console.error("Failed to copy post to Telegram:", result);
             
+            const errorMessage = result.description || "Unknown error";
+            
             const { error: insertError } = await supabase
               .from("posts_history")
               .insert({
@@ -457,16 +459,40 @@ async function handleChannelPost(
                 target_channel: targetChannel,
                 post_content: postText.substring(0, 500),
                 status: "failed",
-                error_message: result.description || "Unknown error",
+                error_message: errorMessage,
               });
             
             if (insertError) {
               console.error("ERROR inserting failed post into posts_history:", insertError);
             }
+            
+            // Auto-pause bot on Telegram error
+            await supabase
+              .from('bot_services')
+              .update({
+                is_running: false,
+                started_at: null,
+                last_error: errorMessage,
+                last_error_at: new Date().toISOString()
+              })
+              .eq('id', botService.id);
+            
+            // Create error notification
+            await supabase.rpc('create_bot_error_notification', {
+              p_user_id: botService.user_id,
+              p_bot_name: 'Плагіатор',
+              p_channel_name: targetChannel,
+              p_error_message: errorMessage,
+              p_service_type: 'plagiarist'
+            });
+            
+            console.log(`Bot ${botService.id} auto-paused due to Telegram error, notification sent`);
           }
         }
       } catch (copyError: any) {
         console.error("EXCEPTION while copying post:", copyError);
+        
+        const errorMessage = copyError.message || "Unknown error";
         
         const { error: insertError } = await supabase
           .from("posts_history")
@@ -476,11 +502,37 @@ async function handleChannelPost(
             target_channel: targetChannel,
             post_content: postText.substring(0, 500),
             status: "failed",
-            error_message: copyError.message,
+            error_message: errorMessage,
           });
         
         if (insertError) {
           console.error("ERROR inserting exception into posts_history:", insertError);
+        }
+        
+        // Auto-pause bot on critical error
+        try {
+          await supabase
+            .from('bot_services')
+            .update({
+              is_running: false,
+              started_at: null,
+              last_error: errorMessage,
+              last_error_at: new Date().toISOString()
+            })
+            .eq('id', botService.id);
+          
+          // Create error notification
+          await supabase.rpc('create_bot_error_notification', {
+            p_user_id: botService.user_id,
+            p_bot_name: 'Плагіатор',
+            p_channel_name: targetChannel,
+            p_error_message: errorMessage,
+            p_service_type: 'plagiarist'
+          });
+          
+          console.log(`Bot ${botService.id} auto-paused due to critical error, notification sent`);
+        } catch (pauseError) {
+          console.error(`Failed to auto-pause bot ${botService.id}:`, pauseError);
         }
       }
     }
