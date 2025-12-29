@@ -1161,9 +1161,16 @@ const MyChannels = () => {
                 
                 {/* Status Badges - Always Visible */}
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  <Badge variant={group.service.is_running ? "default" : "secondary"}>
-                    {group.service.is_running ? "Активний" : "Не активний"}
-                  </Badge>
+                  {group.service.last_error ? (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Помилка
+                    </Badge>
+                  ) : (
+                    <Badge variant={group.service.is_running ? "default" : "secondary"}>
+                      {group.service.is_running ? "Активний" : "Не активний"}
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="gap-1">
                     {group.type === 'ai' ? (
                       <>
