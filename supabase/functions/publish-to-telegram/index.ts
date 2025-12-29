@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
     if (!result.ok) {
       console.error('Telegram API error:', result);
       
-      // Auto-pause bot on error
+      // Auto-pause bot on error and send notification
       if (req.url.includes('botServiceId')) {
         try {
           const url = new URL(req.url);
@@ -203,6 +203,13 @@ Deno.serve(async (req) => {
 
             const table = serviceType === 'ai' ? 'ai_bot_services' : 'bot_services';
             
+            // Get service info for notification
+            const { data: serviceData } = await supabase
+              .from(table)
+              .select('user_id, target_channel')
+              .eq('id', botServiceId)
+              .single();
+            
             await supabase
               .from(table)
               .update({
@@ -213,7 +220,19 @@ Deno.serve(async (req) => {
               })
               .eq('id', botServiceId);
             
-            console.log(`Bot ${botServiceId} auto-paused due to error`);
+            // Create error notification
+            if (serviceData) {
+              await supabase.rpc('create_bot_error_notification', {
+                p_user_id: serviceData.user_id,
+                p_bot_name: serviceType === 'ai' ? 'AI Бот' : 'Плагіатор',
+                p_channel_name: serviceData.target_channel,
+                p_error_message: result.description || 'Failed to publish to Telegram',
+                p_service_type: serviceType
+              });
+              console.log(`Bot ${botServiceId} auto-paused due to error, notification sent`);
+            } else {
+              console.log(`Bot ${botServiceId} auto-paused due to error`);
+            }
           }
         } catch (pauseError) {
           console.error('Failed to auto-pause bot:', pauseError);

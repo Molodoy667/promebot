@@ -276,7 +276,16 @@ Deno.serve(async (req) => {
             })
             .eq('id', service.id);
           
-          console.log(`Bot ${service.id} auto-paused due to Telegram publish error`);
+          // Create error notification
+          await supabase.rpc('create_bot_error_notification', {
+            p_user_id: service.user_id,
+            p_bot_name: 'AI Бот',
+            p_channel_name: service.target_channel,
+            p_error_message: errorMessage,
+            p_service_type: 'ai'
+          });
+          
+          console.log(`Bot ${service.id} auto-paused due to Telegram publish error, notification sent`);
           
           results.push({
             serviceId: service.id,
@@ -407,7 +416,16 @@ Deno.serve(async (req) => {
             })
             .eq('id', service.id);
           
-          console.log(`Bot ${service.id} auto-paused due to critical error`);
+          // Create error notification
+          await supabase.rpc('create_bot_error_notification', {
+            p_user_id: service.user_id,
+            p_bot_name: 'AI Бот',
+            p_channel_name: service.target_channel,
+            p_error_message: errorMessage,
+            p_service_type: 'ai'
+          });
+          
+          console.log(`Bot ${service.id} auto-paused due to critical error, notification sent`);
         } catch (pauseError) {
           console.error(`Failed to auto-pause bot ${service.id}:`, pauseError);
         }
