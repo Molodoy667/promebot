@@ -334,21 +334,21 @@ Model: ${service.model_name}`;
     }
   };
 
-  const renderServiceCard = (service: AIServiceSettings | null, title: string, description: string) => {
+  const renderServiceCard = (service: AIServiceSettings | null, title: string, description: string, showTest: boolean = true) => {
     if (!service) return null;
 
     const isTextService = service.service_name === 'text_generation';
 
     return (
-      <Card className="p-6 glass-effect border-border/50">
-        <div className="space-y-6">
+      <Card className="p-4 md:p-6 glass-effect border-border/50 overflow-hidden">
+        <div className="space-y-4 md:space-y-6">
           <div>
             <h3 className="text-base md:text-lg font-bold">{title}</h3>
             <p className="text-xs md:text-sm text-muted-foreground mt-1">{description}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <Label className="text-sm md:text-base">Активний</Label>
               <p className="text-xs md:text-sm text-muted-foreground mt-1">
                 Використовувати цей сервіс для генерації
@@ -391,12 +391,12 @@ Model: ${service.model_name}`;
                   updateService(service.service_name, 'api_endpoint', e.target.value)
                 }
                 placeholder="https://api.megallm.io/v1/chat/completions"
-                className="text-sm md:text-base font-mono w-full break-all"
+                className="text-sm md:text-base font-mono w-full truncate"
               />
-              <p className="text-xs text-muted-foreground break-words">
+              <p className="text-xs text-muted-foreground break-all">
                 {service.service_name === 'image_generation' 
-                  ? 'Vertex AI Imagen: https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT_ID/locations/us-central1/publishers/google/models/imagen-3.0-generate-001:predict'
-                  : 'Vertex AI Gemini: https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT_ID/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent'}
+                  ? 'Vertex AI Imagen: https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT_ID/...'
+                  : 'OpenAI: https://api.openai.com/v1/chat/completions'}
               </p>
             </div>
 
@@ -413,14 +413,14 @@ Model: ${service.model_name}`;
                   updateService(service.service_name, 'api_key', e.target.value)
                 }
                 placeholder={service.provider?.toLowerCase().includes('vertex')
-                  ? '{"type": "service_account", "project_id": "...", "private_key": "...", ...}'
+                  ? '{"type": "service_account", ...}'
                   : 'sk-... або ваш ключ'}
-                className="text-sm md:text-base font-mono w-full break-all border rounded-md p-2 min-h-[120px] bg-background"
-                rows={6}
+                className="text-sm md:text-base font-mono w-full border rounded-md p-2 min-h-[100px] bg-background resize-y"
+                rows={4}
               />
               {service.provider?.toLowerCase().includes('vertex') && (
                 <p className="text-xs text-muted-foreground">
-                  Вставте повний JSON з Google Cloud Console → Service Accounts → Keys
+                  Вставте повний JSON з Google Cloud Console
                 </p>
               )}
             </div>
@@ -441,8 +441,8 @@ Model: ${service.model_name}`;
             </div>
           </div>
 
-          {service.test_status && (
-            <Alert variant={service.test_status === 'success' ? 'default' : 'destructive'}>
+          {showTest && service.test_status && (
+            <Alert variant={service.test_status === 'success' ? 'default' : 'destructive'} className="overflow-hidden">
               <div className="flex items-start gap-2">
                 {service.test_status === 'success' ? (
                   <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -451,12 +451,12 @@ Model: ${service.model_name}`;
                 ) : (
                   <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <AlertDescription>
                     <div className="font-medium mb-1 text-xs md:text-sm">
                       {service.test_status === 'success' ? '✅ Тест успішний' : '❌ Тест провалився'}
                     </div>
-                    <div className="text-xs md:text-sm whitespace-pre-wrap break-words font-mono">
+                    <div className="text-xs md:text-sm whitespace-pre-wrap break-all font-mono overflow-hidden">
                       {service.test_message}
                     </div>
                     {service.test_last_run && (
@@ -480,42 +480,41 @@ Model: ${service.model_name}`;
             <Button
               onClick={() => handleSave(service.service_name)}
               disabled={saving || testing !== null}
-              className="flex-1 text-sm md:text-base"
+              className="flex-1 text-sm md:text-base min-w-0"
             >
               {saving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Збереження...</span>
-                  <span className="sm:hidden">Збереження</span>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin flex-shrink-0" />
+                  <span className="truncate">Збереження...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Зберегти
+                  <Save className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Зберегти</span>
                 </>
               )}
             </Button>
 
-            <Button
-              onClick={() => handleTest(service.service_name)}
-              disabled={!service.api_key || testing !== null || saving}
-              variant="outline"
-              className="flex-1 text-sm md:text-base"
-            >
-              {testing === service.service_name ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Тестування...</span>
-                  <span className="sm:hidden">Тест</span>
-                </>
-              ) : (
-                <>
-                  <TestTube className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Протестувати</span>
-                  <span className="sm:hidden">Тест</span>
-                </>
-              )}
-            </Button>
+            {showTest && (
+              <Button
+                onClick={() => handleTest(service.service_name)}
+                disabled={!service.api_key || testing !== null || saving}
+                variant="outline"
+                className="flex-1 text-sm md:text-base min-w-0"
+              >
+                {testing === service.service_name ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin flex-shrink-0" />
+                    <span className="truncate">Тестування...</span>
+                  </>
+                ) : (
+                  <>
+                    <TestTube className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">Протестувати</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -531,21 +530,22 @@ Model: ${service.model_name}`;
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 max-w-full overflow-hidden">
       <PageBreadcrumbs />
       
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold">AI Сервіси</h2>
-          <p className="text-sm md:text-base text-muted-foreground mt-2">
-            Налаштування AI провайдерів для генерації текстів та зображень
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mt-4 md:mt-6">
+        <div className="min-w-0">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">AI Сервіси</h2>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
+            Налаштування AI провайдерів
           </p>
         </div>
         
         <Button
           onClick={() => navigate('/admin/category-prompts')}
           variant="outline"
-          className="shrink-0"
+          className="shrink-0 text-sm"
+          size="sm"
         >
           <FileText className="w-4 h-4 mr-2" />
           <span className="hidden sm:inline">Промти категорій</span>
@@ -553,16 +553,14 @@ Model: ${service.model_name}`;
         </Button>
       </div>
 
-      <Alert className="border-blue-500/50 bg-blue-500/10">
-        <AlertCircle className="h-4 w-4 text-blue-500" />
-        <AlertDescription className="text-sm">
-          <strong>Важливо:</strong> Після зміни налаштувань рекомендується протестувати підключення.
-          Якщо сервіс активний, він буде використовуватись для всіх AI Bot сервісів.<br/><br/>
-          <strong>Google Imagen:</strong> Тест може провалитися через CORS, але реальна генерація працюватиме через серверну функцію.
+      <Alert className="border-blue-500/50 bg-blue-500/10 mt-4">
+        <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+        <AlertDescription className="text-xs md:text-sm">
+          <strong>Важливо:</strong> Після зміни налаштувань протестуйте підключення.
         </AlertDescription>
       </Alert>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2 mt-4 md:mt-6">
         {renderServiceCard(
           textService,
           "Генерація текстів",
@@ -572,11 +570,12 @@ Model: ${service.model_name}`;
         {renderServiceCard(
           imageService,
           "Генерація зображень",
-          "AI сервіс для створення ілюстрацій до постів"
+          "AI сервіс для створення ілюстрацій до постів",
+          false
         )}
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:gap-6 mt-4 md:mt-6">
         {renderServiceCard(
           chatService,
           "AI Чат",
