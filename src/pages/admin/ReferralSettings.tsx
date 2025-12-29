@@ -224,8 +224,15 @@ const ReferralSettingsPage = () => {
                 <Input
                   id="referrerBonus"
                   type="text"
+                  inputMode="decimal"
                   value={referrerBonus}
-                  onChange={(e) => setReferrerBonus(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setReferrerBonus(value);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="5"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -238,8 +245,15 @@ const ReferralSettingsPage = () => {
                 <Input
                   id="refereeBonus"
                   type="text"
+                  inputMode="decimal"
                   value={refereeBonus}
-                  onChange={(e) => setRefereeBonus(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setRefereeBonus(value);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="3"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -269,8 +283,15 @@ const ReferralSettingsPage = () => {
               <Input
                 id="tariffCommission"
                 type="text"
+                inputMode="decimal"
                 value={tariffCommission}
-                onChange={(e) => setTariffCommission(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setTariffCommission(value);
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="10"
               />
               <p className="text-xs text-muted-foreground">
@@ -282,12 +303,16 @@ const ReferralSettingsPage = () => {
               <Label htmlFor="purchaseBonus">Бонус за покупку тарифу (%)</Label>
               <Input
                 id="purchaseBonus"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
                 value={purchaseBonusPercent}
-                onChange={(e) => setPurchaseBonusPercent(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setPurchaseBonusPercent(value);
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="5"
               />
               <p className="text-xs text-muted-foreground">
@@ -316,8 +341,15 @@ const ReferralSettingsPage = () => {
                 <Input
                   id="minWithdrawal"
                   type="text"
+                  inputMode="decimal"
                   value={minWithdrawal}
-                  onChange={(e) => setMinWithdrawal(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setMinWithdrawal(value);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="100"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -330,8 +362,15 @@ const ReferralSettingsPage = () => {
                 <Input
                   id="maxWithdrawalPerDay"
                   type="text"
+                  inputMode="decimal"
                   value={maxWithdrawalPerDay}
-                  onChange={(e) => setMaxWithdrawalPerDay(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setMaxWithdrawalPerDay(value);
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
                   placeholder="1000"
                 />
                 <p className="text-xs text-muted-foreground">

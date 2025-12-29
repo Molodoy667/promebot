@@ -161,6 +161,7 @@ export const VipSettings = () => {
                       });
                     }
                   }}
+                  onFocus={(e) => e.target.select()}
                 />
               </div>
             ))}

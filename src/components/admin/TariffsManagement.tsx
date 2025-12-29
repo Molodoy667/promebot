@@ -363,6 +363,7 @@ export const TariffsManagement = ({
                     handleInputChange("price", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="space-y-2">
@@ -379,6 +380,7 @@ export const TariffsManagement = ({
                     handleInputChange("duration_days", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="space-y-2">
@@ -395,6 +397,7 @@ export const TariffsManagement = ({
                     handleInputChange("bots_limit", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
           </div>
@@ -413,6 +416,7 @@ export const TariffsManagement = ({
                     handleInputChange("channels_limit", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="space-y-2">
@@ -429,6 +433,7 @@ export const TariffsManagement = ({
                     handleInputChange("sources_limit", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="space-y-2">
@@ -445,6 +450,7 @@ export const TariffsManagement = ({
                     handleInputChange("posts_per_month", value);
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
           </div>

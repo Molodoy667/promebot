@@ -533,6 +533,7 @@ export const UsersManagement = ({ users, onRefresh }: UsersManagementProps) => {
                     setEditData({ ...editData, balance: value });
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="space-y-2">
@@ -549,6 +550,7 @@ export const UsersManagement = ({ users, onRefresh }: UsersManagementProps) => {
                     setEditData({ ...editData, bonus_balance: value });
                   }
                 }}
+                onFocus={(e) => e.target.select()}
               />
             </div>
           </div>
