@@ -13,7 +13,10 @@ import {
   Trash2,
   Edit,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Loader2,
+  Sparkles,
+  Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -56,6 +59,8 @@ export default function QueueManagement() {
   const [editedContent, setEditedContent] = useState("");
   const [publishInterval, setPublishInterval] = useState(60);
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
 
   const { serviceId, serviceType, channelName } = location.state || {};
 
@@ -154,17 +159,63 @@ export default function QueueManagement() {
       setDeleteDialogOpen(false);
       setPostToDelete(null);
 
-      // Generate new post
+      // Generate new post with status tracking
+      setIsGenerating(true);
+      setGenerationStatus("Генерація нового поста...");
+      
       await supabase.functions.invoke("generate-ai-posts", {
         body: { serviceId, count: 1 },
       });
 
+      setGenerationStatus(null);
+      setIsGenerating(false);
       loadQueue();
     } catch (error: any) {
       console.error("Error deleting post:", error);
+      setIsGenerating(false);
+      setGenerationStatus(null);
       toast({
         title: "Помилка",
         description: "Не вдалося видалити пост",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManualGenerate = async () => {
+    if (scheduledPosts.length >= 10) {
+      toast({
+        title: "Черга заповнена",
+        description: "Максимум 10 постів в черзі",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const postsToGenerate = Math.min(10 - scheduledPosts.length, 3);
+      setGenerationStatus(`Генерація ${postsToGenerate} ${postsToGenerate === 1 ? 'поста' : 'постів'}...`);
+
+      await supabase.functions.invoke("generate-ai-posts", {
+        body: { serviceId, count: postsToGenerate },
+      });
+
+      toast({
+        title: "Успішно",
+        description: `Згенеровано ${postsToGenerate} ${postsToGenerate === 1 ? 'пост' : 'постів'}`,
+      });
+
+      setGenerationStatus(null);
+      setIsGenerating(false);
+      loadQueue();
+    } catch (error: any) {
+      console.error("Error generating posts:", error);
+      setIsGenerating(false);
+      setGenerationStatus(null);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося згенерувати пости",
         variant: "destructive",
       });
     }
@@ -219,7 +270,7 @@ export default function QueueManagement() {
             Назад до статистики
           </Button>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <Clock className="w-6 h-6 text-primary-foreground" />
@@ -229,15 +280,44 @@ export default function QueueManagement() {
                 <p className="text-muted-foreground">{channelName}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadQueue}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Оновити
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualGenerate}
+                disabled={isGenerating || scheduledPosts.length >= 10}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Згенерувати
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadQueue}
+                disabled={isGenerating}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Оновити
+              </Button>
+            </div>
           </div>
+
+          {/* Generation Status Banner */}
+          {isGenerating && generationStatus && (
+            <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/30 flex items-center gap-3 animate-pulse">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20">
+                <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+              </div>
+              <div>
+                <p className="font-medium text-primary">AI генерує контент</p>
+                <p className="text-sm text-muted-foreground">{generationStatus}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {scheduledPosts.length > 0 ? (
