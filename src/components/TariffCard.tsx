@@ -117,29 +117,24 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
             </div>
           </div>
           
-          {/* AI Images Feature */}
-          <div className={`flex items-center gap-2 p-2 rounded-lg ${
-            tariff.allow_ai_images !== false
-              ? 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20'
-              : 'bg-muted/30 border border-muted'
-          }`}>
-            {tariff.allow_ai_images !== false ? (
-              <Check className="w-4 h-4 text-purple-600 flex-shrink-0" />
-            ) : (
-              <X className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            )}
-            <span className={`text-xs sm:text-sm ${tariff.allow_ai_images !== false ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-              Зображення до АІ публікацій
-            </span>
-          </div>
         </div>
 
         {/* Функції - показуємо всі з можливістю розгортання */}
-        {tariff.features_list && tariff.features_list.length > 0 && (
+        {(() => {
+          // Add AI Images as a feature to the list
+          const aiImagesFeature: TariffFeature = {
+            key: 'allow_ai_images',
+            label: 'Зображення до АІ публікацій',
+            enabled: tariff.allow_ai_images === true
+          };
+          const allFeatures = [...(tariff.features_list || []), aiImagesFeature];
+          const totalEnabled = allFeatures.filter(f => f.enabled).length;
+          
+          return allFeatures.length > 0 && (
           <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Можливості ({enabledCount}/{tariff.features_list.length})
+                Можливості ({totalEnabled}/{allFeatures.length})
               </p>
               <button
                 onClick={(e) => {
@@ -160,7 +155,7 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
               </button>
             </div>
             <div className="space-y-1 sm:space-y-1.5">
-              {tariff.features_list
+              {allFeatures
                 .slice(0, isExpanded ? undefined : 4)
                 .map((feature) => (
                   <div 
@@ -182,7 +177,7 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
                   </div>
                 ))
               }
-              {!isExpanded && tariff.features_list.length > 4 && (
+              {!isExpanded && allFeatures.length > 4 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -190,12 +185,13 @@ export const TariffCard = ({ tariff, isCurrentTariff = false, onSelect }: Tariff
                   }}
                   className="w-full text-[10px] sm:text-xs text-muted-foreground text-center py-1 hover:text-primary transition-colors"
                 >
-                  +{tariff.features_list.length - 4} функцій • Натисніть щоб переглянути всі
+                  +{allFeatures.length - 4} функцій • Натисніть щоб переглянути всі
                 </button>
               )}
             </div>
           </div>
-        )}
+        );
+        })()}
       </CardContent>
 
       <CardFooter className="pt-0 p-4 sm:p-6">

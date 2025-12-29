@@ -99,7 +99,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
   const [enableTimerPublish, setEnableTimerPublish] = useState(true);
   const [postInterval, setPostInterval] = useState(60);
   
-  const [includeMedia, setIncludeMedia] = useState(true);
+  const [includeMedia, setIncludeMedia] = useState(false);
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [generateTags, setGenerateTags] = useState(false);
