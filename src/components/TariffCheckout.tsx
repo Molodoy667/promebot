@@ -158,25 +158,26 @@ export const TariffCheckout = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Перевіряємо, чи вже є активний тариф
-      const { data: existingSub, error: existingSubError } = await supabase
+      // Перевіряємо, чи вже є активний тариф(и)
+      // НЕ використовуємо maybeSingle(), бо в БД може бути кілька активних рядків і тоді буде PGRST116
+      const { data: activeSubs, error: activeSubsError } = await supabase
         .from('subscriptions')
-        .select('id, status')
+        .select('id')
         .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .maybeSingle();
+        .eq('status', 'active');
 
-      if (existingSubError) throw existingSubError;
+      if (activeSubsError) throw activeSubsError;
 
-      const hadActiveSubscription = !!existingSub;
+      const hadActiveSubscription = (activeSubs?.length ?? 0) > 0;
 
-      // Deactivate existing subscription if exists
-      if (existingSub) {
+      // Deactivate ALL active subscriptions if any exist
+      if (hadActiveSubscription) {
         const { error: deactivateError } = await supabase
           .from('subscriptions')
           .update({ status: 'cancelled' })
-          .eq('id', existingSub.id);
-        
+          .eq('user_id', session.user.id)
+          .eq('status', 'active');
+
         if (deactivateError) throw deactivateError;
       }
 
