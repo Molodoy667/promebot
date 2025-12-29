@@ -543,8 +543,16 @@ export default function AIChat() {
 
   if (step === "loading") {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-[60vh]">
+      <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
+        <PageBreadcrumbs />
+        <PageHeader
+          icon={MessageSquare}
+          title="AI Чат"
+          description="Спілкуйтеся з AI асистентом"
+          backTo="/tools"
+          backLabel="Назад до інструментів"
+        />
+        <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
@@ -554,17 +562,17 @@ export default function AIChat() {
   if (step === "selection") {
     if (!settings?.is_enabled) {
       return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
           <PageBreadcrumbs />
-          <Button variant="ghost" onClick={() => navigate("/tools")} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Назад до інструментів
-          </Button>
+          <PageHeader
+            icon={MessageSquare}
+            title="AI Чат"
+            description="Спілкуйтеся з AI асистентом"
+            backTo="/tools"
+            backLabel="Назад до інструментів"
+          />
           <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>AI Чат</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <p className="text-center text-muted-foreground py-8">
                 AI чат наразі недоступний
               </p>
@@ -575,50 +583,52 @@ export default function AIChat() {
     }
 
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
         <PageBreadcrumbs />
         <PageHeader
           icon={MessageSquare}
           title="AI Чат"
-          description="Спілкуйтеся з AI асистентом - отримуйте відповіді на запитання та допомогу в режимі реального часу"
+          description="Спілкуйтеся з AI асистентом - отримуйте відповіді на запитання та допомогу"
           backTo="/tools"
           backLabel="Назад до інструментів"
         />
 
         <Card className="max-w-2xl mx-auto">
           <CardContent className="space-y-4 pt-6">
-            <p className="text-muted-foreground">
-              Ви можете скористатись інструментом безкоштовно протягом{" "}
-              {settings.free_duration_minutes} хвилин раз на{" "}
-              {settings.free_cooldown_hours} годин, або орендувати його на {settings.rental_duration_minutes} хвилин за бонусні кошти.
+            <p className="text-sm md:text-base text-muted-foreground">
+              Безкоштовно на {settings.free_duration_minutes} хв (раз на {settings.free_cooldown_hours} год) або орендуйте на {settings.rental_duration_minutes} хв.
             </p>
             <div className="flex flex-col gap-3">
               <Button
                 onClick={() => startSession("free")}
                 disabled={!canUseFree}
-                className="w-full"
+                className="w-full text-sm md:text-base"
                 size="lg"
               >
                 {canUseFree
-                  ? "Спробувати Безкоштовно"
-                  : `Спробуйте через ${getTimeUntilFree()}`}
+                  ? `Безкоштовно (${settings.free_duration_minutes} хв)`
+                  : `Через ${getTimeUntilFree()}`}
               </Button>
+              
               <Button
                 onClick={() => startSession("rental")}
                 variant="outline"
-                className="w-full"
-                size="lg"
+                className="w-full flex-wrap h-auto py-3 text-sm md:text-base"
               >
-                Орендувати на {settings.rental_duration_minutes} хв за{" "}
-                {isVip && vipDiscount > 0 ? (
-                  <>
-                    <span className="line-through mx-1">{settings.rental_price}</span>
-                    <span className="font-bold">{(settings.rental_price * (1 - vipDiscount / 100)).toFixed(2)}</span>
-                    <span className="ml-1">бонусних ₴ (VIP -{vipDiscount}%)</span>
-                  </>
-                ) : (
-                  <span className="ml-1">{settings.rental_price} бонусних ₴</span>
-                )}
+                <span className="w-full text-center">
+                  Орендувати на {settings.rental_duration_minutes} хв
+                </span>
+                <span className="w-full text-center mt-1">
+                  {isVip && vipDiscount > 0 ? (
+                    <>
+                      <span className="line-through text-muted-foreground mr-1">{settings.rental_price}</span>
+                      <span className="font-bold">{(settings.rental_price * (1 - vipDiscount / 100)).toFixed(2)} ₴</span>
+                      <span className="text-xs ml-1 text-primary">(VIP -{vipDiscount}%)</span>
+                    </>
+                  ) : (
+                    <span className="font-semibold">{settings.rental_price} бонусних ₴</span>
+                  )}
+                </span>
               </Button>
             </div>
           </CardContent>
@@ -632,25 +642,29 @@ export default function AIChat() {
   const progressValue = totalSeconds > 0 ? (timeLeft / totalSeconds) * 100 : 0;
 
   return (
-    <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex flex-col min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)]">
-      <PageBreadcrumbs />
-      <div className="flex items-center justify-between mb-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/tools")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Назад</span>
-        </Button>
+    <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex flex-col min-h-[calc(100vh-100px)] max-h-[calc(100vh-100px)]">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/tools")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <h1 className="text-base md:text-lg font-semibold">AI Чат</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             {sessionType === "free" ? "Безкоштовна" : "Оренда"}
           </span>
-          <span className="text-base md:text-lg font-semibold tabular-nums">{formatTime(timeLeft)}</span>
+          <span className="text-sm md:text-base font-semibold tabular-nums">{formatTime(timeLeft)}</span>
         </div>
       </div>
 
-      <div className="mb-3">
-        <Progress value={progressValue} className="h-2" />
-        <p className="text-xs text-muted-foreground mt-1 text-right">
-          Залишилось {Math.ceil(timeLeft / 60)} з {sessionDuration} хв
+      <div className="mb-2">
+        <Progress value={progressValue} className="h-1.5" />
+        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 text-right">
+          {Math.ceil(timeLeft / 60)} / {sessionDuration} хв
         </p>
       </div>
 
