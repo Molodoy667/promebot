@@ -935,26 +935,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         generateTags: generateTags,
       });
 
-      // If content settings changed, regenerate posts
-      if (contentSettingsChanged && serviceId) {
-        console.log('Content settings changed - regenerating 5 initial posts');
-        try {
-          await supabase.functions.invoke("generate-ai-posts", {
-            body: { serviceId: serviceId, count: 5 },
-          });
-          toast({
-            title: "Успішно",
-            description: "Налаштування збережено. Генеруємо нові публікації...",
-          });
-          // Reload posts after a short delay
-          setTimeout(() => loadGeneratedPosts(), 2000);
-        } catch (genError) {
-          console.error("Error regenerating posts:", genError);
-          toast({
-            title: "Успішно",
-            description: "Налаштування збережено. Пости згенеруються при запуску бота.",
-          });
-        }
+      // Show appropriate message based on what changed
+      if (contentSettingsChanged) {
+        toast({
+          title: "Успішно",
+          description: "Налаштування збережено. Пости згенеруються при запуску бота.",
+        });
       } else {
         toast({
           title: "Успішно",
