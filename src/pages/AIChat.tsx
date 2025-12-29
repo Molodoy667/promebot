@@ -39,11 +39,14 @@ export default function AIChat() {
   const [canUseFree, setCanUseFree] = useState(false);
   const [nextFreeTime, setNextFreeTime] = useState<Date | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionType, setSessionType] = useState<"free" | "rental">("free");
+  const [sessionDuration, setSessionDuration] = useState(60); // в хвилинах
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [isVip, setIsVip] = useState(false);
@@ -76,8 +79,10 @@ export default function AIChat() {
   }, [expiresAt]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > 0 || isTyping) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
 
   const checkActiveSession = async () => {
     try {
@@ -104,6 +109,13 @@ export default function AIChat() {
         const session = activeSessions[0];
         setSessionId(session.id);
         setExpiresAt(new Date(session.expires_at));
+        setSessionType(session.session_type as "free" | "rental");
+        
+        // Розраховуємо тривалість сесії
+        const started = new Date(session.started_at);
+        const expires = new Date(session.expires_at);
+        const durationMs = expires.getTime() - started.getTime();
+        setSessionDuration(Math.round(durationMs / (1000 * 60)));
         
         // Завантажуємо повідомлення
         await loadMessages(session.id);
@@ -306,6 +318,8 @@ export default function AIChat() {
 
       setSessionId(session.id);
       setExpiresAt(new Date(session.expires_at));
+      setSessionType(type);
+      setSessionDuration(durationMinutes);
       
       // Встановлюємо привітальне повідомлення в стейт
       setMessages([{
@@ -375,6 +389,7 @@ export default function AIChat() {
     if ((!input.trim() && !imageFile) || !sessionId || sending) return;
 
     setSending(true);
+    setIsTyping(true);
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
@@ -503,6 +518,7 @@ export default function AIChat() {
       });
     } finally {
       setSending(false);
+      setIsTyping(false);
     }
   };
 
@@ -612,27 +628,35 @@ export default function AIChat() {
   }
 
   // Chat view
+  const totalSeconds = sessionDuration * 60;
+  const progressValue = totalSeconds > 0 ? (timeLeft / totalSeconds) * 100 : 0;
+
   return (
-    <div className="container mx-auto px-4 py-4 h-screen flex flex-col">
+    <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex flex-col min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)]">
       <PageBreadcrumbs />
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" onClick={() => navigate("/tools")}>
+      <div className="flex items-center justify-between mb-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/tools")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Назад
+          <span className="hidden sm:inline">Назад</span>
         </Button>
-        <div className="flex items-center gap-4">
-          <span className="text-lg font-semibold">{formatTime(timeLeft)}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {sessionType === "free" ? "Безкоштовна" : "Оренда"}
+          </span>
+          <span className="text-base md:text-lg font-semibold tabular-nums">{formatTime(timeLeft)}</span>
         </div>
       </div>
 
-      <Progress
-        value={(timeLeft / ((settings?.rental_duration_minutes || 60) * 60)) * 100}
-        className="h-2 mb-4"
-      />
+      <div className="mb-3">
+        <Progress value={progressValue} className="h-2" />
+        <p className="text-xs text-muted-foreground mt-1 text-right">
+          Залишилось {Math.ceil(timeLeft / 60)} з {sessionDuration} хв
+        </p>
+      </div>
 
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
+      <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <ScrollArea className="flex-1 p-3 md:p-4">
+          <div className="space-y-3 md:space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -641,7 +665,7 @@ export default function AIChat() {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[85%] md:max-w-[75%] rounded-lg p-2.5 md:p-3 ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
@@ -654,17 +678,32 @@ export default function AIChat() {
                       className="rounded mb-2 max-w-full"
                     />
                   )}
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap text-sm md:text-base">{message.content}</p>
                 </div>
               </div>
             ))}
+            
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg p-3 flex items-center gap-1">
+                  <span className="text-sm text-muted-foreground">Бот печатає</span>
+                  <span className="flex gap-1 ml-1">
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t">
+        <div className="p-3 md:p-4 border-t flex-shrink-0">
           {imagePreview && (
-            <div className="relative w-20 h-20 mb-2">
+            <div className="relative w-16 h-16 md:w-20 md:h-20 mb-2">
               <img
                 src={imagePreview}
                 alt="Preview"
@@ -673,10 +712,10 @@ export default function AIChat() {
               <Button
                 size="icon"
                 variant="destructive"
-                className="absolute -top-2 -right-2 h-6 w-6"
+                className="absolute -top-2 -right-2 h-5 w-5 md:h-6 md:w-6"
                 onClick={removeImage}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
             </div>
           )}
@@ -693,6 +732,7 @@ export default function AIChat() {
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={sending}
+              className="flex-shrink-0 h-10 w-10 md:h-11 md:w-11"
             >
               <ImageIcon className="h-4 w-4" />
             </Button>
@@ -700,7 +740,7 @@ export default function AIChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Напишіть повідомлення..."
-              className="min-h-[60px]"
+              className="min-h-[40px] max-h-[120px] text-sm md:text-base resize-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -713,6 +753,7 @@ export default function AIChat() {
               size="icon"
               onClick={sendMessage}
               disabled={sending || (!input.trim() && !imageFile)}
+              className="flex-shrink-0 h-10 w-10 md:h-11 md:w-11"
             >
               {sending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
