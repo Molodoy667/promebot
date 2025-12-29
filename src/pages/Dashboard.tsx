@@ -779,7 +779,7 @@ const Dashboard = () => {
               {subscription ? (
                 <>
                   <p className="text-sm text-muted-foreground mb-2">
-                    {subscription.tariffs?.price} ₴/місяць • {subscription.tariffs?.bots_limit} ботів • {subscription.tariffs?.channels_limit} каналів • {subscription.tariffs?.sources_limit} джерел • {subscription.tariffs?.posts_per_month} постів/день
+                    {subscription.tariffs?.price} ₴/місяць • {subscription.tariffs?.bots_limit} ботів • {subscription.tariffs?.channels_limit} каналів • {subscription.tariffs?.sources_limit} джерел • {subscription.tariffs?.posts_per_month} постів/міс
                   </p>
                   {subscription.expires_at && (
                     <p className="text-xs text-muted-foreground">

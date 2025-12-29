@@ -27,6 +27,7 @@ interface Tariff {
   sources_limit: number;
   duration_days: number | null;
   features_list: TariffFeature[];
+  is_trial?: boolean;
 }
 
 interface TariffCheckoutProps {
@@ -157,6 +158,27 @@ export const TariffCheckout = ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
+
+      // Перевірка пробного тарифу - чи користувач вже його купував
+      if (tariff.is_trial) {
+        const { data: previousTrialPurchases, error: trialCheckError } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('tariff_id', tariff.id);
+
+        if (trialCheckError) throw trialCheckError;
+
+        if (previousTrialPurchases && previousTrialPurchases.length > 0) {
+          toast({ 
+            title: "Пробний тариф недоступний", 
+            description: "Ви вже використовували цей пробний тариф раніше",
+            variant: "destructive" 
+          });
+          setIsProcessing(false);
+          return;
+        }
+      }
 
       // Перевіряємо, чи вже є активний тариф(и)
       // НЕ використовуємо maybeSingle(), бо в БД може бути кілька активних рядків і тоді буде PGRST116
