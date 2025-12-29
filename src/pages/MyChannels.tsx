@@ -740,7 +740,9 @@ const MyChannels = () => {
       
       const updateData: any = { 
         is_running: newStatus,
-        started_at: newStatus ? new Date().toISOString() : group.service.started_at
+        started_at: newStatus ? new Date().toISOString() : group.service.started_at,
+        // Clear error when starting the bot
+        ...(newStatus && { last_error: null, last_error_at: null, error_count: 0 })
       };
       
       const { error } = await supabase

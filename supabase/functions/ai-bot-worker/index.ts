@@ -302,6 +302,54 @@ Deno.serve(async (req) => {
           );
         }
 
+        // Check HTTP status first
+        if (!telegramResponse.ok) {
+          const errorText = await telegramResponse.text();
+          console.error(`Telegram HTTP error: ${telegramResponse.status} ${telegramResponse.statusText} - ${errorText}`);
+          
+          const errorMessage = `${telegramResponse.status}: ${telegramResponse.statusText}`;
+          
+          // Update post status to failed
+          await supabase
+            .from('ai_generated_posts')
+            .update({ 
+              status: 'failed',
+              error_message: errorMessage
+            })
+            .eq('id', postToPublish.id);
+          
+          // Auto-pause bot on HTTP error
+          await supabase
+            .from('ai_bot_services')
+            .update({
+              is_running: false,
+              started_at: null,
+              last_error: errorMessage,
+              last_error_at: new Date().toISOString()
+            })
+            .eq('id', service.id);
+          
+          // Create error notification
+          await supabase.rpc('create_bot_error_notification', {
+            p_user_id: service.user_id,
+            p_bot_name: 'AI Бот',
+            p_channel_name: service.target_channel,
+            p_error_message: errorMessage,
+            p_service_type: 'ai'
+          });
+          
+          console.log(`Bot ${service.id} auto-paused due to HTTP error ${telegramResponse.status}, notification sent`);
+          
+          results.push({
+            serviceId: service.id,
+            postId: postToPublish.id,
+            status: 'failed',
+            error: errorMessage
+          });
+          
+          continue;
+        }
+
         const telegramResult = await telegramResponse.json();
 
         if (!telegramResult.ok) {
