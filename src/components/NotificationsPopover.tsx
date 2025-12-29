@@ -72,16 +72,20 @@ export const NotificationsPopover = ({ unreadCount, onCountChange }: Notificatio
           },
           (payload) => {
             const newNotification = payload.new as Notification;
-            setNotifications((prev) => [newNotification, ...prev]);
             
-            // Оновлюємо лічильник непрочитаних
-            if (onCountChange) {
-              setNotifications((current) => {
-                const unread = [newNotification, ...current].filter(n => !n.is_read).length;
+            setNotifications((prev) => {
+              // Перевіряємо, чи сповіщення вже існує
+              if (prev.some(n => n.id === newNotification.id)) {
+                return prev;
+              }
+              const updated = [newNotification, ...prev];
+              // Оновлюємо лічильник непрочитаних
+              if (onCountChange) {
+                const unread = updated.filter(n => !n.is_read).length;
                 onCountChange(unread);
-                return [newNotification, ...current];
-              });
-            }
+              }
+              return updated;
+            });
             
             if (soundEnabled && audioRef.current) {
               // Для APK - reset перед play
