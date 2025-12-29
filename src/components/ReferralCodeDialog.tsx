@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Gift, AlertTriangle, Loader2 } from "lucide-react";
+import { Gift, AlertTriangle, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -189,11 +189,11 @@ export const ReferralCodeDialog = ({ isOpen, onClose, userId }: ReferralCodeDial
 
           {/* Benefits */}
           <div className="rounded-lg p-4 space-y-2 bg-card/80 border border-border/60 shadow-card">
-            <p className="text-sm font-semibold text-foreground">🎁 Що ви отримаєте:</p>
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2"><Gift className="w-4 h-4" /> Що ви отримаєте:</p>
             <ul className="text-xs sm:text-sm space-y-1 text-muted-foreground">
-              <li>✅ <strong>{refereeBonus}₴</strong> бонусів на ваш рахунок</li>
-              <li>✅ Ваш запрошувач отримає <strong>{referrerBonus}₴</strong></li>
-              <li>✅ Можна використати для оплати тарифів</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-500" /> <strong>{refereeBonus}₴</strong> бонусів на ваш рахунок</li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-500" /> Ваш запрошувач отримає <strong>{referrerBonus}₴</strong></li>
+              <li className="flex items-center gap-1"><Check className="w-3 h-3 text-green-500" /> Можна використати для оплати тарифів</li>
             </ul>
           </div>
 
