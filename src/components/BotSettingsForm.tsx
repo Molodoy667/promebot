@@ -341,16 +341,20 @@ export const BotSettingsForm = ({
             <Input
               id="posts_per_month"
               type="text"
-              value={botService?.posts_per_month || 300}
+              inputMode="numeric"
+              value={botService?.posts_per_month || ''}
               onChange={(e) => {
                 const value = e.target.value;
-                if (value === '' || !isNaN(parseInt(value))) {
-                  const numValue = parseInt(value) || 0;
-                  if (numValue >= 1 && numValue <= (tariff?.posts_per_month || 300)) {
-                    onFieldUpdate('posts_per_month', numValue);
-                  }
+                if (value === '' || /^\d*$/.test(value)) {
+                  onFieldUpdate('posts_per_month', value === '' ? '' : parseInt(value));
                 }
               }}
+              onBlur={(e) => {
+                const numValue = parseInt(e.target.value) || 1;
+                const maxValue = tariff?.posts_per_month || 300;
+                onFieldUpdate('posts_per_month', Math.max(1, Math.min(maxValue, numValue)));
+              }}
+              onFocus={(e) => e.target.select()}
               placeholder="10"
             />
           </div>
@@ -363,16 +367,19 @@ export const BotSettingsForm = ({
               <Input
                 id="post_interval"
                 type="text"
-                value={botService?.post_interval_minutes || 60}
+                inputMode="numeric"
+                value={botService?.post_interval_minutes || ''}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === '' || !isNaN(parseInt(value))) {
-                    const numValue = parseInt(value) || 60;
-                    if (numValue >= 1) {
-                      onFieldUpdate('post_interval_minutes', numValue);
-                    }
+                  if (value === '' || /^\d*$/.test(value)) {
+                    onFieldUpdate('post_interval_minutes', value === '' ? '' : parseInt(value));
                   }
                 }}
+                onBlur={(e) => {
+                  const numValue = parseInt(e.target.value) || 60;
+                  onFieldUpdate('post_interval_minutes', Math.max(1, numValue));
+                }}
+                onFocus={(e) => e.target.select()}
                 placeholder="60"
               />
             </div>

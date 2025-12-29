@@ -2320,16 +2320,19 @@ const BotSetup = () => {
                     <Input
                       id="post_interval"
                       type="text"
-                      value={botService?.post_interval_minutes || 60}
+                      inputMode="numeric"
+                      value={botService?.post_interval_minutes || ''}
                       onChange={(e) => {
                         const value = e.target.value;
-                        if (value === '' || !isNaN(parseInt(value))) {
-                          const numValue = parseInt(value) || 0;
-                          if (numValue >= 1) {
-                            updateBotServiceField('post_interval_minutes', numValue);
-                          }
+                        if (value === '' || /^\d*$/.test(value)) {
+                          updateBotServiceField('post_interval_minutes', value === '' ? '' : parseInt(value));
                         }
                       }}
+                      onBlur={(e) => {
+                        const numValue = parseInt(e.target.value) || 60;
+                        updateBotServiceField('post_interval_minutes', Math.max(1, numValue));
+                      }}
+                      onFocus={(e) => e.target.select()}
                       placeholder="60"
                     />
                   </div>
