@@ -1334,12 +1334,40 @@ const BotSetup = () => {
           if (verifyError) throw new Error(verifyError.message);
           if (!verifyData.success) throw new Error(verifyData.error);
 
-          const channelInfo = verifyData.channelInfo;
-          // Використовуємо username з інпута як ідентифікатор
-          const displayName = input.replace('https://', '').replace('http://', '');
-          const channelTitle = channelInfo.title !== 'Приватний канал' 
-            ? channelInfo.title 
-            : `🔒 ${displayName}`;
+          // Отримуємо реальну інформацію про канал
+          let channelTitle = `🔒 ${input.replace('https://', '').replace('http://', '')}`;
+          let photoUrl: string | undefined = undefined;
+          
+          // Якщо Edge Function повернула реальні дані
+          if (channelInfo.title && channelInfo.title !== 'Приватний канал') {
+            channelTitle = channelInfo.title;
+          }
+          
+          // Якщо немає реальної інформації, пробуємо отримати через синхронізацію
+          if (channelInfo.title === 'Приватний канал') {
+            toast({
+              title: "Отримую інформацію...",
+              description: "Запитую дані про канал через спамера",
+              duration: 2000,
+            });
+            
+            try {
+              // Пробуємо отримати інфо без створення в БД
+              const { data: infoData, error: infoError } = await supabase.functions.invoke('get-channel-info', {
+                body: {
+                  inviteHash: inviteHash,
+                  isPrivate: true,
+                }
+              });
+              
+              if (!infoError && infoData?.success && infoData.channelInfo) {
+                channelTitle = infoData.channelInfo.title || channelTitle;
+                photoUrl = infoData.channelInfo.photo_url;
+              }
+            } catch (err) {
+              console.log("Could not fetch channel info:", err);
+            }
+          }
           
           setChannelVerificationStatus({ canRead: true, isPublic: false });
           
@@ -1407,7 +1435,7 @@ const BotSetup = () => {
             setPendingSourceChannels(prev => [...prev, { 
               username: channelId,
               title: channelTitle,
-              photo_url: undefined
+              photo_url: photoUrl
             }]);
           }
           
