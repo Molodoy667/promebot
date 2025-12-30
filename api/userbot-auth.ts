@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram";
+import { TelegramClient, Api } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -65,8 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       try {
         // Use invoke directly with auth.signIn
-        const { user } = await client.invoke(
-          new (await import('telegram/tl/functions/auth/index.js')).SignIn({
+        const result = await client.invoke(
+          new Api.auth.SignIn({
             phoneNumber: phoneNumber,
             phoneCodeHash: phoneCodeHash,
             phoneCode: phoneCode,
@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const session = client.session.save() as unknown as string;
         await client.disconnect();
 
-        console.log(`[Vercel MTProto] Successfully authorized! User:`, user);
+        console.log(`[Vercel MTProto] Successfully authorized!`, result);
 
         return res.status(200).json({
           success: true,
