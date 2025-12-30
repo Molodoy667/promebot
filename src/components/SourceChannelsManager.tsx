@@ -243,11 +243,11 @@ export const SourceChannelsManager = ({
 
         <div className="space-y-4">
           <div className="space-y-3">
-            <Label htmlFor="channelInput">Username, посилання або chat_id</Label>
+            <Label htmlFor="channelInput">Username або посилання</Label>
             
             <Input
               id="channelInput"
-              placeholder="@channel, t.me/channel, t.me/+invite або -1001234567890"
+              placeholder="@channel, t.me/channel або t.me/+invite"
               value={newChannelInput}
               onChange={(e) => setNewChannelInput(e.target.value)}
               disabled={isAdding || isVerifying}
@@ -266,11 +266,11 @@ export const SourceChannelsManager = ({
                   <div className="space-y-1 text-xs">
                     <div className="flex gap-2">
                       <span className="text-green-500">✓</span>
-                      <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel або -1001234567890</span>
+                      <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
                     </div>
                     <div className="flex gap-2">
                       <span className="text-blue-500">✓</span>
-                      <span><strong>Приватні:</strong> t.me/+AbCdEf123 або https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
+                      <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
                     </div>
                   </div>
                 </div>

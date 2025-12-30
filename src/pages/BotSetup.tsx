@@ -1780,11 +1780,11 @@ const BotSetup = () => {
                     <div className="space-y-1.5 text-xs">
                       <div className="flex gap-2">
                         <span className="text-green-500">✓</span>
-                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel або -1001234567890</span>
+                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
                       </div>
                       <div className="flex gap-2">
                         <span className="text-blue-500">✓</span>
-                        <span><strong>Приватні:</strong> t.me/+AbCdEf123 або https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
+                        <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
                       </div>
                     </div>
                     <div className="pt-2 border-t border-blue-500/20 mt-2">
@@ -1799,7 +1799,7 @@ const BotSetup = () => {
               {/* Input Field */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="sourceChannel">Username, посилання або chat_id</Label>
+                  <Label htmlFor="sourceChannel">Username або посилання</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button type="button" className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-muted hover:bg-muted/80 transition-colors">
@@ -1874,7 +1874,7 @@ const BotSetup = () => {
                 <div className="flex gap-2">
                   <Input
                     id="sourceChannel"
-                    placeholder="@channel, t.me/channel, t.me/+invite або -1001234567890"
+                    placeholder="@channel, t.me/channel або t.me/+invite"
                     value={newChannelUsername}
                     onChange={(e) => setNewChannelUsername(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !isCheckingChannel && newChannelUsername.trim() && handleAddSourceChannel()}
