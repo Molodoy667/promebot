@@ -574,6 +574,13 @@ const MyChannels = () => {
           .in("bot_service_id", services.map(s => s.id));
 
         for (const service of services) {
+          const serviceChannels = channels?.filter(ch => ch.bot_service_id === service.id) || [];
+          
+          // Показуємо тільки bot_services що мають джерела (не чернетки)
+          if (serviceChannels.length === 0) {
+            continue;
+          }
+          
           const channelInfo = plagiaristBot?.bot_token 
             ? await getChannelInfo(service.target_channel, plagiaristBot.bot_token)
             : null;
@@ -582,7 +589,7 @@ const MyChannels = () => {
             type: 'plagiarist',
             service: service,
             bot: plagiaristBot || null,
-            sourceChannels: channels?.filter(ch => ch.bot_service_id === service.id) || [],
+            sourceChannels: serviceChannels,
             channelInfo
           });
         }
