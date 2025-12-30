@@ -1333,7 +1333,8 @@ const BotSetup = () => {
 
           // Отримуємо реальну інформацію про канал
           const channelInfo = verifyData.channelInfo;
-          let channelTitle = `🔒 ${input.replace('https://', '').replace('http://', '')}`;
+          const shortHash = inviteHash?.substring(0, 8) || 'unknown';
+          let channelTitle = `🔒 Приватний канал (${shortHash}...)`;
           let photoUrl: string | undefined = undefined;
           
           // Якщо Edge Function повернула реальні дані
