@@ -203,69 +203,86 @@ export const SourceChannelsManager = ({
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-bold mb-4">Канали-джерела</h2>
-      
-      {sourcesLimit && (
-        <Alert className="mb-4">
-          <AlertCircle className="w-4 h-4" />
-          <AlertDescription>
-            Використано джерел: {sourceChannels.length} / {sourcesLimit}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="space-y-4">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="channelInput">Username або посилання на канал</Label>
-            <Input
-              id="channelInput"
-              placeholder="@channel, t.me/channel або t.me/+invite"
-              value={newChannelInput}
-              onChange={(e) => setNewChannelInput(e.target.value)}
-              disabled={isAdding}
-            />
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                <strong>Публічний канал:</strong> @username або t.me/username
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <strong>Приватний канал:</strong> t.me/+invitehash (посилання-запрошення)
-              </p>
-            </div>
-          </div>
-
-          <Alert className="bg-blue-500/10 border-blue-500/20">
-            <AlertCircle className="w-4 h-4 text-blue-500" />
-            <AlertDescription className="text-sm">
-              <p className="font-medium mb-1">Як це працює:</p>
-              <ul className="space-y-1 text-xs">
-                <li>✓ Публічний канал - бот підключається автоматично</li>
-                <li>✓ Приватний канал - використовується спамер з адмінки</li>
-                <li>✓ Автоматична перевірка при додаванні</li>
-              </ul>
+        <div>
+          <h2 className="text-xl font-bold mb-1">Канали-джерела</h2>
+          <p className="text-sm text-muted-foreground">
+            Канали, з яких бот копіює контент для публікації
+          </p>
+        </div>
+      
+        {sourcesLimit && (
+          <Alert className="mb-4">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>
+              Використано джерел: {sourceChannels.length} / {sourcesLimit}
+              {sourceChannels.length >= sourcesLimit && " (досягнуто ліміт)"}
             </AlertDescription>
           </Alert>
+        )}
+
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <Label htmlFor="channelInput">Додати джерело</Label>
+            
+            {/* Інструкції */}
+            <Alert className="bg-blue-500/10 border-blue-500/20">
+              <AlertCircle className="w-4 h-4 text-blue-500" />
+              <AlertDescription className="text-sm space-y-2">
+                <div>
+                  <p className="font-medium mb-1.5">📋 Підтримувані формати:</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span><strong>Приватні:</strong> t.me/+AbCdEf123 (invite-посилання, потрібен спамер в адмінці)</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-blue-500/20">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Публічні канали підключаються ботом, приватні — через спамера
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+
+            <Input
+              id="channelInput"
+              placeholder="@channel або t.me/+invite"
+              value={newChannelInput}
+              onChange={(e) => setNewChannelInput(e.target.value)}
+              disabled={isAdding || isVerifying}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && newChannelInput.trim() && !isAdding && !isVerifying) {
+                  handleAddSourceChannel();
+                }
+              }}
+            />
+          </div>
 
           <Button 
             onClick={handleAddSourceChannel} 
-            disabled={isAdding || isVerifying || (sourcesLimit !== undefined && sourceChannels.length >= sourcesLimit)}
+            disabled={!newChannelInput.trim() || isAdding || isVerifying || (sourcesLimit !== undefined && sourceChannels.length >= sourcesLimit)}
             className="w-full"
           >
             {isVerifying ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Перевірка каналу...
+                Перевіряю канал...
               </>
             ) : isAdding ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Підключення...
+                Додаю...
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4 mr-2" />
-                Додати канал-джерело
+                Додати джерело
               </>
             )}
           </Button>
