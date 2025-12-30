@@ -65,6 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       console.log(`[Vercel MTProto] Signing in with code`);
+      console.log(`[Vercel MTProto] Session string length:`, sessionString?.length || 0);
+      console.log(`[Vercel MTProto] phoneCodeHash:`, phoneCodeHash);
 
       try {
         // Use invoke directly with auth.signIn

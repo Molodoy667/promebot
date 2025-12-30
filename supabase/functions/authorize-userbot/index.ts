@@ -91,6 +91,13 @@ serve(async (req) => {
       }
 
       console.log(`[Userbot Auth] Signing in via Vercel API`);
+      console.log(`[Userbot Auth] Data:`, { 
+        hasPhone: !!phoneNumber, 
+        hasCode: !!phoneCode, 
+        hasHash: !!phoneCodeHash,
+        hasSession: !!sessionString,
+        sessionLength: sessionString?.length 
+      });
 
       const response = await fetch(`${VERCEL_API_URL}/api/userbot-auth`, {
         method: 'POST',
