@@ -454,6 +454,44 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_global_stats: {
+        Row: {
+          bot_id: string
+          created_at: string | null
+          id: string
+          total_channels: number | null
+          total_posts: number | null
+          total_users: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string | null
+          id?: string
+          total_channels?: number | null
+          total_posts?: number | null
+          total_users?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string | null
+          id?: string
+          total_channels?: number | null
+          total_posts?: number | null
+          total_users?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_global_stats_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: true
+            referencedRelation: "telegram_bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_services: {
         Row: {
           allow_auto_delete: boolean | null

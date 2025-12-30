@@ -24,13 +24,21 @@ interface BotCategoriesPanelProps {
   onSelectBot: (botId: string) => void;
 }
 
+interface BotGlobalStats {
+  total_users: number;
+  total_channels: number;
+  total_posts: number;
+}
+
 export const BotCategoriesPanel = ({ bots, selectedBotId, onSelectBot }: BotCategoriesPanelProps) => {
   const [hasVip, setHasVip] = useState(false);
   const [botUptime, setBotUptime] = useState<Record<string, number>>({});
+  const [globalStats, setGlobalStats] = useState<Record<string, BotGlobalStats>>({});
 
   useEffect(() => {
     checkVipStatus();
     loadBotUptime();
+    loadGlobalStats();
   }, [bots]);
 
   const checkVipStatus = async () => {
@@ -68,6 +76,38 @@ export const BotCategoriesPanel = ({ bots, selectedBotId, onSelectBot }: BotCate
     setBotUptime(uptimeData);
   };
 
+  const loadGlobalStats = async () => {
+    const stats: Record<string, BotGlobalStats> = {};
+    
+    for (const bot of bots) {
+      try {
+        const { data: statsData, error: statsError } = await supabase
+          .from('bot_global_stats')
+          .select('total_users, total_channels, total_posts')
+          .eq('bot_id', bot.id)
+          .maybeSingle();
+
+        if (!statsError && statsData) {
+          stats[bot.id] = statsData;
+        } else {
+          stats[bot.id] = {
+            total_users: 0,
+            total_channels: 0,
+            total_posts: 0
+          };
+        }
+      } catch (err) {
+        stats[bot.id] = {
+          total_users: 0,
+          total_channels: 0,
+          total_posts: 0
+        };
+      }
+    }
+    
+    setGlobalStats(stats);
+  };
+
   const aiBots = bots.filter(bot => bot.bot_type === 'ai');
   const plagiaristBots = bots.filter(bot => bot.bot_type === 'plagiarist' || !bot.bot_type);
 
@@ -78,6 +118,23 @@ export const BotCategoriesPanel = ({ bots, selectedBotId, onSelectBot }: BotCate
 
   const renderBotCard = (bot: typeof bots[0], isLocked: boolean = false) => {
     const isSelected = selectedBotId === bot.id;
+    const stats = globalStats[bot.id] || { total_users: 0, total_channels: 0, total_posts: 0 };
+    const uptime = botUptime[bot.id] || 0;
+
+    // Розрахунок навантаження
+    const maxUsers = 100;
+    const maxChannels = 200;
+    const maxPosts = 10000;
+
+    const userLoad = Math.min((stats.total_users / maxUsers) * 100, 100);
+    const channelLoad = Math.min((stats.total_channels / maxChannels) * 100, 100);
+    const postLoad = Math.min((stats.total_posts / maxPosts) * 100, 100);
+
+    const loadPercentage = Math.round(
+      (userLoad * 0.4) + (channelLoad * 0.3) + (postLoad * 0.3)
+    );
+
+    const loadColor = loadPercentage > 80 ? '🔴' : loadPercentage > 60 ? '🟡' : '🟢';
     
     return (
       <Card
@@ -128,28 +185,28 @@ export const BotCategoriesPanel = ({ bots, selectedBotId, onSelectBot }: BotCate
               <Users className="w-3.5 h-3.5 text-primary" />
               <div>
                 <span className="text-muted-foreground block">Користувачів:</span>
-                <p className="font-semibold">{bot.users_count || 0}</p>
+                <p className="font-semibold">{stats.total_users}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-primary" />
               <div>
                 <span className="text-muted-foreground block">Каналів:</span>
-                <p className="font-semibold">{bot.channels_count || 0}</p>
+                <p className="font-semibold">{stats.total_channels}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-primary" />
               <div>
                 <span className="text-muted-foreground block">Постів:</span>
-                <p className="font-semibold">{bot.posts_count || 0}</p>
+                <p className="font-semibold">{stats.total_posts}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-primary" />
               <div>
                 <span className="text-muted-foreground block">Навантаження:</span>
-                <p className="font-semibold">{botUptime[bot.id]?.toFixed(1) || 0}%</p>
+                <p className="font-semibold">{loadColor} {loadPercentage}%</p>
               </div>
             </div>
           </div>

@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
+interface BotGlobalStats {
+  total_users: number;
+  total_channels: number;
+  total_posts: number;
+}
+
 interface BotSelectorProps {
   bots: Array<{
     id: string;
@@ -24,13 +30,19 @@ interface BotSelectorProps {
 
 export const BotSelector = ({ bots, selectedBotId, onSelectBot }: BotSelectorProps) => {
   const [uptimeData, setUptimeData] = useState<Record<string, number>>({});
+  const [globalStats, setGlobalStats] = useState<Record<string, BotGlobalStats>>({});
+
+  console.log('🤖 BotSelector render, bots count:', bots.length);
 
   useEffect(() => {
-    // Calculate uptime for all bots
-    const calculateUptimes = async () => {
+    console.log('🔄 BotSelector useEffect triggered, loading data for', bots.length, 'bots');
+    // Calculate uptime and load global stats for all bots
+    const loadBotData = async () => {
       const uptimes: Record<string, number> = {};
+      const stats: Record<string, BotGlobalStats> = {};
       
       for (const bot of bots) {
+        // Load uptime
         try {
           const { data, error } = await supabase.rpc('calculate_bot_uptime', {
             bot_id: bot.id
@@ -39,21 +51,49 @@ export const BotSelector = ({ bots, selectedBotId, onSelectBot }: BotSelectorPro
           if (!error && data !== null) {
             uptimes[bot.id] = data;
           } else {
-            // Fallback to 0 if calculation fails
             console.warn(`Failed to calculate uptime for bot ${bot.id}:`, error);
             uptimes[bot.id] = 0;
           }
         } catch (error) {
-          // Silent fallback - don't spam console
           uptimes[bot.id] = 0;
+        }
+
+        // Load global stats
+        try {
+          const { data: statsData, error: statsError } = await supabase
+            .from('bot_global_stats')
+            .select('total_users, total_channels, total_posts')
+            .eq('bot_id', bot.id)
+            .maybeSingle();
+
+          console.log('📊 Bot stats for', bot.id, ':', statsData, statsError);
+
+          if (!statsError && statsData) {
+            stats[bot.id] = statsData;
+          } else {
+            console.warn('⚠️ No stats for bot', bot.id, statsError);
+            stats[bot.id] = {
+              total_users: 0,
+              total_channels: 0,
+              total_posts: 0
+            };
+          }
+        } catch (error) {
+          console.error('❌ Error loading stats for bot', bot.id, error);
+          stats[bot.id] = {
+            total_users: 0,
+            total_channels: 0,
+            total_posts: 0
+          };
         }
       }
       
       setUptimeData(uptimes);
+      setGlobalStats(stats);
     };
     
     if (bots.length > 0) {
-      calculateUptimes();
+      loadBotData();
     }
   }, [bots]);
 
@@ -68,6 +108,24 @@ export const BotSelector = ({ bots, selectedBotId, onSelectBot }: BotSelectorPro
         {bots.map((bot) => {
           const isSelected = selectedBotId === bot.id;
           const uptime = uptimeData[bot.id] || 0;
+          const stats = globalStats[bot.id] || { total_users: 0, total_channels: 0, total_posts: 0 };
+
+          // Розрахунок навантаження на основі статистики
+          // Максимальні значення для 100% навантаження
+          const maxUsers = 100;
+          const maxChannels = 200;
+          const maxPosts = 10000;
+
+          const userLoad = Math.min((stats.total_users / maxUsers) * 100, 100);
+          const channelLoad = Math.min((stats.total_channels / maxChannels) * 100, 100);
+          const postLoad = Math.min((stats.total_posts / maxPosts) * 100, 100);
+
+          // Середнє навантаження (вага: користувачі 40%, канали 30%, пости 30%)
+          const loadPercentage = Math.round(
+            (userLoad * 0.4) + (channelLoad * 0.3) + (postLoad * 0.3)
+          );
+
+          const loadColor = loadPercentage > 80 ? '🔴' : loadPercentage > 60 ? '🟡' : '🟢';
 
           return (
             <Card
@@ -103,17 +161,26 @@ export const BotSelector = ({ bots, selectedBotId, onSelectBot }: BotSelectorPro
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span className="text-xs">Користувачів</span>
+                {/* Глобальна статистика бота */}
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">📊 Загальна статистика</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                      <p className="text-lg font-bold">{stats.total_users}</p>
+                      <p className="text-xs text-muted-foreground">Користувачів</p>
                     </div>
-                    <p className="text-lg font-bold">
-                      {bot.users_count || 0}
-                    </p>
+                    <div className="text-center">
+                      <p className="text-lg font-bold">{stats.total_channels}</p>
+                      <p className="text-xs text-muted-foreground">Каналів</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold">{stats.total_posts}</p>
+                      <p className="text-xs text-muted-foreground">Постів</p>
+                    </div>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Activity className="w-4 h-4" />
@@ -121,25 +188,13 @@ export const BotSelector = ({ bots, selectedBotId, onSelectBot }: BotSelectorPro
                     </div>
                     <p className="text-lg font-bold">{uptime}%</p>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Activity className="w-4 h-4" />
-                      <span className="text-xs">Постів</span>
+                      <span className="text-xs">Навантаження</span>
                     </div>
-                    <p className="text-base font-semibold">
-                      {bot.posts_count || 0}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Bot className="w-4 h-4" />
-                      <span className="text-xs">Каналів</span>
-                    </div>
-                    <p className="text-base font-semibold">{bot.channels_count || 0}</p>
+                    <p className="text-lg font-bold">{loadColor} {loadPercentage}%</p>
                   </div>
                 </div>
 

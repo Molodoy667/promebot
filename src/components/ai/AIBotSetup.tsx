@@ -984,38 +984,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
       const newRunningState = !service.is_running;
       const now = new Date().toISOString();
       
-      if (newRunningState) {
-        // Check how many posts are already in queue
-        const { data: existingPosts, error: countError } = await supabase
-          .from("ai_generated_posts")
-          .select("id", { count: 'exact', head: true })
-          .eq("ai_bot_service_id", service.id)
-          .eq("status", "scheduled");
-
-        if (countError) throw countError;
-
-        const postsCount = existingPosts || 0;
-        console.log('Posts in queue:', postsCount);
-
-        // If queue is full (10 posts), don't generate more
-        if (postsCount >= 10) {
-          toast({
-            title: "Черга заповнена",
-            description: "У черзі вже 10 постів. Бот продовжить публікацію існуючих постів.",
-            duration: 5000,
-          });
-        } else {
-          // If this is first start (no posts yet), generate initial 5 posts
-          if (postsCount === 0) {
-            console.log('First start - generating 5 initial posts');
-            await supabase.functions.invoke("generate-ai-posts", {
-              body: { serviceId: service.id, count: 5 },
-            });
-          }
-          // Otherwise, standard logic will handle generation (via cron/worker)
-        }
-      }
-      
       const { error } = await supabase
         .from("ai_bot_services")
         .update({ 

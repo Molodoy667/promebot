@@ -15,8 +15,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Loader2,
-  Sparkles,
-  Plus
+  Sparkles
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -281,19 +280,6 @@ export default function QueueManagement() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualGenerate}
-                disabled={isGenerating || scheduledPosts.length >= 10}
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4 mr-2" />
-                )}
-                Згенерувати
-              </Button>
               <Button
                 variant="outline"
                 size="sm"
