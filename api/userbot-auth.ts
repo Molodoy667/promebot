@@ -64,24 +64,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log(`[Vercel MTProto] Signing in with code`);
 
       try {
-        // Use signInUser instead of start for proper phoneCodeHash handling
-        await client.signInUser(
-          { apiId: parseInt(apiId), apiHash },
-          {
-            phoneNumber: async () => phoneNumber,
-            phoneCode: async () => phoneCode,
-            phoneCodeHash: async () => phoneCodeHash,
-            onError: (err: Error) => {
-              console.error('[Vercel MTProto] Error:', err);
-              throw err;
-            },
-          }
+        // Use invoke directly with auth.signIn
+        const { user } = await client.invoke(
+          new (await import('telegram/tl/functions/auth/index.js')).SignIn({
+            phoneNumber: phoneNumber,
+            phoneCodeHash: phoneCodeHash,
+            phoneCode: phoneCode,
+          })
         );
 
         const session = client.session.save() as unknown as string;
         await client.disconnect();
 
-        console.log(`[Vercel MTProto] Successfully authorized!`);
+        console.log(`[Vercel MTProto] Successfully authorized! User:`, user);
 
         return res.status(200).json({
           success: true,
