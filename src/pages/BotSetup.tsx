@@ -1322,12 +1322,9 @@ const BotSetup = () => {
           // Викликаємо Edge Function для верифікації через спамера
           const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-source-channel', {
             body: {
-              channelInput: input,
-              channelIdentifier: channelId,
-              isPrivate: true,
-              inviteHash: inviteHash,
-              botToken: selectedBot.bot_token,
-              serviceId: botService?.id || null,
+              channel_input: input, // Edge Function очікує channel_input
+              is_private: true,
+              invite_hash: inviteHash,
             }
           });
 
