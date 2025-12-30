@@ -709,7 +709,7 @@ const MyChannels = () => {
       if (!group.sourceChannels || group.sourceChannels.length === 0) {
         toast({
           title: "Помилка",
-          description: "Додайте хоча б один джерельний канал",
+          description: "Додайте хоча б один канал-джерело",
           variant: "destructive",
           duration: 1500,
         });
@@ -1452,7 +1452,7 @@ const MyChannels = () => {
                           <Alert className="py-2">
                             <Info className="w-4 h-4" />
                             <AlertDescription className="text-xs">
-                              Немає джерельних каналів
+                              Немає джерел
                             </AlertDescription>
                           </Alert>
                         )}
@@ -1599,7 +1599,7 @@ const MyChannels = () => {
                   <ul className="space-y-1 text-sm">
                     <li className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-destructive rounded-full" />
-                      <span><strong>{deleteStats.sourceChannelsCount}</strong> джерельних каналів</span>
+                      <span><strong>{deleteStats.sourceChannelsCount}</strong> каналів-джерел</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-destructive rounded-full" />
