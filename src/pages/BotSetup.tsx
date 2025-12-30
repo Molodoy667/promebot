@@ -1335,13 +1335,17 @@ const BotSetup = () => {
           if (!verifyData.success) throw new Error(verifyData.error);
 
           const channelInfo = verifyData.channelInfo;
-          const channelTitle = channelInfo.title || `Приватний канал (${inviteHash?.substring(0, 8)}...)`;
+          // Використовуємо username з інпута як ідентифікатор
+          const displayName = input.replace('https://', '').replace('http://', '');
+          const channelTitle = channelInfo.title !== 'Приватний канал' 
+            ? channelInfo.title 
+            : `🔒 ${displayName}`;
           
           setChannelVerificationStatus({ canRead: true, isPublic: false });
           
           toast({
-            title: "Приватний канал перевірено",
-            description: `Канал "${channelTitle}" буде використовувати спамера для доступу`,
+            title: "Приватний канал додано",
+            description: `Спамер отримає доступ до каналу при першій синхронізації`,
             duration: 3000,
           });
           
