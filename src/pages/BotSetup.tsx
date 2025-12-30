@@ -120,6 +120,7 @@ const BotSetup = () => {
   
   const [botService, setBotService] = useState<BotService | null>(null);
   const [sourceChannels, setSourceChannels] = useState<SourceChannel[]>([]);
+  const [pendingSourceChannels, setPendingSourceChannels] = useState<{username: string, title?: string}[]>([]); // Локальні джерела до збереження
   const [newChannelUsername, setNewChannelUsername] = useState("");
   const [newChannelType, setNewChannelType] = useState<"public" | "private">("public");
   const [inviteLink, setInviteLink] = useState("");
@@ -942,6 +943,36 @@ const BotSetup = () => {
         if (error) throw error;
         console.log("✅ Bot service created via save:", data);
         setBotService(data);
+        
+        // Додаємо всі pending джерела в БД
+        if (pendingSourceChannels.length > 0) {
+          const sourcesToInsert = pendingSourceChannels.map(ch => ({
+            bot_service_id: data.id,
+            channel_username: ch.username,
+            is_active: true,
+          }));
+          
+          const { error: sourcesError } = await supabase
+            .from("source_channels")
+            .insert(sourcesToInsert);
+          
+          if (sourcesError) {
+            console.error("Error adding sources:", sourcesError);
+            toast({
+              title: "Попередження",
+              description: "Налаштування збережено, але деякі джерела не додались",
+              variant: "destructive",
+              duration: 3000,
+            });
+          } else {
+            console.log(`✅ Added ${pendingSourceChannels.length} sources`);
+            // Очищаємо pending список
+            setPendingSourceChannels([]);
+            // Завантажуємо джерела з БД
+            await loadSourceChannels(data.id);
+          }
+        }
+        
         setHasUnsavedChanges(false);
       }
 
@@ -1205,51 +1236,39 @@ const BotSetup = () => {
     setChannelVerificationStatus({ canRead: null, isPublic: null });
 
     try {
-      // Auto-create botService if doesn't exist (for adding sources before save)
-      let currentBotService = botService;
+      // Якщо bot_service вже існує, перевіряємо чи джерело вже в БД
+      if (botService) {
+        // Перевірка на дублікат в БД
+        const existsInDb = sourceChannels.some(ch => 
+          normalizeChannelId(ch.channel_username) === normalizedInput
+        );
+        
+        if (existsInDb) {
+          toast({
+            title: "Дублікат",
+            description: "Цей канал вже додано до джерел",
+            variant: "destructive",
+            duration: 2000,
+          });
+          setIsCheckingChannel(false);
+          return;
+        }
+      }
       
-      if (!currentBotService) {
-        // Перевіряємо що target_channel заповнений (обов'язкове поле)
-        if (!targetChannel || !targetChannel.trim()) {
-          toast({
-            title: "Помилка",
-            description: "Спочатку вкажіть цільовий канал та перевірте права бота",
-            variant: "destructive",
-            duration: 3000,
-          });
-          setIsCheckingChannel(false);
-          return;
-        }
-        
-        const { data: newService, error: serviceError } = await supabase
-          .from("bot_services")
-          .insert({
-            user_id: user.id,
-            bot_id: selectedBotId,
-            target_channel: targetChannel.trim(),
-            posts_per_day: tariff?.posts_per_day || 10,
-            post_interval_minutes: 60,
-            include_media: true,
-            post_as_bot: true,
-            is_running: false,
-          })
-          .select()
-          .single();
-
-        if (serviceError) {
-          console.error("Error creating bot service:", serviceError);
-          toast({
-            title: "Помилка",
-            description: serviceError.message || "Не вдалося створити налаштування",
-            variant: "destructive",
-          });
-          setIsCheckingChannel(false);
-          return;
-        }
-        
-        console.log("✅ Bot service auto-created for source:", newService);
-        currentBotService = newService;
-        setBotService(newService);
+      // Перевірка на дублікат в локальних pending джерелах
+      const existsInPending = pendingSourceChannels.some(ch => 
+        normalizeChannelId(ch.username) === normalizedInput
+      );
+      
+      if (existsInPending) {
+        toast({
+          title: "Дублікат",
+          description: "Цей канал вже додано до списку",
+          variant: "destructive",
+          duration: 2000,
+        });
+        setIsCheckingChannel(false);
+        return;
       }
 
       // Determine input type and extract channel identifier
@@ -1341,25 +1360,33 @@ const BotSetup = () => {
       setChannelVerificationStatus({ canRead: true, isPublic: true });
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Add channel (source channels can be shared, no ownership check needed)
+      // Додаємо канал локально (не в БД)
       const channelTitle = checkData.result.title || channelId;
-      const { error } = await supabase
-        .from("source_channels")
-        .insert({
-          bot_service_id: currentBotService.id,
-          channel_username: channelId,
-          is_active: true,
-        });
+      
+      if (botService) {
+        // Якщо bot_service вже існує, додаємо в БД
+        const { error } = await supabase
+          .from("source_channels")
+          .insert({
+            bot_service_id: botService.id,
+            channel_username: channelId,
+            is_active: true,
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+        
+        await loadSourceChannels(botService.id);
+      } else {
+        // Додаємо в локальний список (до збереження)
+        setPendingSourceChannels(prev => [...prev, { username: channelId, title: channelTitle }]);
+      }
 
       setNewChannelUsername("");
       setChannelVerificationStatus({ canRead: null, isPublic: null });
-      await loadSourceChannels(currentBotService.id);
       
       toast({
         title: "Канал додано",
-        description: `Канал "${channelTitle}" успішно додано як джерело`,
+        description: `Канал "${channelTitle}" додано до списку джерел`,
         duration: 2000,
       });
     } catch (error: any) {
@@ -1401,6 +1428,15 @@ const BotSetup = () => {
         duration: 1500,
       });
     }
+  };
+
+  const handleDeletePendingChannel = (username: string) => {
+    setPendingSourceChannels(prev => prev.filter(ch => ch.username !== username));
+    toast({
+      title: "Канал видалено",
+      description: "Канал видалено зі списку",
+      duration: 1500,
+    });
   };
 
   const handleToggleChannelStatus = async (channelId: string, currentStatus: boolean) => {
@@ -1972,6 +2008,28 @@ const BotSetup = () => {
             )}
             <Separator className="my-4" />
             <div className="space-y-3">
+              {/* Pending джерела (локальні, не збережені) */}
+              {pendingSourceChannels.map((channel, index) => (
+                <Card key={`pending-${index}`} className="p-4 bg-muted/30 border-dashed">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium">{channel.title || channel.username}</div>
+                      <div className="text-sm text-muted-foreground">Очікує збереження</div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeletePendingChannel(channel.username)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Видалити
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+
+              {/* Збережені джерела (з БД) */}
               {sourceChannels.map((channel) => (
                 <Card key={channel.id} className="p-4 bg-background border-border">
                   <div className="flex flex-col gap-3">
@@ -2012,7 +2070,7 @@ const BotSetup = () => {
                   </div>
                 </Card>
               ))}
-              {sourceChannels.length === 0 && (
+              {sourceChannels.length === 0 && pendingSourceChannels.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                     <FileText className="w-8 h-8 text-muted-foreground" />
@@ -2349,7 +2407,7 @@ const BotSetup = () => {
                 </Alert>
               )}
 
-              {sourceChannels.length > 0 ? (
+              {(sourceChannels.length > 0 || pendingSourceChannels.length > 0) ? (
                 <Button 
                   onClick={handleSaveBotService} 
                   disabled={isSaving || !botVerified}
@@ -2371,7 +2429,9 @@ const BotSetup = () => {
                 <Alert>
                   <Info className="w-4 h-4" />
                   <AlertDescription>
-                    Додайте хоча б 1 канал-джерело для збереження налаштувань
+                    {!botService 
+                      ? "Додайте хоча б 1 канал-джерело для збереження налаштувань"
+                      : "Немає джерел. Додайте канали для копіювання контенту"}
                   </AlertDescription>
                 </Alert>
               )}
