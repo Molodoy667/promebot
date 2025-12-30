@@ -1205,52 +1205,19 @@ const BotSetup = () => {
     setChannelVerificationStatus({ canRead: null, isPublic: null });
 
     try {
-      // Auto-create botService if doesn't exist
-      let currentBotService = botService;
-      
-      if (!currentBotService) {
-        // Перевіряємо що target_channel заповнений (обов'язкове поле)
-        if (!targetChannel || !targetChannel.trim()) {
-          toast({
-            title: "Помилка",
-            description: "Спочатку вкажіть цільовий канал та перевірте права бота",
-            variant: "destructive",
-            duration: 3000,
-          });
-          setIsCheckingChannel(false);
-          return;
-        }
-        
-        const { data: newService, error: serviceError } = await supabase
-          .from("bot_services")
-          .insert({
-            user_id: user.id,
-            bot_id: selectedBotId, // Link to the selected telegram bot
-            target_channel: targetChannel.trim(),
-            posts_per_day: tariff?.posts_per_day || 10,
-            post_interval_minutes: 60,
-            include_media: true,
-            post_as_bot: true,
-            is_running: false,
-          })
-          .select()
-          .single();
-
-        if (serviceError) {
-          console.error("Error creating bot service:", serviceError);
-          toast({
-            title: "Помилка",
-            description: serviceError.message || "Не вдалося створити налаштування",
-            variant: "destructive",
-          });
-          setIsCheckingChannel(false);
-          return;
-        }
-        
-        console.log("✅ Bot service created:", newService);
-        currentBotService = newService;
-        setBotService(newService);
+      // Check if botService exists
+      if (!botService) {
+        toast({
+          title: "Помилка",
+          description: "Спочатку збережіть налаштування бота (вкажіть цільовий канал та натисніть 'Зберегти')",
+          variant: "destructive",
+          duration: 4000,
+        });
+        setIsCheckingChannel(false);
+        return;
       }
+      
+      const currentBotService = botService;
 
       // Determine input type and extract channel identifier
       let channelId = input;
@@ -2349,29 +2316,29 @@ const BotSetup = () => {
                 </Alert>
               )}
 
-              <Button 
-                onClick={handleSaveBotService} 
-                disabled={isSaving || !botVerified}
-                className="w-full h-12 text-base font-semibold"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Збереження...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5 mr-2" />
-                    Зберегти налаштування
-                  </>
-                )}
-              </Button>
-              
-              {sourceChannels.length === 0 && (
+              {sourceChannels.length > 0 ? (
+                <Button 
+                  onClick={handleSaveBotService} 
+                  disabled={isSaving || !botVerified}
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Збереження...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5 mr-2" />
+                      Зберегти налаштування
+                    </>
+                  )}
+                </Button>
+              ) : (
                 <Alert>
                   <Info className="w-4 h-4" />
                   <AlertDescription>
-                    💡 Додайте канали-джерела після збереження, щоб бот міг копіювати контент
+                    Додайте хоча б 1 канал-джерело для збереження налаштувань
                   </AlertDescription>
                 </Alert>
               )}
