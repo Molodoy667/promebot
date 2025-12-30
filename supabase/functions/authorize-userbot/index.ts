@@ -33,6 +33,8 @@ serve(async (req) => {
       throw new Error('spyId is required');
     }
 
+    console.log('[Userbot Auth] Looking for spy:', spyId);
+
     // Get spy credentials
     const { data: spy, error: spyError } = await supabaseClient
       .from('telegram_spies')
@@ -40,8 +42,11 @@ serve(async (req) => {
       .eq('id', spyId)
       .single();
 
+    console.log('[Userbot Auth] Spy query result:', { spy: !!spy, error: spyError?.message });
+
     if (spyError || !spy) {
-      throw new Error('Spy not found');
+      console.error('[Userbot Auth] Spy not found error:', spyError);
+      throw new Error(`Spy not found: ${spyError?.message || 'Unknown error'}`);
     }
 
     console.log(`[Userbot Auth] Action: ${action}, Spy: ${spy.name}`);
