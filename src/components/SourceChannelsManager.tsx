@@ -70,21 +70,24 @@ export const SourceChannelsManager = ({
       let isPrivate = false;
       let inviteHash = null;
       
-      // Check if it's a private invite link
-      if (input.includes('t.me/+') || input.includes('t.me/joinchat/')) {
+      // Check if it's a private invite link (with or without https)
+      if (input.includes('t.me/+') || input.includes('t.me/joinchat/') || input.includes('telegram.me/+')) {
         isPrivate = true;
-        const match = input.match(/t\.me\/\+([A-Za-z0-9_-]+)/) || input.match(/t\.me\/joinchat\/([A-Za-z0-9_-]+)/);
+        // Support both http(s):// and plain formats
+        const match = input.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(?:\+|joinchat\/)([A-Za-z0-9_-]+)/);
         if (match) {
           inviteHash = match[1];
           channelIdentifier = `invite_${inviteHash}`;
         }
       } else {
-        // Public channel - extract username
-        if (input.includes('t.me/')) {
-          const match = input.match(/t\.me\/([^/?]+)/);
+        // Public channel - extract username or chat_id
+        if (input.includes('t.me/') || input.includes('telegram.me/')) {
+          const match = input.match(/(?:t\.me|telegram\.me)\/([^/?]+)/);
           if (match) channelIdentifier = match[1];
+        } else {
+          channelIdentifier = input;
         }
-        channelIdentifier = channelIdentifier.replace('@', '');
+        channelIdentifier = channelIdentifier.replace('@', '').replace('https://', '').replace('http://', '');
       }
 
       // Check for duplicates
@@ -240,22 +243,34 @@ export const SourceChannelsManager = ({
 
         <div className="space-y-4">
           <div className="space-y-3">
-            <Label htmlFor="channelInput">Додати джерело</Label>
+            <Label htmlFor="channelInput">Username, посилання або chat_id</Label>
+            
+            <Input
+              id="channelInput"
+              placeholder="@channel, t.me/channel, t.me/+invite або -1001234567890"
+              value={newChannelInput}
+              onChange={(e) => setNewChannelInput(e.target.value)}
+              disabled={isAdding || isVerifying}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && newChannelInput.trim() && !isAdding && !isVerifying) {
+                  handleAddSourceChannel();
+                }
+              }}
+            />
             
             {/* Інструкції */}
             <Alert className="bg-blue-500/10 border-blue-500/20">
-              <AlertCircle className="w-4 h-4 text-blue-500" />
               <AlertDescription className="text-sm space-y-2">
                 <div>
                   <p className="font-medium mb-1.5">📋 Підтримувані формати:</p>
                   <div className="space-y-1 text-xs">
                     <div className="flex gap-2">
                       <span className="text-green-500">✓</span>
-                      <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
+                      <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel або -1001234567890</span>
                     </div>
                     <div className="flex gap-2">
                       <span className="text-blue-500">✓</span>
-                      <span><strong>Приватні:</strong> t.me/+AbCdEf123 (invite-посилання, потрібен спамер в адмінці)</span>
+                      <span><strong>Приватні:</strong> t.me/+AbCdEf123 або https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
                     </div>
                   </div>
                 </div>
@@ -266,19 +281,6 @@ export const SourceChannelsManager = ({
                 </div>
               </AlertDescription>
             </Alert>
-
-            <Input
-              id="channelInput"
-              placeholder="@channel або t.me/+invite"
-              value={newChannelInput}
-              onChange={(e) => setNewChannelInput(e.target.value)}
-              disabled={isAdding || isVerifying}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && newChannelInput.trim() && !isAdding && !isVerifying) {
-                  handleAddSourceChannel();
-                }
-              }}
-            />
           </div>
 
           <Button 

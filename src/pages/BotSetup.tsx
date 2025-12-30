@@ -1774,18 +1774,17 @@ const BotSetup = () => {
             <div className="space-y-4 mb-4">
               {/* Instructions */}
               <Alert className="bg-blue-500/10 border-blue-500/20">
-                <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <AlertDescription>
                   <div className="text-sm space-y-2">
                     <p className="font-medium mb-1.5">📋 Підтримувані формати:</p>
                     <div className="space-y-1.5 text-xs">
                       <div className="flex gap-2">
                         <span className="text-green-500">✓</span>
-                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
+                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel або -1001234567890</span>
                       </div>
                       <div className="flex gap-2">
                         <span className="text-blue-500">✓</span>
-                        <span><strong>Приватні:</strong> t.me/+AbCdEf123 (invite-посилання, потрібен спамер в адмінці)</span>
+                        <span><strong>Приватні:</strong> t.me/+AbCdEf123 або https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
                       </div>
                     </div>
                     <div className="pt-2 border-t border-blue-500/20 mt-2">
@@ -1875,7 +1874,7 @@ const BotSetup = () => {
                 <div className="flex gap-2">
                   <Input
                     id="sourceChannel"
-                    placeholder="@channel або t.me/+invite"
+                    placeholder="@channel, t.me/channel, t.me/+invite або -1001234567890"
                     value={newChannelUsername}
                     onChange={(e) => setNewChannelUsername(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !isCheckingChannel && newChannelUsername.trim() && handleAddSourceChannel()}
