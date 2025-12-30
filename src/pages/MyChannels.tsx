@@ -1595,34 +1595,36 @@ const MyChannels = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Видалити канал?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p className="text-base font-medium">
-                Ви впевнені, що хочете видалити канал <strong>{groupToDelete?.service.target_channel}</strong>?
-              </p>
-              
-              {deleteStats && (
-                <div className="bg-muted p-4 rounded-lg space-y-2">
-                  <p className="font-semibold text-foreground">Буде видалено:</p>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-destructive rounded-full" />
-                      <span><strong>{deleteStats.sourceChannelsCount}</strong> каналів-джерел</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-destructive rounded-full" />
-                      <span><strong>{deleteStats.postsCount}</strong> записів історії публікацій</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-destructive rounded-full" />
-                      <span>Всі налаштування цього каналу</span>
-                    </li>
-                  </ul>
-                </div>
-              )}
-              
-              <p className="text-destructive font-medium">
-                Цю дію неможливо скасувати!
-              </p>
+            <AlertDialogDescription>
+              <div className="space-y-3">
+                <p className="text-base font-medium">
+                  Ви впевнені, що хочете видалити канал <strong>{groupToDelete?.service.target_channel}</strong>?
+                </p>
+                
+                {deleteStats && (
+                  <div className="bg-muted p-4 rounded-lg space-y-2">
+                    <p className="font-semibold text-foreground">Буде видалено:</p>
+                    <ul className="space-y-1 text-sm">
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-destructive rounded-full" />
+                        <span><strong>{deleteStats.sourceChannelsCount}</strong> каналів-джерел</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-destructive rounded-full" />
+                        <span><strong>{deleteStats.postsCount}</strong> записів історії публікацій</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-destructive rounded-full" />
+                        <span>Всі налаштування цього каналу</span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                
+                <p className="text-destructive font-medium">
+                  Цю дію неможливо скасувати!
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
