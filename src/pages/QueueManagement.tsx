@@ -169,7 +169,7 @@ export default function QueueManagement() {
       setGenerationStatus(null);
       setIsGenerating(false);
       loadQueue();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting post:", error);
       setIsGenerating(false);
       setGenerationStatus(null);
