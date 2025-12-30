@@ -131,8 +131,8 @@ export const BotVerification = ({
             <div className="text-sm space-y-2">
               <p className="font-semibold text-blue-700 dark:text-blue-300">Як підключити канал:</p>
               <div className="space-y-1 text-blue-600 dark:text-blue-400">
-                <p className="break-words"><strong>Публічні канали:</strong> вкажіть @username або посилання https://t.me/username</p>
-                <p className="break-words"><strong>Приватні канали:</strong> вам потрібен числовий chat_id (формат: -1001234567890)</p>
+                <p className="break-words"><strong>Публічні канали:</strong> вкажіть @username або посилання t.me/username</p>
+                <p className="break-words"><strong>Приватні канали:</strong> вкажіть посилання-запрошення t.me/+invite</p>
               </div>
             </div>
           </AlertDescription>
@@ -140,7 +140,7 @@ export const BotVerification = ({
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="targetChannel">Username, посилання або chat_id</Label>
+            <Label htmlFor="targetChannel">Username або посилання</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <button type="button" className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-muted hover:bg-muted/80 transition-colors">
@@ -152,7 +152,7 @@ export const BotVerification = ({
                   <div className="space-y-2">
                     <p className="font-semibold text-sm">Приватний канал</p>
                     <p className="text-xs text-muted-foreground">
-                      Для читання постів боту <strong>НЕ потрібні</strong> права адміністратора!
+                      Для приватних каналів використовується спамер з адмінки
                     </p>
                   </div>
                   
@@ -160,18 +160,18 @@ export const BotVerification = ({
                     <div className="bg-muted/50 p-3 rounded-md space-y-2">
                       <p className="font-medium">Як підключити:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                        <li>Додайте бота в приватний канал як звичайного учасника</li>
-                        <li>Отримайте числовий chat_id каналу</li>
-                        <li>Вкажіть chat_id нижче (формат: -1001234567890)</li>
+                        <li>Отримайте посилання-запрошення з приватного каналу</li>
+                        <li>Вкажіть посилання нижче (формат: t.me/+invitehash)</li>
+                        <li>Спамер автоматично приєднається і почне читати пости</li>
                       </ol>
                     </div>
                     
                     <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                      <p className="font-medium">Як отримати chat_id:</p>
+                      <p className="font-medium">Як отримати посилання:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                        <li>Додайте @userinfobot або @JsonDumpBot у Telegram</li>
-                        <li>Перешліть повідомлення з приватного каналу в бота</li>
-                        <li>Бот покаже вам chat_id каналу</li>
+                        <li>Відкрийте приватний канал в Telegram</li>
+                        <li>Натисніть "Поділитися" → "Скопіювати посилання"</li>
+                        <li>Вставте посилання (має містити /+ або /joinchat/)</li>
                       </ol>
                       
                       <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -214,7 +214,7 @@ export const BotVerification = ({
           </div>
           <Input
             id="targetChannel"
-            placeholder="@channel, https://t.me/channel або -1001234567890"
+            placeholder="@channel, t.me/channel або t.me/+invite"
             value={targetChannel}
             onChange={(e) => setTargetChannel(e.target.value)}
           />
