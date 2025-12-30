@@ -1282,22 +1282,20 @@ const BotSetup = () => {
       }
       // Check if it's a link
       else if (input.includes('t.me/') || input.includes('telegram.me/')) {
-        // Extract username from link
-        const match = input.match(/(?:t\.me|telegram\.me)\/([^/?]+)/);
-        if (match) {
-          channelId = match[1];
-          // Check if it's an invite link (private)
-          if (channelId.startsWith('+') || input.includes('joinchat')) {
-            toast({
-              title: "Приватний канал виявлено",
-              description: "Для приватних каналів потрібне посилання-запрошення (t.me/+invite).",
-              variant: "destructive",
-              duration: 8000,
-            });
-            setIsCheckingChannel(false);
-            return;
+        // Перевіряємо чи це invite-посилання (приватний канал)
+        if (input.includes('t.me/+') || input.includes('t.me/joinchat/') || input.includes('telegram.me/+')) {
+          // Це invite-посилання - воно працюватиме для приватних каналів
+          const inviteMatch = input.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(?:\+|joinchat\/)([A-Za-z0-9_-]+)/);
+          if (inviteMatch) {
+            // Для перевірки використовуємо повне посилання
+            channelId = input.includes('https://') ? input : `https://t.me/+${inviteMatch[1]}`;
           }
-          channelId = `@${channelId.replace('@', '')}`;
+        } else {
+          // Звичайне публічне посилання
+          const match = input.match(/(?:t\.me|telegram\.me)\/([^/?]+)/);
+          if (match) {
+            channelId = `@${match[1].replace('@', '')}`;
+          }
         }
       }
       // Check if it starts with @
