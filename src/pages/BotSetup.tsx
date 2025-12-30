@@ -1350,7 +1350,8 @@ const BotSetup = () => {
           });
           
           if (botService) {
-            const { error } = await supabase
+            // Додаємо канал в БД
+            const { data: newChannel, error } = await supabase
               .from("source_channels")
               .insert({
                 bot_service_id: botService.id,
@@ -1359,9 +1360,47 @@ const BotSetup = () => {
                 is_private: true,
                 invite_hash: inviteHash,
                 spammer_id: channelInfo.spammerId || null,
-              });
+              })
+              .select()
+              .single();
 
             if (error) throw error;
+            
+            // Викликаємо першу синхронізацію для отримання реальної назви та постів
+            toast({
+              title: "Синхронізація...",
+              description: "Отримую інформацію про канал через спамера",
+              duration: 2000,
+            });
+            
+            try {
+              const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-source-posts', {
+                body: {
+                  sourceChannelId: newChannel.id,
+                  channelIdentifier: channelId,
+                  isPrivate: true,
+                  inviteHash: inviteHash,
+                }
+              });
+              
+              if (syncError) {
+                console.error("Sync error:", syncError);
+                toast({
+                  title: "Попередження",
+                  description: "Канал додано, але синхронізація відкладена",
+                  variant: "default",
+                  duration: 3000,
+                });
+              } else if (syncData?.success) {
+                toast({
+                  title: "Синхронізація завершена",
+                  description: `Отримано інформацію про канал`,
+                  duration: 2000,
+                });
+              }
+            } catch (syncErr) {
+              console.error("Failed to trigger sync:", syncErr);
+            }
             
             await loadSourceChannels(botService.id);
           } else {
