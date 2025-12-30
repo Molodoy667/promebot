@@ -53,34 +53,54 @@ serve(async (req) => {
     let posts = [];
 
     if (sourceChannel.is_private) {
-      // Private channel - use spammer
+      // Private channel - use spammer via read-private-channel function
       console.log('[Sync Source Posts] Private channel, using spammer...');
 
       if (!sourceChannel.spammer_id) {
         throw new Error('No spammer assigned to private channel');
       }
 
-      const { data: spammer } = await supabaseClient
-        .from('telegram_spammers')
-        .select('*')
-        .eq('id', sourceChannel.spammer_id)
-        .single();
+      // Call read-private-channel Edge Function
+      const readResponse = await fetch(
+        `${Deno.env.get('SUPABASE_URL')}/functions/v1/read-private-channel`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({
+            spammerId: sourceChannel.spammer_id,
+            channelIdentifier: sourceChannel.channel_username,
+            inviteHash: sourceChannel.invite_hash,
+            limit: 20,
+          }),
+        }
+      );
 
-      if (!spammer || !spammer.is_authorized) {
-        throw new Error('Spammer not authorized');
+      if (!readResponse.ok) {
+        const errorText = await readResponse.text();
+        throw new Error(`Failed to read private channel: ${errorText}`);
       }
 
-      // TODO: Use spammer TData to read channel messages
-      // For now, mock response
-      console.log('[Sync Source Posts] Using spammer:', spammer.name);
-      
-      posts = [{
-        channel_id: sourceChannel.id,
-        message_id: Date.now(),
-        text: 'Mock post from private channel',
-        media_url: null,
-        posted_at: new Date().toISOString(),
-      }];
+      const readData = await readResponse.json();
+
+      if (!readData.success) {
+        throw new Error(readData.error || 'Failed to read messages');
+      }
+
+      console.log(`[Sync Source Posts] Read ${readData.messages?.length || 0} messages from private channel`);
+
+      // Convert messages to posts format
+      posts = (readData.messages || []).map((msg: any) => ({
+        message_id: msg.id,
+        text: msg.text || '',
+        media_url: msg.media?.url || null,
+        media_type: msg.media?.type || null,
+        views_count: msg.views || 0,
+        forwards_count: msg.forwards || 0,
+        posted_at: msg.date,
+      }));
 
     } else {
       // Public channel - use bot
@@ -121,9 +141,47 @@ serve(async (req) => {
     }
 
     // Save posts to database
+    let savedCount = 0;
+    
     if (posts.length > 0) {
-      // TODO: Save to a posts table
-      console.log(`[Sync Source Posts] Found ${posts.length} posts`);
+      console.log(`[Sync Source Posts] Saving ${posts.length} posts to database...`);
+      
+      for (const post of posts) {
+        try {
+          const { error: insertError } = await supabaseClient
+            .from('source_posts')
+            .insert({
+              source_channel_id: sourceChannelId,
+              bot_service_id: botServiceId,
+              original_message_id: post.message_id,
+              text: post.text,
+              media_url: post.media_url,
+              media_type: post.media_type || null,
+              has_media: !!post.media_url,
+              author_name: post.author_name || null,
+              views_count: post.views_count || 0,
+              forwards_count: post.forwards_count || 0,
+              posted_at: post.posted_at,
+              is_processed: false,
+              is_published: false,
+            })
+            .select()
+            .single();
+
+          if (!insertError) {
+            savedCount++;
+          } else if (insertError.code === '23505') {
+            // Duplicate - skip
+            console.log(`[Sync Source Posts] Post ${post.message_id} already exists, skipping`);
+          } else {
+            console.error(`[Sync Source Posts] Error saving post:`, insertError);
+          }
+        } catch (err) {
+          console.error(`[Sync Source Posts] Failed to save post:`, err);
+        }
+      }
+      
+      console.log(`[Sync Source Posts] Saved ${savedCount}/${posts.length} posts`);
     }
 
     // Update last_sync_at
@@ -136,6 +194,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         postsFound: posts.length,
+        postsSaved: savedCount,
         channelType: sourceChannel.is_private ? 'private' : 'public',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
