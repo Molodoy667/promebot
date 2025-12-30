@@ -87,6 +87,23 @@ export const SourceChannelsManager = ({
         channelIdentifier = channelIdentifier.replace('@', '');
       }
 
+      // Check for duplicates
+      const isDuplicate = sourceChannels.some(channel => 
+        channel.channel_username.toLowerCase() === channelIdentifier.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        toast({
+          title: "Дублікат",
+          description: "Цей канал вже додано до джерел",
+          variant: "destructive",
+          duration: 3000,
+        });
+        setIsAdding(false);
+        setIsVerifying(false);
+        return;
+      }
+
       // Verify channel via Edge Function
       toast({
         title: "Перевірка каналу...",
@@ -335,8 +352,8 @@ export const SourceChannelsManager = ({
               <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                 <FileText className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground">Поки що немає джерельних каналів</p>
-              <p className="text-sm text-muted-foreground mt-1">Додайте канал вище, щоб почати</p>
+              <p className="text-muted-foreground">Поки що немає джерел</p>
+              <p className="text-sm text-muted-foreground mt-1">Додайте канал-джерело вище, щоб почати копіювання контенту</p>
             </div>
           )}
         </div>

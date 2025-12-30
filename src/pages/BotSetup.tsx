@@ -986,7 +986,7 @@ const BotSetup = () => {
     if (sourceChannels.length === 0) {
       toast({
         title: "Помилка",
-        description: "Додайте хоча б один джерельний канал",
+        description: "Додайте хоча б один канал-джерело",
         variant: "destructive",
         duration: 1500,
       });
@@ -1156,7 +1156,7 @@ const BotSetup = () => {
     if (normalizedInput === normalizedTarget) {
       toast({
         title: "Помилка",
-        description: "Джерельний канал не може співпадати з цільовим каналом. Виберіть інший канал для копіювання постів.",
+        description: "Канал-джерело не може співпадати з цільовим каналом. Виберіть інший канал.",
         variant: "destructive",
         duration: 3000,
       });
@@ -1389,7 +1389,7 @@ const BotSetup = () => {
       
       toast({
         title: "Канал видалено",
-        description: "Джерельний канал успішно видалено",
+        description: "Канал-джерело успішно видалено",
         duration: 1500,
       });
     } catch (error: any) {
@@ -1759,33 +1759,38 @@ const BotSetup = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4">Джерельні канали</h2>
-            <p className="text-muted-foreground mb-4">
-              Додайте канали, з яких бот буде копіювати пости
-              {tariff && (
-                <span className="ml-1">
-                  ({sourceChannels.length} / {tariff.sources_limit || '∞'} використано)
-                </span>
-              )}
-            </p>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold mb-1">Канали-джерела</h2>
+              <p className="text-sm text-muted-foreground">
+                Канали, з яких бот копіює контент для публікації
+                {tariff && (
+                  <span className="ml-1">
+                    ({sourceChannels.length} з {tariff.sources_limit || '∞'})
+                  </span>
+                )}
+              </p>
+            </div>
             
             <div className="space-y-4 mb-4">
               {/* Instructions */}
               <Alert className="bg-blue-500/10 border-blue-500/20">
                 <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <AlertDescription>
-                  <div className="text-sm space-y-3">
-                    <div>
-                      <p className="font-semibold text-blue-700 dark:text-blue-300 mb-1">Публічний канал</p>
-                      <p className="text-blue-600 dark:text-blue-400 text-xs break-words">
-                        Вкажіть @username або посилання t.me/channel
-                      </p>
+                  <div className="text-sm space-y-2">
+                    <p className="font-medium mb-1.5">📋 Підтримувані формати:</p>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex gap-2">
+                        <span className="text-green-500">✓</span>
+                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="text-blue-500">✓</span>
+                        <span><strong>Приватні:</strong> t.me/+AbCdEf123 (invite-посилання, потрібен спамер в адмінці)</span>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <p className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Приватний канал</p>
-                      <p className="text-amber-600 dark:text-amber-400 text-xs">
-                        Вкажіть посилання-запрошення (t.me/+invite). Спамер підключиться автоматично.
+                    <div className="pt-2 border-t border-blue-500/20 mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        💡 Публічні канали підключаються ботом, приватні — через спамера
                       </p>
                     </div>
                   </div>
@@ -1870,7 +1875,7 @@ const BotSetup = () => {
                 <div className="flex gap-2">
                   <Input
                     id="sourceChannel"
-                    placeholder="@channel, https://t.me/channel або -1001234567890"
+                    placeholder="@channel або t.me/+invite"
                     value={newChannelUsername}
                     onChange={(e) => setNewChannelUsername(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !isCheckingChannel && newChannelUsername.trim() && handleAddSourceChannel()}
@@ -1887,19 +1892,16 @@ const BotSetup = () => {
                     {isCheckingChannel ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Перевірка...
+                        Перевіряю...
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        Додати
+                        Додати джерело
                       </>
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Для публічних: @username або t.me/username • Для приватних: t.me/+invite
-                </p>
               </div>
 
               {/* Channel Verification Progress */}
@@ -2016,8 +2018,8 @@ const BotSetup = () => {
                   <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                     <FileText className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground">Поки що немає джерельних каналів</p>
-                  <p className="text-sm text-muted-foreground mt-1">Додайте канал вище, щоб почати</p>
+                  <p className="text-muted-foreground">Поки що немає джерел</p>
+                  <p className="text-sm text-muted-foreground mt-1">Додайте канал-джерело вище, щоб почати копіювання контенту</p>
                 </div>
               )}
             </div>
@@ -2370,7 +2372,7 @@ const BotSetup = () => {
                 <Alert>
                   <Info className="w-4 h-4" />
                   <AlertDescription>
-                    Додайте хоча б 1 джерельний канал для збереження налаштувань
+                    Додайте хоча б 1 канал-джерело для збереження налаштувань
                   </AlertDescription>
                 </Alert>
               )}
