@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Send, Trash2, Loader2, Check, X, AlertCircle, Zap, FileText } from "lucide-react";
+import { Send, Trash2, Loader2, Check, X, AlertCircle, Zap, FileText, Lock } from "lucide-react";
 
 interface TelegramSpammer {
   id: string;
@@ -129,6 +129,22 @@ export const SpammerMobileCard = ({ spammer, onDelete, onTest, isTesting }: Spam
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-2">
+            {!spammer.is_authorized && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onTest(spammer)}
+                disabled={isTesting}
+                className="w-full col-span-2 border-primary/30 hover:bg-primary/10"
+              >
+                {isTesting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Lock className="w-4 h-4 mr-2" />
+                )}
+                Авторизувати
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

@@ -389,16 +389,39 @@ export const BotsManagement = () => {
   const handleTestSpammer = async (spammer: TelegramSpammer) => {
     setIsTestingSpammer(spammer.id);
     
-    // TODO: Implement spammer test logic
-    toast({
-      title: "Тест спамера",
-      description: "Функція в розробці",
-      duration: 2000,
-    });
-    
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke("test-spammer", {
+        body: { spammerId: spammer.id },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Спамер працює!",
+          description: `${spammer.name} готовий до розсилки`,
+          duration: 2000,
+        });
+
+        await loadSpammers();
+      } else {
+        toast({
+          title: "Помилка тестування",
+          description: data.error || "Не вдалося підключитись",
+          variant: "destructive",
+          duration: 2000,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+        duration: 2000,
+      });
+    } finally {
       setIsTestingSpammer(null);
-    }, 2000);
+    }
   };
 
   const openAuthDialog = (spy: TelegramSpy) => {
@@ -970,6 +993,22 @@ export const BotsManagement = () => {
                       <Badge variant={spammer.is_active ? "default" : "outline"}>
                         {spammer.is_active ? "Активний" : "Неактивний"}
                       </Badge>
+                      {!spammer.is_authorized && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTestSpammer(spammer)}
+                          disabled={isTestingSpammer === spammer.id}
+                          className="border-primary/30 hover:bg-primary/10"
+                        >
+                          {isTestingSpammer === spammer.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Lock className="w-4 h-4 mr-1" />
+                          )}
+                          Авторизувати
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
