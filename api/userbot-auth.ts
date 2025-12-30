@@ -63,25 +63,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log(`[Vercel MTProto] Signing in with code`);
 
-      await client.start({
-        phoneNumber: async () => phoneNumber,
-        phoneCode: async () => phoneCode,
-        onError: (err: Error) => {
-          console.error('[Vercel MTProto] Error:', err);
-          throw err;
-        },
-      });
+      try {
+        // Use signInUser instead of start for proper phoneCodeHash handling
+        await client.signInUser(
+          { apiId: parseInt(apiId), apiHash },
+          {
+            phoneNumber: async () => phoneNumber,
+            phoneCode: async () => phoneCode,
+            phoneCodeHash: async () => phoneCodeHash,
+            onError: (err: Error) => {
+              console.error('[Vercel MTProto] Error:', err);
+              throw err;
+            },
+          }
+        );
 
-      const session = client.session.save() as unknown as string;
-      await client.disconnect();
+        const session = client.session.save() as unknown as string;
+        await client.disconnect();
 
-      console.log(`[Vercel MTProto] Successfully authorized!`);
+        console.log(`[Vercel MTProto] Successfully authorized!`);
 
-      return res.status(200).json({
-        success: true,
-        sessionString: session,
-        isAuthorized: true,
-      });
+        return res.status(200).json({
+          success: true,
+          sessionString: session,
+          isAuthorized: true,
+        });
+      } catch (signInError: any) {
+        await client.disconnect();
+        console.error('[Vercel MTProto] Sign in error:', signInError);
+        return res.status(400).json({
+          error: signInError.message || 'Failed to sign in'
+        });
+      }
     }
 
     // Action 3: Check auth
