@@ -1342,29 +1342,40 @@ const BotSetup = () => {
             channelTitle = channelInfo.title;
           }
           
-          // Якщо немає реальної інформації, пробуємо отримати через синхронізацію
-          if (!channelInfo || channelInfo.title === '🔒 Приватний канал') {
+          // Отримуємо реальну інформацію через read-private-channel
+          if (channelInfo && channelInfo.spammerId) {
             toast({
-              title: "Отримую інформацію...",
-              description: "Запитую дані про канал через спамера",
+              title: "Підключаюсь до каналу...",
+              description: "Отримую інформацію через спамера",
               duration: 2000,
             });
             
             try {
-              // Пробуємо отримати інфо без створення в БД
-              const { data: infoData, error: infoError } = await supabase.functions.invoke('get-channel-info', {
+              const { data: readData, error: readError } = await supabase.functions.invoke('read-private-channel', {
                 body: {
+                  spammerId: channelInfo.spammerId,
+                  channelIdentifier: channelId,
                   inviteHash: inviteHash,
-                  isPrivate: true,
+                  limit: 10, // Отримуємо останні 10 постів
                 }
               });
               
-              if (!infoError && infoData?.success && infoData.channelInfo) {
-                channelTitle = infoData.channelInfo.title || channelTitle;
-                photoUrl = infoData.channelInfo.photo_url;
+              if (!readError && readData?.success) {
+                // Отримали реальну інформацію про канал
+                if (readData.channelInfo) {
+                  channelTitle = readData.channelInfo.title || channelTitle;
+                  photoUrl = readData.channelInfo.photo || readData.channelInfo.photo_url;
+                  console.log("Got channel info:", readData.channelInfo);
+                }
+                
+                // Якщо є пости, збережемо їх після створення bot_service
+                if (readData.messages && readData.messages.length > 0) {
+                  console.log(`Got ${readData.messages.length} messages from channel`);
+                }
               }
             } catch (err) {
-              console.log("Could not fetch channel info:", err);
+              console.log("Could not read private channel:", err);
+              // Не критична помилка - канал все одно буде додано
             }
           }
           

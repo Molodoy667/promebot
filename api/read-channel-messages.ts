@@ -13,20 +13,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { action, tdataPath, channelIdentifier, limit = 10 } = req.body;
 
-    if (action !== 'read_messages') {
-      return res.status(400).json({ error: 'Invalid action' });
+    if (!action || (action !== 'read_messages' && action !== 'get_channel_info')) {
+      return res.status(400).json({ error: 'Invalid action. Use read_messages or get_channel_info' });
     }
 
     if (!tdataPath || !channelIdentifier) {
       return res.status(400).json({ error: 'tdataPath and channelIdentifier required' });
     }
 
-    console.log('[Vercel MTProto] Reading messages from:', channelIdentifier);
+    console.log('[Vercel MTProto] Action:', action);
+    console.log('[Vercel MTProto] Channel:', channelIdentifier);
     console.log('[Vercel MTProto] Using TData:', tdataPath);
 
     // TODO: Implement actual TData reading with GramJS
     // For now, return mock data structure
     
+    const mockChannelInfo = {
+      id: channelIdentifier.replace('+', ''),
+      title: `📢 Тестовий приватний канал`,
+      username: null,
+      photo_url: null,
+      members_count: 1250,
+      description: 'Mock channel for testing',
+    };
+
+    // Action: get_channel_info
+    if (action === 'get_channel_info') {
+      console.log('[Vercel MTProto] Returning channel info');
+      return res.status(200).json({
+        success: true,
+        channelInfo: mockChannelInfo,
+      });
+    }
+
+    // Action: read_messages
     const mockMessages = [
       {
         id: Date.now(),
@@ -43,11 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       messages: mockMessages,
-      channelInfo: {
-        id: channelIdentifier,
-        title: 'Private Channel',
-        username: null,
-      }
+      channelInfo: mockChannelInfo,
     });
 
   } catch (error: any) {

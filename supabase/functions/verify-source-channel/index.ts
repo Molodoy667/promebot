@@ -51,30 +51,48 @@ serve(async (req) => {
         .single();
 
       if (spammerError || !spammer) {
-        console.log('[Verify Source Channel] No spammer found, returning success anyway');
-        // Повертаємо успіх навіть без спамера
-        channelInfo = {
-          id: invite_hash,
-          title: '🔒 Приватний канал',
-          type: 'channel',
-          username: null,
-          isPrivate: true,
-          spammerId: null,
-        };
-      } else {
-        console.log('[Verify Source Channel] Using spammer:', spammer.id);
-
-        // TODO: Use spammer session to join channel and get real info
-        // For now, return basic data
-        channelInfo = {
-          id: invite_hash,
-          title: '🔒 Приватний канал',
-          type: 'channel',
-          username: null,
-          isPrivate: true,
-          spammerId: spammer.id,
-        };
+        throw new Error('Активного спамера не знайдено. Додайте спамера в адмін-панелі.');
       }
+
+      console.log('[Verify Source Channel] Using spammer:', spammer.id);
+
+      // Read private channel via spammer
+      const VERCEL_API_URL = Deno.env.get('VERCEL_API_URL') || 'https://promobot.store';
+      
+      const response = await fetch(`${VERCEL_API_URL}/api/read-channel-messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'read_messages',
+          tdataPath: spammer.tdata_path,
+          channelIdentifier: invite_hash ? `+${invite_hash}` : channel_input,
+          limit: 1,
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Не вдалося підключитись: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.channelInfo) {
+        throw new Error(data.error || 'Не вдалося отримати інфо про канал');
+      }
+
+      channelInfo = {
+        id: data.channelInfo.id,
+        title: data.channelInfo.title || '🔒 Приватний канал',
+        type: 'channel',
+        username: data.channelInfo.username || null,
+        isPrivate: true,
+        spammerId: spammer.id,
+        photo_url: data.channelInfo.photo_url || null,
+        members_count: data.channelInfo.members_count || null,
+      };
+
+      console.log('[Verify Source Channel] Got channel info:', channelInfo.title);
 
     } else {
       // Public channel - verify with bot
