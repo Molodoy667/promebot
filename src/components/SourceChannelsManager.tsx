@@ -32,16 +32,17 @@ export const SourceChannelsManager = ({
   onChannelsUpdate
 }: SourceChannelsManagerProps) => {
   const { toast } = useToast();
-  const [newChannelUsername, setNewChannelUsername] = useState("");
-  const [newChannelType, setNewChannelType] = useState<"public" | "private">("public");
-  const [inviteLink, setInviteLink] = useState("");
+  const [newChannelInput, setNewChannelInput] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleAddSourceChannel = async () => {
-    if (!newChannelUsername.trim()) {
+    const input = newChannelInput.trim();
+    
+    if (!input) {
       toast({
         title: "Помилка",
-        description: "Вкажіть username каналу",
+        description: "Вкажіть username або посилання на канал",
         variant: "destructive",
         duration: 2000,
       });
@@ -59,34 +60,76 @@ export const SourceChannelsManager = ({
     }
 
     setIsAdding(true);
+    setIsVerifying(true);
+    
     try {
       const { supabase } = await import("@/integrations/supabase/client");
       
-      let channelToAdd = newChannelUsername.trim();
-      if (channelToAdd.includes('t.me/')) {
-        const match = channelToAdd.match(/t\.me\/([^/?]+)/);
-        if (match) channelToAdd = match[1];
+      // Determine channel type and extract identifier
+      let channelIdentifier = input;
+      let isPrivate = false;
+      let inviteHash = null;
+      
+      // Check if it's a private invite link
+      if (input.includes('t.me/+') || input.includes('t.me/joinchat/')) {
+        isPrivate = true;
+        const match = input.match(/t\.me\/\+([A-Za-z0-9_-]+)/) || input.match(/t\.me\/joinchat\/([A-Za-z0-9_-]+)/);
+        if (match) {
+          inviteHash = match[1];
+          channelIdentifier = `invite_${inviteHash}`;
+        }
+      } else {
+        // Public channel - extract username
+        if (input.includes('t.me/')) {
+          const match = input.match(/t\.me\/([^/?]+)/);
+          if (match) channelIdentifier = match[1];
+        }
+        channelIdentifier = channelIdentifier.replace('@', '');
       }
-      channelToAdd = channelToAdd.replace('@', '');
 
+      // Verify channel via Edge Function
+      toast({
+        title: "Перевірка каналу...",
+        description: "Зачекайте, йде підключення",
+        duration: 2000,
+      });
+
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke("verify-source-channel", {
+        body: {
+          channelInput: input,
+          channelIdentifier,
+          isPrivate,
+          inviteHash,
+          botToken,
+          serviceId
+        }
+      });
+
+      if (verifyError || !verifyData?.success) {
+        throw new Error(verifyData?.error || "Не вдалося перевірити канал");
+      }
+
+      // Add to database
       const { error } = await supabase
         .from("source_channels")
         .insert({
           bot_service_id: serviceId,
-          channel_username: channelToAdd,
+          channel_username: channelIdentifier,
+          channel_title: verifyData.channelInfo?.title,
+          is_private: isPrivate,
+          invite_hash: inviteHash,
           is_active: true,
         });
 
       if (error) throw error;
 
       toast({
-        title: "Успішно",
-        description: "Канал-джерело додано",
-        duration: 2000,
+        title: "Успішно!",
+        description: `Канал "${verifyData.channelInfo?.title || channelIdentifier}" додано`,
+        duration: 3000,
       });
 
-      setNewChannelUsername("");
-      setInviteLink("");
+      setNewChannelInput("");
       onChannelsUpdate();
     } catch (error: any) {
       console.error("Error adding source channel:", error);
@@ -94,10 +137,11 @@ export const SourceChannelsManager = ({
         title: "Помилка",
         description: error.message || "Не вдалося додати канал",
         variant: "destructive",
-        duration: 2000,
+        duration: 3000,
       });
     } finally {
       setIsAdding(false);
+      setIsVerifying(false);
     }
   };
 
@@ -173,60 +217,50 @@ export const SourceChannelsManager = ({
       <div className="space-y-4">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Тип каналу</Label>
-            <RadioGroup value={newChannelType} onValueChange={(value: "public" | "private") => setNewChannelType(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="public" id="public" />
-                <Label htmlFor="public" className="cursor-pointer">Публічний канал</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="private" id="private" />
-                <Label htmlFor="private" className="cursor-pointer">Приватний канал</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="channelUsername">
-              {newChannelType === "public" ? "Username каналу" : "Chat ID приватного каналу"}
-            </Label>
+            <Label htmlFor="channelInput">Username або посилання на канал</Label>
             <Input
-              id="channelUsername"
-              placeholder={newChannelType === "public" ? "@channel або t.me/channel" : "-1001234567890"}
-              value={newChannelUsername}
-              onChange={(e) => setNewChannelUsername(e.target.value)}
+              id="channelInput"
+              placeholder="@channel, t.me/channel або t.me/+invite"
+              value={newChannelInput}
+              onChange={(e) => setNewChannelInput(e.target.value)}
+              disabled={isAdding}
             />
-            <p className="text-xs text-muted-foreground">
-              {newChannelType === "public" 
-                ? "Вкажіть @username або посилання t.me/username" 
-                : "Отримайте chat_id через @userinfobot"}
-            </p>
-          </div>
-
-          {newChannelType === "private" && (
-            <div className="space-y-2">
-              <Label htmlFor="inviteLink">Посилання-запрошення (опціонально)</Label>
-              <Input
-                id="inviteLink"
-                placeholder="https://t.me/+xxxxx"
-                value={inviteLink}
-                onChange={(e) => setInviteLink(e.target.value)}
-              />
+            <div className="space-y-1">
               <p className="text-xs text-muted-foreground">
-                Для автоматичного підписування бота (якщо потрібно)
+                <strong>Публічний канал:</strong> @username або t.me/username
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <strong>Приватний канал:</strong> t.me/+invitehash (посилання-запрошення)
               </p>
             </div>
-          )}
+          </div>
+
+          <Alert className="bg-blue-500/10 border-blue-500/20">
+            <AlertCircle className="w-4 h-4 text-blue-500" />
+            <AlertDescription className="text-sm">
+              <p className="font-medium mb-1">Як це працює:</p>
+              <ul className="space-y-1 text-xs">
+                <li>✓ Публічний канал - бот підключається автоматично</li>
+                <li>✓ Приватний канал - використовується спамер з адмінки</li>
+                <li>✓ Автоматична перевірка при додаванні</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
 
           <Button 
             onClick={handleAddSourceChannel} 
-            disabled={isAdding || (sourcesLimit !== undefined && sourceChannels.length >= sourcesLimit)}
+            disabled={isAdding || isVerifying || (sourcesLimit !== undefined && sourceChannels.length >= sourcesLimit)}
             className="w-full"
           >
-            {isAdding ? (
+            {isVerifying ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Додавання...
+                Перевірка каналу...
+              </>
+            ) : isAdding ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Підключення...
               </>
             ) : (
               <>
