@@ -208,7 +208,7 @@ export default function QueueManagement() {
       setGenerationStatus(null);
       setIsGenerating(false);
       loadQueue();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error generating posts:", error);
       setIsGenerating(false);
       setGenerationStatus(null);
@@ -241,7 +241,7 @@ export default function QueueManagement() {
       setEditedContent("");
 
       loadQueue();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error editing post:", error);
       toast({
         title: "Помилка",
