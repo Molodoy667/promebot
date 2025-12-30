@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BotMobileCard } from "./BotMobileCard";
 import { SpyMobileCard } from "./SpyMobileCard";
+import { SpammerMobileCard } from "./SpammerMobileCard";
 
 interface TelegramBot {
   id: string;
@@ -68,17 +69,36 @@ interface TelegramSpy {
   error_count: number;
 }
 
+interface TelegramSpammer {
+  id: string;
+  user_id: string;
+  name: string;
+  phone_number: string | null;
+  tdata_path: string;
+  authkey: string | null;
+  is_active: boolean;
+  is_authorized: boolean;
+  last_activity_at: string | null;
+  last_error: string | null;
+  error_count: number;
+  messages_sent: number;
+  created_at: string;
+}
+
 export const BotsManagement = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [bots, setBots] = useState<TelegramBot[]>([]);
   const [spies, setSpies] = useState<TelegramSpy[]>([]);
+  const [spammers, setSpammers] = useState<TelegramSpammer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
   const [isSpyDialogOpen, setIsSpyDialogOpen] = useState(false);
+  const [isSpammerDialogOpen, setIsSpammerDialogOpen] = useState(false);
+  const [isTestingSpammer, setIsTestingSpammer] = useState<string | null>(null);
   const [selectedBot, setSelectedBot] = useState<TelegramBot | null>(null);
   const [isTesting, setIsTesting] = useState<string | null>(null);
   const [isTestingSpy, setIsTestingSpy] = useState<string | null>(null);
@@ -99,9 +119,17 @@ export const BotsManagement = () => {
     name: "",
   });
 
+  const [spammerFormData, setSpammerFormData] = useState({
+    name: "",
+    phone_number: "",
+    tdata_file: null as File | null,
+    authkey: "",
+  });
+
   useEffect(() => {
     loadBots();
     loadSpies();
+    loadSpammers();
 
     // Real-time updates for telegram bots
     const botsChannel = supabase
@@ -136,9 +164,26 @@ export const BotsManagement = () => {
       )
       .subscribe();
 
+    const spammersChannel = supabase
+      .channel('admin_spammers_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'telegram_spammers',
+        },
+        () => {
+          console.log('Spammer changed, reloading spammers...');
+          loadSpammers();
+        }
+      )
+      .subscribe();
+
     return () => {
       botsChannel.unsubscribe();
       spiesChannel.unsubscribe();
+      spammersChannel.unsubscribe();
     };
   }, []);
 
@@ -188,6 +233,20 @@ export const BotsManagement = () => {
       setSpies(data || []);
     } catch (error: any) {
       console.error("Error loading spies:", error);
+    }
+  };
+
+  const loadSpammers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("telegram_spammers")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setSpammers(data || []);
+    } catch (error: any) {
+      console.error("Error loading spammers:", error);
     }
   };
 
@@ -255,6 +314,91 @@ export const BotsManagement = () => {
         duration: 1500,
       });
     }
+  };
+
+  const handleCreateSpammer = async () => {
+    if (!spammerFormData.name || !spammerFormData.tdata_file) {
+      toast({
+        title: "Помилка",
+        description: "Введіть назву та завантажте TData",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+
+    try {
+      // TODO: Upload TData file to storage
+      // For now, just store the filename
+      const tdataPath = `tdata/${Date.now()}_${spammerFormData.tdata_file.name}`;
+
+      const { error } = await supabase.from("telegram_spammers").insert({
+        name: spammerFormData.name,
+        phone_number: spammerFormData.phone_number || null,
+        tdata_path: tdataPath,
+        authkey: spammerFormData.authkey || null,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Спамера додано",
+        description: "Telegram спамер успішно створено",
+        duration: 2000,
+      });
+
+      setIsSpammerDialogOpen(false);
+      setSpammerFormData({ name: "", phone_number: "", tdata_file: null, authkey: "" });
+      await loadSpammers();
+    } catch (error: any) {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleDeleteSpammer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("telegram_spammers")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Спамера видалено",
+        duration: 1500,
+      });
+
+      await loadSpammers();
+    } catch (error: any) {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+        duration: 1500,
+      });
+    }
+  };
+
+  const handleTestSpammer = async (spammer: TelegramSpammer) => {
+    setIsTestingSpammer(spammer.id);
+    
+    // TODO: Implement spammer test logic
+    toast({
+      title: "Тест спамера",
+      description: "Функція в розробці",
+      duration: 2000,
+    });
+    
+    setTimeout(() => {
+      setIsTestingSpammer(null);
+    }, 2000);
   };
 
   const openAuthDialog = (spy: TelegramSpy) => {
@@ -759,6 +903,123 @@ export const BotsManagement = () => {
         </div>
       )}
 
+      {/* Spammers Section */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Send className="w-6 h-6" />
+              Telegram Спамери
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Telegram акаунти через TData для масової розсилки
+            </p>
+          </div>
+          <Button onClick={() => setIsSpammerDialogOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Додати спамера
+          </Button>
+        </div>
+
+        {/* Desktop - Spammers List */}
+        {!isMobile && (
+          <Card className="p-6 glass-effect border-border/50 mb-8">
+            <div className="space-y-4">
+              {spammers.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  Немає доданих спамерів
+                </div>
+              ) : (
+                spammers.map((spammer) => (
+                  <div key={spammer.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <Send className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold">{spammer.name}</div>
+                        {spammer.phone_number && (
+                          <code className="text-xs text-muted-foreground block">
+                            Phone: {spammer.phone_number}
+                          </code>
+                        )}
+                        <code className="text-xs text-muted-foreground block">
+                          TData: {spammer.tdata_path.slice(0, 30)}...
+                        </code>
+                        <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                          <span>Надіслано: {spammer.messages_sent}</span>
+                          <span>•</span>
+                          <span>
+                            {spammer.last_activity_at
+                              ? new Date(spammer.last_activity_at).toLocaleDateString("uk-UA")
+                              : "Не використовувався"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {spammer.is_authorized ? (
+                        <Badge variant="default" className="bg-green-500">
+                          ✓ Авторизований
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-orange-500">
+                          ⚠️ Потрібна авторизація
+                        </Badge>
+                      )}
+                      <Badge variant={spammer.is_active ? "default" : "outline"}>
+                        {spammer.is_active ? "Активний" : "Неактивний"}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestSpammer(spammer)}
+                        disabled={isTestingSpammer === spammer.id}
+                      >
+                        {isTestingSpammer === spammer.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Zap className="w-4 h-4" />
+                        )}
+                        <span className="ml-1">Тест</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteSpammer(spammer.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Mobile - Spammers Card View */}
+        {isMobile && (
+          <div className="space-y-3 mb-8">
+            {spammers.length === 0 ? (
+              <Card className="p-6 text-center text-muted-foreground">
+                Немає доданих спамерів
+              </Card>
+            ) : (
+              spammers.map((spammer) => (
+                <SpammerMobileCard
+                  key={spammer.id}
+                  spammer={spammer}
+                  onDelete={handleDeleteSpammer}
+                  onTest={handleTestSpammer}
+                  isTesting={isTestingSpammer === spammer.id}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Spies Section */}
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
@@ -1230,6 +1491,87 @@ export const BotsManagement = () => {
               Скасувати
             </Button>
             <Button onClick={handleCreateSpy}>Створити</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Spammer Dialog */}
+      <Dialog open={isSpammerDialogOpen} onOpenChange={setIsSpammerDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Додати спамера</DialogTitle>
+            <DialogDescription>
+              Завантажте TData папку з Telegram акаунтом
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="spammer_name">Назва *</Label>
+              <Input
+                id="spammer_name"
+                value={spammerFormData.name}
+                onChange={(e) => setSpammerFormData({ ...spammerFormData, name: e.target.value })}
+                placeholder="Мій спамер"
+                className="bg-background/60 border-border/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="spammer_phone">Номер телефону (опціонально)</Label>
+              <Input
+                id="spammer_phone"
+                value={spammerFormData.phone_number}
+                onChange={(e) => setSpammerFormData({ ...spammerFormData, phone_number: e.target.value })}
+                placeholder="+380123456789"
+                className="bg-background/60 border-border/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tdata_file">TData файл *</Label>
+              <Input
+                id="tdata_file"
+                type="file"
+                accept=".zip,.rar,.7z"
+                onChange={(e) => setSpammerFormData({ 
+                  ...spammerFormData, 
+                  tdata_file: e.target.files?.[0] || null 
+                })}
+                className="bg-background/60 border-border/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Архів з папкою tdata від Telegram Desktop
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="authkey">AuthKey (опціонально)</Label>
+              <Input
+                id="authkey"
+                value={spammerFormData.authkey}
+                onChange={(e) => setSpammerFormData({ ...spammerFormData, authkey: e.target.value })}
+                placeholder="Ключ авторизації"
+                className="bg-background/60 border-border/50 font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Додатковий ключ для авторизації (якщо потрібен)
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <p className="text-sm text-foreground font-medium flex items-center gap-2">
+                <Send className="w-4 h-4" />
+                Як отримати TData?
+              </p>
+              <ol className="text-xs text-muted-foreground mt-2 space-y-1 list-decimal list-inside">
+                <li>Відкрийте Telegram Desktop</li>
+                <li>Знайдіть папку tdata (AppData\Roaming\Telegram Desktop\tdata)</li>
+                <li>Заархівуйте папку tdata</li>
+                <li>Завантажте архів сюди</li>
+              </ol>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSpammerDialogOpen(false)}>
+              Скасувати
+            </Button>
+            <Button onClick={handleCreateSpammer}>Створити</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
