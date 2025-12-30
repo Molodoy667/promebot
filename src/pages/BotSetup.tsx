@@ -1273,38 +1273,82 @@ const BotSetup = () => {
 
       // Determine input type and extract channel identifier
       let channelId = input;
-      let isPrivateChannel = false;
+      let isPrivateInvite = false;
+      let inviteHash = null;
       
       // Check if it's a chat_id (numeric)
       if (/^-?\d+$/.test(input)) {
-        isPrivateChannel = true;
         channelId = input;
       }
-      // Check if it's a link
-      else if (input.includes('t.me/') || input.includes('telegram.me/')) {
-        // Перевіряємо чи це invite-посилання (приватний канал)
-        if (input.includes('t.me/+') || input.includes('t.me/joinchat/') || input.includes('telegram.me/+')) {
-          // Це invite-посилання - воно працюватиме для приватних каналів
-          const inviteMatch = input.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(?:\+|joinchat\/)([A-Za-z0-9_-]+)/);
-          if (inviteMatch) {
-            // Для перевірки використовуємо повне посилання
-            channelId = input.includes('https://') ? input : `https://t.me/+${inviteMatch[1]}`;
-          }
+      // Check if it's an invite link (private channel)
+      else if (input.includes('t.me/+') || input.includes('t.me/joinchat/') || input.includes('telegram.me/+')) {
+        isPrivateInvite = true;
+        const inviteMatch = input.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(?:\+|joinchat\/)([A-Za-z0-9_-]+)/);
+        if (inviteMatch) {
+          inviteHash = inviteMatch[1];
+          channelId = `invite_${inviteHash}`; // Тимчасовий ID для збереження
         } else {
-          // Звичайне публічне посилання
-          const match = input.match(/(?:t\.me|telegram\.me)\/([^/?]+)/);
-          if (match) {
-            channelId = `@${match[1].replace('@', '')}`;
-          }
+          toast({
+            title: "Помилка",
+            description: "Невірний формат invite-посилання",
+            variant: "destructive",
+            duration: 3000,
+          });
+          setIsCheckingChannel(false);
+          return;
         }
       }
-      // Check if it starts with @
+      // Regular public channel link
+      else if (input.includes('t.me/') || input.includes('telegram.me/')) {
+        const match = input.match(/(?:t\.me|telegram\.me)\/([^/?]+)/);
+        if (match) {
+          channelId = `@${match[1].replace('@', '')}`;
+        }
+      }
+      // Username with @
       else if (input.startsWith('@')) {
         channelId = input;
       }
-      // Otherwise assume it's a username
+      // Plain username
       else {
         channelId = `@${input}`;
+      }
+      
+      // Для приватних invite-посилань пропускаємо перевірку через API
+      // бо без приєднання до каналу getChat не працює
+      if (isPrivateInvite) {
+        setChannelVerificationStatus({ canRead: true, isPublic: false });
+        
+        toast({
+          title: "Приватний канал",
+          description: "Invite-посилання додано. Переконайтеся що бот має доступ до цього каналу.",
+          duration: 3000,
+        });
+        
+        if (botService) {
+          const { error } = await supabase
+            .from("source_channels")
+            .insert({
+              bot_service_id: botService.id,
+              channel_username: channelId,
+              is_active: true,
+            });
+
+          if (error) throw error;
+          
+          await loadSourceChannels(botService.id);
+        } else {
+          setPendingSourceChannels(prev => [...prev, { 
+            username: channelId,
+            title: `Приватний канал (${inviteHash?.substring(0, 8)}...)`,
+            photo_url: undefined
+          }]);
+        }
+        
+        setNewChannelUsername("");
+        setChannelVerificationStatus({ canRead: null, isPublic: null });
+        setIsCheckingChannel(false);
+        return;
       }
 
       await new Promise(resolve => setTimeout(resolve, 800));
