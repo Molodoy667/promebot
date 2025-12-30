@@ -1314,41 +1314,77 @@ const BotSetup = () => {
         channelId = `@${input}`;
       }
       
-      // Для приватних invite-посилань пропускаємо перевірку через API
-      // бо без приєднання до каналу getChat не працює
+      // Для приватних invite-посилань використовуємо verify-source-channel
       if (isPrivateInvite) {
-        setChannelVerificationStatus({ canRead: true, isPublic: false });
+        setChannelVerificationStatus({ canRead: null, isPublic: false });
         
-        toast({
-          title: "Приватний канал",
-          description: "Invite-посилання додано. Переконайтеся що бот має доступ до цього каналу.",
-          duration: 3000,
-        });
-        
-        if (botService) {
-          const { error } = await supabase
-            .from("source_channels")
-            .insert({
-              bot_service_id: botService.id,
-              channel_username: channelId,
-              is_active: true,
-            });
+        try {
+          // Викликаємо Edge Function для верифікації через спамера
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-source-channel', {
+            body: {
+              channelInput: input,
+              channelIdentifier: channelId,
+              isPrivate: true,
+              inviteHash: inviteHash,
+              botToken: selectedBot.bot_token,
+              serviceId: botService?.id || null,
+            }
+          });
 
-          if (error) throw error;
+          if (verifyError) throw new Error(verifyError.message);
+          if (!verifyData.success) throw new Error(verifyData.error);
+
+          const channelInfo = verifyData.channelInfo;
+          const channelTitle = channelInfo.title || `Приватний канал (${inviteHash?.substring(0, 8)}...)`;
           
-          await loadSourceChannels(botService.id);
-        } else {
-          setPendingSourceChannels(prev => [...prev, { 
-            username: channelId,
-            title: `Приватний канал (${inviteHash?.substring(0, 8)}...)`,
-            photo_url: undefined
-          }]);
+          setChannelVerificationStatus({ canRead: true, isPublic: false });
+          
+          toast({
+            title: "Приватний канал перевірено",
+            description: `Канал "${channelTitle}" буде використовувати спамера для доступу`,
+            duration: 3000,
+          });
+          
+          if (botService) {
+            const { error } = await supabase
+              .from("source_channels")
+              .insert({
+                bot_service_id: botService.id,
+                channel_username: channelId,
+                is_active: true,
+                is_private: true,
+                invite_hash: inviteHash,
+                spammer_id: channelInfo.spammerId || null,
+              });
+
+            if (error) throw error;
+            
+            await loadSourceChannels(botService.id);
+          } else {
+            setPendingSourceChannels(prev => [...prev, { 
+              username: channelId,
+              title: channelTitle,
+              photo_url: undefined
+            }]);
+          }
+          
+          setNewChannelUsername("");
+          setChannelVerificationStatus({ canRead: null, isPublic: null });
+          setIsCheckingChannel(false);
+          return;
+          
+        } catch (error: any) {
+          console.error("Error verifying private channel:", error);
+          toast({
+            title: "Помилка перевірки",
+            description: error.message || "Не вдалося перевірити приватний канал. Перевірте налаштування спамера в адмінці.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          setChannelVerificationStatus({ canRead: null, isPublic: null });
+          setIsCheckingChannel(false);
+          return;
         }
-        
-        setNewChannelUsername("");
-        setChannelVerificationStatus({ canRead: null, isPublic: null });
-        setIsCheckingChannel(false);
-        return;
       }
 
       await new Promise(resolve => setTimeout(resolve, 800));
