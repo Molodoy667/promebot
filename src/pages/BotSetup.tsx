@@ -120,7 +120,7 @@ const BotSetup = () => {
   
   const [botService, setBotService] = useState<BotService | null>(null);
   const [sourceChannels, setSourceChannels] = useState<SourceChannel[]>([]);
-  const [pendingSourceChannels, setPendingSourceChannels] = useState<{username: string, title?: string}[]>([]); // Локальні джерела до збереження
+  const [pendingSourceChannels, setPendingSourceChannels] = useState<{username: string, title?: string, photo_url?: string}[]>([]); // Локальні джерела до збереження
   const [newChannelUsername, setNewChannelUsername] = useState("");
   const [newChannelType, setNewChannelType] = useState<"public" | "private">("public");
   const [inviteLink, setInviteLink] = useState("");
@@ -656,7 +656,7 @@ const BotSetup = () => {
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
         toast({
           title: "Приватний канал",
-          description: "Для приватних каналів використовуйте посилання-запрошення (наприклад: t.me/+invite). Спамер з адмінки автоматично підключиться.",
+          description: "Для приватних каналів використовуйте посилання-запрошення (наприклад: t.me/+invite).",
           variant: "destructive",
           duration: 8000,
         });
@@ -1290,7 +1290,7 @@ const BotSetup = () => {
           if (channelId.startsWith('+') || input.includes('joinchat')) {
             toast({
               title: "Приватний канал виявлено",
-              description: "Для приватних каналів потрібне посилання-запрошення (t.me/+invite). Спамер підключиться автоматично.",
+              description: "Для приватних каналів потрібне посилання-запрошення (t.me/+invite).",
               variant: "destructive",
               duration: 8000,
             });
@@ -1362,6 +1362,9 @@ const BotSetup = () => {
 
       // Додаємо канал локально (не в БД)
       const channelTitle = checkData.result.title || channelId;
+      const photoUrl = checkData.result.photo?.small_file_id 
+        ? `https://api.telegram.org/file/bot${selectedBot.bot_token}/${checkData.result.photo.small_file_id}`
+        : undefined;
       
       if (botService) {
         // Якщо bot_service вже існує, додаємо в БД
@@ -1378,7 +1381,11 @@ const BotSetup = () => {
         await loadSourceChannels(botService.id);
       } else {
         // Додаємо в локальний список (до збереження)
-        setPendingSourceChannels(prev => [...prev, { username: channelId, title: channelTitle }]);
+        setPendingSourceChannels(prev => [...prev, { 
+          username: channelId, 
+          title: channelTitle,
+          photo_url: photoUrl 
+        }]);
       }
 
       setNewChannelUsername("");
@@ -1820,13 +1827,8 @@ const BotSetup = () => {
                       </div>
                       <div className="flex gap-2">
                         <span className="text-blue-500">✓</span>
-                        <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
+                        <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (invite-посилання)</span>
                       </div>
-                    </div>
-                    <div className="pt-2 border-t border-blue-500/20 mt-2">
-                      <p className="text-xs text-muted-foreground">
-                        💡 Публічні канали підключаються ботом, приватні — через спамера
-                      </p>
                     </div>
                   </div>
                 </AlertDescription>
@@ -2011,16 +2013,35 @@ const BotSetup = () => {
               {/* Pending джерела (локальні, не збережені) */}
               {pendingSourceChannels.map((channel, index) => (
                 <Card key={`pending-${index}`} className="p-4 bg-muted/30 border-dashed">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium">{channel.title || channel.username}</div>
-                      <div className="text-sm text-muted-foreground">Очікує збереження</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      {channel.photo_url ? (
+                        <img 
+                          src={channel.photo_url} 
+                          alt={channel.title || channel.username}
+                          className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-semibold text-primary">
+                            {(channel.title || channel.username).charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{channel.title || channel.username}</div>
+                      <div className="text-sm text-muted-foreground truncate">{channel.username}</div>
+                      <div className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Очікує збереження</div>
                     </div>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => handleDeletePendingChannel(channel.username)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Видалити

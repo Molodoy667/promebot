@@ -270,14 +270,9 @@ export const SourceChannelsManager = ({
                     </div>
                     <div className="flex gap-2">
                       <span className="text-blue-500">✓</span>
-                      <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (потрібен спамер в адмінці)</span>
+                      <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (invite-посилання)</span>
                     </div>
                   </div>
-                </div>
-                <div className="pt-2 border-t border-blue-500/20">
-                  <p className="text-xs text-muted-foreground">
-                    💡 Публічні канали підключаються ботом, приватні — через спамера
-                  </p>
                 </div>
               </AlertDescription>
             </Alert>
