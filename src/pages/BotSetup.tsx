@@ -1362,9 +1362,22 @@ const BotSetup = () => {
 
       // Додаємо канал локально (не в БД)
       const channelTitle = checkData.result.title || channelId;
-      const photoUrl = checkData.result.photo?.small_file_id 
-        ? `https://api.telegram.org/file/bot${selectedBot.bot_token}/${checkData.result.photo.small_file_id}`
-        : undefined;
+      
+      // Отримуємо URL аватарки
+      let photoUrl: string | undefined = undefined;
+      if (checkData.result.photo?.small_file_id) {
+        try {
+          const fileResponse = await fetch(
+            `https://api.telegram.org/bot${selectedBot.bot_token}/getFile?file_id=${checkData.result.photo.small_file_id}`
+          );
+          const fileData = await fileResponse.json();
+          if (fileData.ok && fileData.result.file_path) {
+            photoUrl = `https://api.telegram.org/file/bot${selectedBot.bot_token}/${fileData.result.file_path}`;
+          }
+        } catch (error) {
+          console.log("Could not fetch photo:", error);
+        }
+      }
       
       if (botService) {
         // Якщо bot_service вже існує, додаємо в БД
