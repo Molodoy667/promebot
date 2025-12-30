@@ -277,6 +277,12 @@ export default function QueueManagement() {
               <div>
                 <h1 className="text-2xl font-bold">Черга публікації</h1>
                 <p className="text-muted-foreground">{channelName}</p>
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>
+                    Автогенерація: <strong className="text-foreground">кожні 10 хвилин</strong> до 10 постів
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
