@@ -655,7 +655,7 @@ const BotSetup = () => {
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
         toast({
           title: "Приватний канал",
-          description: "Для приватних каналів використовуйте числовий chat_id (наприклад: -1001234567890), а не посилання-запрошення. Отримайте chat_id через @userinfobot або @JsonDumpBot",
+          description: "Для приватних каналів використовуйте посилання-запрошення (наприклад: t.me/+invite). Спамер з адмінки автоматично підключиться.",
           variant: "destructive",
           duration: 8000,
         });
@@ -1271,7 +1271,7 @@ const BotSetup = () => {
           if (channelId.startsWith('+') || input.includes('joinchat')) {
             toast({
               title: "Приватний канал виявлено",
-              description: "Для приватних каналів потрібен числовий chat_id. Будь ласка, використайте @userinfobot або @JsonDumpBot для отримання chat_id.",
+              description: "Для приватних каналів потрібне посилання-запрошення (t.me/+invite). Спамер підключиться автоматично.",
               variant: "destructive",
               duration: 8000,
             });
@@ -1584,7 +1584,7 @@ const BotSetup = () => {
                     <p className="font-semibold text-blue-700 dark:text-blue-300">Як підключити канал:</p>
                     <div className="space-y-1 text-blue-600 dark:text-blue-400">
                       <p className="break-words"><strong>Публічні канали:</strong> вкажіть @username або посилання https://t.me/username</p>
-                      <p className="break-words"><strong>Приватні канали:</strong> вам потрібен числовий chat_id (формат: -1001234567890)</p>
+                      <p className="break-words"><strong>Приватні канали:</strong> вкажіть посилання-запрошення (формат: t.me/+invite)</p>
                     </div>
                   </div>
                 </AlertDescription>
@@ -1672,7 +1672,7 @@ const BotSetup = () => {
                   onChange={(e) => setTargetChannel(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Для публічних: @username або t.me/username • Для приватних: числовий chat_id (наприклад: -1001234567890)
+                  Для публічних: @username або t.me/username • Для приватних: t.me/+invite
                 </p>
               </div>
               
@@ -1785,7 +1785,7 @@ const BotSetup = () => {
                     <div>
                       <p className="font-semibold text-amber-700 dark:text-amber-300 mb-1">Приватний канал</p>
                       <p className="text-amber-600 dark:text-amber-400 text-xs">
-                        Вкажіть chat-id каналу. Додайте бота до каналу щоб він міг парсити публікації.
+                        Вкажіть посилання-запрошення (t.me/+invite). Спамер підключиться автоматично.
                       </p>
                     </div>
                   </div>
@@ -1898,7 +1898,7 @@ const BotSetup = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Для публічних: @username або t.me/username • Для приватних: числовий chat_id
+                  Для публічних: @username або t.me/username • Для приватних: t.me/+invite
                 </p>
               </div>
 
