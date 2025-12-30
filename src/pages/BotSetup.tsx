@@ -2316,29 +2316,29 @@ const BotSetup = () => {
                 </Alert>
               )}
 
-              {sourceChannels.length > 0 ? (
-                <Button 
-                  onClick={handleSaveBotService} 
-                  disabled={isSaving || !botVerified}
-                  className="w-full h-12 text-base font-semibold"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Збереження...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5 mr-2" />
-                      Зберегти налаштування
-                    </>
-                  )}
-                </Button>
-              ) : (
+              <Button 
+                onClick={handleSaveBotService} 
+                disabled={isSaving || !botVerified}
+                className="w-full h-12 text-base font-semibold"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Збереження...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 mr-2" />
+                    Зберегти налаштування
+                  </>
+                )}
+              </Button>
+              
+              {sourceChannels.length === 0 && !botService && (
                 <Alert>
                   <Info className="w-4 h-4" />
                   <AlertDescription>
-                    Додайте хоча б 1 канал-джерело для збереження налаштувань
+                    💡 Після збереження додайте канали-джерела для копіювання контенту
                   </AlertDescription>
                 </Alert>
               )}
