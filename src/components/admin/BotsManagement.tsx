@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Search, Plus, Edit, Trash2, Check, X, Bot, TestTube2, BarChart3, Loader2, Sparkles, Copy, Users, Radio, FileText, Eye, Zap, Lock } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Check, X, Bot, TestTube2, BarChart3, Loader2, Sparkles, Copy, Users, Radio, FileText, Eye, Zap, Lock, Send } from "lucide-react";
 import { UserbotAuthDialog } from "@/components/UserbotAuthDialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
