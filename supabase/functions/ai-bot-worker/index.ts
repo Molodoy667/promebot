@@ -478,25 +478,6 @@ Deno.serve(async (req) => {
           .eq('id', service.id);
 
         console.log(`Successfully published post ${postToPublish.id} (message_id: ${messageId}) for service ${service.id}`);
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                },
-                body: JSON.stringify({
-                  serviceId: service.id,
-                  count: 1,
-                }),
-              }
-            );
-
-            if (generateResponse.ok) {
-              console.log(`Successfully generated new post for service ${service.id}`);
-            } else {
-              const errorText = await generateResponse.text();
-              console.error(`Failed to generate new post for service ${service.id}:`, errorText);
-            }
-          } catch (generateError) {
-            console.error(`Error generating new post for service ${service.id}:`, generateError);
-          }
-        }
 
         results.push({
           serviceId: service.id,
