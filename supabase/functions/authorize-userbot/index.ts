@@ -27,7 +27,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { spyId, phoneNumber, phoneCode, phoneCodeHash, action } = await req.json();
+    const { spyId, phoneNumber, phoneCode, phoneCodeHash, sessionString, action } = await req.json();
 
     if (!spyId) {
       throw new Error('spyId is required');
@@ -102,6 +102,7 @@ serve(async (req) => {
           phoneNumber: phoneNumber,
           phoneCode: phoneCode,
           phoneCodeHash: phoneCodeHash,
+          sessionString: sessionString, // Pass session from send_code
         }),
       });
 

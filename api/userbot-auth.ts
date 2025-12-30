@@ -45,11 +45,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         phoneNumber
       );
 
+      // Save session to pass to sign_in
+      const tempSession = client.session.save() as unknown as string;
       await client.disconnect();
 
       return res.status(200).json({
         success: true,
         phoneCodeHash: result.phoneCodeHash,
+        sessionString: tempSession, // Return session to frontend
       });
     }
 

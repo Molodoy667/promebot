@@ -31,6 +31,7 @@ export const UserbotAuthDialog = ({
   const [phone, setPhone] = useState(phoneNumber || '');
   const [code, setCode] = useState('');
   const [phoneCodeHash, setPhoneCodeHash] = useState('');
+  const [sessionString, setSessionString] = useState('');
 
   const handleSendCode = async () => {
     if (!phone) {
@@ -55,6 +56,7 @@ export const UserbotAuthDialog = ({
       if (error) throw error;
 
       setPhoneCodeHash(data.phoneCodeHash);
+      setSessionString(data.sessionString || ''); // Save session from send_code
       setStep('enter_code');
 
       toast({
@@ -94,6 +96,7 @@ export const UserbotAuthDialog = ({
           phoneNumber: phone,
           phoneCode: code,
           phoneCodeHash: phoneCodeHash,
+          sessionString: sessionString, // Pass session from send_code
           action: 'sign_in'
         }
       });
