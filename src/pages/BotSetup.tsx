@@ -1332,16 +1332,17 @@ const BotSetup = () => {
           if (!verifyData.success) throw new Error(verifyData.error);
 
           // Отримуємо реальну інформацію про канал
+          const channelInfo = verifyData.channelInfo;
           let channelTitle = `🔒 ${input.replace('https://', '').replace('http://', '')}`;
           let photoUrl: string | undefined = undefined;
           
           // Якщо Edge Function повернула реальні дані
-          if (channelInfo.title && channelInfo.title !== 'Приватний канал') {
+          if (channelInfo && channelInfo.title && channelInfo.title !== '🔒 Приватний канал') {
             channelTitle = channelInfo.title;
           }
           
           // Якщо немає реальної інформації, пробуємо отримати через синхронізацію
-          if (channelInfo.title === 'Приватний канал') {
+          if (!channelInfo || channelInfo.title === '🔒 Приватний канал') {
             toast({
               title: "Отримую інформацію...",
               description: "Запитую дані про канал через спамера",
