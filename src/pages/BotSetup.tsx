@@ -2241,25 +2241,41 @@ const BotSetup = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {channel.is_active ? "Активний" : "Неактивний"}
-                        </span>
-                        <Switch 
-                          checked={channel.is_active} 
-                          onCheckedChange={() => handleToggleChannelStatus(channel.id, channel.is_active)} 
-                        />
+                    <div className="flex flex-col gap-2 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {channel.is_active ? "Активний" : "Неактивний"}
+                          </span>
+                          <Switch 
+                            checked={channel.is_active} 
+                            onCheckedChange={() => handleToggleChannelStatus(channel.id, channel.is_active)} 
+                          />
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDeleteSourceChannel(channel.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Видалити
+                        </Button>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleDeleteSourceChannel(channel.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Видалити
-                      </Button>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`px-2 py-1 rounded-full font-medium ${
+                          channel.is_private 
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                            : 'bg-green-500/10 text-green-600 dark:text-green-400'
+                        }`}>
+                          {channel.is_private ? '🔒 Приватний' : '🌐 Публічний'}
+                        </span>
+                        {channel.spy_id && (
+                          <span className="px-2 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">
+                            👁️ Userbot
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
