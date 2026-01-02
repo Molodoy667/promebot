@@ -1566,9 +1566,9 @@ const BotSetup = () => {
       setChannelVerificationStatus({ canRead: null, isPublic: null });
       
       toast({
-        title: "Канал додано",
-        description: `Канал "${channelTitle}" додано до списку джерел`,
-        duration: 2000,
+        title: "✅ Джерельний канал успішно додано!",
+        description: channelTitle,
+        duration: 3000,
       });
     } catch (error: any) {
       console.error("Error adding source channel:", error);
