@@ -48,30 +48,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.connect();
     console.log('[Spy Get Channel Info] Client connected');
 
-    // Resolve channel entity - try to join if it's an invite link
+    // Resolve channel entity
     let entity;
     try {
-      // If it's an invite link (+hash), try to join first
+      // If it's an invite link (+hash), check if already joined first
       if (channel_identifier.startsWith('+')) {
-        console.log('[Spy Get Channel Info] Invite link detected, joining channel...');
+        console.log('[Spy Get Channel Info] Invite link detected, checking if already joined...');
+        
+        const hash = channel_identifier.substring(1); // Remove '+'
+        let alreadyJoined = false;
+        
+        // Try to check invite first
         try {
-          const result: any = await client.invoke(
-            new Api.messages.ImportChatInvite({
-              hash: channel_identifier.substring(1), // Remove '+'
+          const checkInvite: any = await client.invoke(
+            new Api.messages.CheckChatInvite({
+              hash: hash,
             })
           );
-          console.log('[Spy Get Channel Info] Successfully joined via invite');
           
-          // Get channel from result
-          if (result.chats && result.chats.length > 0) {
-            entity = result.chats[0];
+          // If chat is returned, we're already a member
+          if (checkInvite.chat) {
+            console.log('[Spy Get Channel Info] Already joined to this channel');
+            entity = checkInvite.chat;
+            alreadyJoined = true;
           }
-        } catch (joinErr: any) {
-          // If already joined, ignore error and try to get entity
-          if (joinErr.message.includes('INVITE_REQUEST_SENT') || joinErr.message.includes('USER_ALREADY_PARTICIPANT')) {
-            console.log('[Spy Get Channel Info] Already joined, getting entity...');
-          } else {
-            throw joinErr;
+        } catch (checkErr: any) {
+          console.log('[Spy Get Channel Info] CheckChatInvite error (will try to join):', checkErr.message);
+        }
+        
+        // If not already joined, join now
+        if (!alreadyJoined) {
+          console.log('[Spy Get Channel Info] Not joined yet, joining channel...');
+          try {
+            const result: any = await client.invoke(
+              new Api.messages.ImportChatInvite({
+                hash: hash,
+              })
+            );
+            console.log('[Spy Get Channel Info] Successfully joined via invite');
+            
+            // Get channel from result
+            if (result.chats && result.chats.length > 0) {
+              entity = result.chats[0];
+            }
+          } catch (joinErr: any) {
+            // If already joined (race condition), ignore error
+            if (joinErr.message.includes('USER_ALREADY_PARTICIPANT')) {
+              console.log('[Spy Get Channel Info] Already participant (race condition)');
+            } else if (joinErr.message.includes('INVITE_REQUEST_SENT')) {
+              await client.disconnect();
+              return res.status(400).json({
+                success: false,
+                error: 'Заявка на вступ відправлена. Дочекайтесь підтвердження адміністратора каналу.'
+              });
+            } else {
+              throw joinErr;
+            }
           }
         }
       }
