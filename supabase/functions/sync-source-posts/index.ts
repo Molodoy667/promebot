@@ -60,10 +60,10 @@ serve(async (req) => {
         throw new Error('No spy (userbot) assigned to private channel');
       }
 
-      // Get spy info
+      // Get spy info with API credentials
       const { data: spy } = await supabaseClient
         .from('telegram_spies')
-        .select('*')
+        .select('id, session_string, api_id, api_hash')
         .eq('id', sourceChannel.spy_id)
         .single();
 
@@ -79,6 +79,8 @@ serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_string: spy.session_string,
+          api_id: spy.api_id,
+          api_hash: spy.api_hash,
           channel_identifier: sourceChannel.invite_hash 
             ? `+${sourceChannel.invite_hash}` 
             : sourceChannel.channel_username,

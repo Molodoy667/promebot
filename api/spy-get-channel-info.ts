@@ -7,6 +7,8 @@ export const config = {
 
 interface RequestBody {
   session_string: string;
+  api_id: string;
+  api_hash: string;
   channel_identifier: string; // @username, t.me/channel, +hash, -100123456789
 }
 
@@ -16,23 +18,23 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { session_string, channel_identifier } = req.body as RequestBody;
+    const { session_string, api_id, api_hash, channel_identifier } = req.body as RequestBody;
 
-    if (!session_string || !channel_identifier) {
+    if (!session_string || !channel_identifier || !api_id || !api_hash) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing session_string or channel_identifier' 
+        error: 'Missing required parameters: session_string, api_id, api_hash, channel_identifier' 
       });
     }
 
     console.log('[Spy Get Channel Info] Connecting with session...');
     console.log('[Spy Get Channel Info] Channel identifier:', channel_identifier);
 
-    // Initialize Telegram client
+    // Initialize Telegram client with provided API credentials
     const client = new TelegramClient(
       new StringSession(session_string),
-      parseInt(process.env.TELEGRAM_API_ID || ''),
-      process.env.TELEGRAM_API_HASH || '',
+      parseInt(api_id),
+      api_hash,
       {
         connectionRetries: 5,
       }

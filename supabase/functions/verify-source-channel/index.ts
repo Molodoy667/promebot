@@ -59,10 +59,10 @@ serve(async (req) => {
       // Private channel - use spy (userbot) via MTProto
       console.log('[Verify Source Channel] Private channel detected, using spy (userbot)...');
 
-      // Get active spy
+      // Get active spy with API credentials
       const { data: spy, error: spyError } = await supabaseClient
         .from('telegram_spies')
-        .select('*')
+        .select('id, session_string, api_id, api_hash')
         .eq('is_active', true)
         .eq('is_authorized', true)
         .limit(1)
@@ -89,6 +89,8 @@ serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_string: spy.session_string,
+          api_id: spy.api_id,
+          api_hash: spy.api_hash,
           channel_identifier: inviteHashValue ? `+${inviteHashValue}` : channelInputValue,
         })
       });
