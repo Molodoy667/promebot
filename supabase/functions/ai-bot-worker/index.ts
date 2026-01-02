@@ -120,66 +120,51 @@ Deno.serve(async (req) => {
         const currentScheduled = scheduledCount || 0;
         const maxScheduled = 10;
 
-        console.log(`Service ${service.id} - ${currentScheduled}/${maxScheduled} scheduled posts`);
+        console.log(`Service ${service.id} - ${currentScheduled}/${maxScheduled} scheduled posts in queue`);
 
-        // Check last generation time to enforce 10 minute interval
-        const { data: lastGeneratedPost } = await supabase
-          .from('ai_generated_posts')
-          .select('created_at')
-          .eq('ai_bot_service_id', service.id)
-          .eq('status', 'scheduled')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const canGenerate = currentScheduled < maxScheduled;
-        let shouldGenerate = false;
-
-        if (canGenerate) {
-          if (!lastGeneratedPost) {
-            // No posts yet - generate first one
-            shouldGenerate = true;
-            console.log(`Service ${service.id}: no posts yet, generating first post`);
-          } else {
-            // Check if 10 minutes passed since last generation
-            const lastGeneratedAt = new Date(lastGeneratedPost.created_at);
-            const minutesSinceLastGeneration = (now.getTime() - lastGeneratedAt.getTime()) / (1000 * 60);
-            
-            if (minutesSinceLastGeneration >= 10) {
-              shouldGenerate = true;
-              console.log(`Service ${service.id}: 10 minutes passed (${Math.round(minutesSinceLastGeneration)} min), generating 1 post`);
-            } else {
-              console.log(`Service ${service.id}: waiting for generation interval (${Math.round(minutesSinceLastGeneration)}/10 min)`);
-            }
+        // Check if generation is already in progress using lock field
+        if (service.last_generation_started_at) {
+          const timeSinceLastGen = (Date.now() - new Date(service.last_generation_started_at).getTime()) / 1000;
+          if (timeSinceLastGen < 300) { // Less than 5 minutes
+            console.log(`Service ${service.id}: generation in progress (${Math.round(timeSinceLastGen)}s ago), skipping`);
+            continue;
           }
         }
 
-        if (shouldGenerate) {
-          try {
-            const generateResponse = await fetch(
-              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                },
-                body: JSON.stringify({
-                  serviceId: service.id,
-                  count: 1, // Generate only 1 post at a time
-                }),
-              }
-            );
-
-            if (generateResponse.ok) {
-              console.log(`Successfully generated 1 post for service ${service.id}`);
-            } else {
-              const errorText = await generateResponse.text();
-              console.error(`Failed to generate post for service ${service.id}:`, errorText);
+        // Generate posts to fill queue up to 10
+        if (currentScheduled < maxScheduled) {
+          const postsToGenerate = maxScheduled - currentScheduled;
+          console.log(`Service ${service.id}: queue below 10, generating ${postsToGenerate} posts`);
+          
+          // Set lock before starting generation
+          await supabase
+            .from('ai_bot_services')
+            .update({ last_generation_started_at: new Date().toISOString() })
+            .eq('id', service.id);
+          
+          console.log(`Service ${service.id}: generation lock set`);
+          
+          // Fire and forget - don't wait for response (generation takes >60sec)
+          fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              },
+              body: JSON.stringify({
+                serviceId: service.id,
+                count: postsToGenerate,
+              }),
             }
-          } catch (generateError) {
-            console.error(`Error generating post for service ${service.id}:`, generateError);
-          }
+          ).catch(err => {
+            console.error(`Async generation error for service ${service.id}:`, err.message);
+          });
+          
+          console.log(`Generation triggered for ${postsToGenerate} posts (async)`);
+        } else {
+          console.log(`Service ${service.id}: queue is full (${currentScheduled} posts)`);
         }
 
         // Get oldest scheduled post
@@ -201,16 +186,9 @@ Deno.serve(async (req) => {
         const postCreatedAt = new Date(postToCheck.created_at);
         const minutesSinceCreation = (now.getTime() - postCreatedAt.getTime()) / (1000 * 60);
         
-        // First post: publish after 5 minutes, others: by interval from last publish
-        if (!serviceData?.last_published_at) {
-          // First post - check if 5 minutes passed since creation
-          if (minutesSinceCreation < 5) {
-            console.log(`Service ${service.id} - first post not ready yet (${Math.round(minutesSinceCreation)}/5 min)`);
-            continue;
-          }
-          console.log(`Service ${service.id} - publishing first post after 5 minutes`);
-        } else {
-          // Subsequent posts - check interval from last publish
+        // Publish immediately after generation (no delay)
+        if (serviceData?.last_published_at) {
+          // Check interval from last publish
           const lastPublishTime = new Date(serviceData.last_published_at);
           const minutesSinceLastPublish = (now.getTime() - lastPublishTime.getTime()) / (1000 * 60);
           
@@ -220,6 +198,8 @@ Deno.serve(async (req) => {
           }
           
           console.log(`Service ${service.id} - interval reached (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`);
+        } else {
+          console.log(`Service ${service.id} - publishing first post immediately`);
         }
 
         // Get next scheduled post

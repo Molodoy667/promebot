@@ -794,17 +794,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
     try {
       setIsSaving(true);
 
-      // Clear scheduled posts when content settings changed
-      if (contentSettingsChanged && service?.id) {
-        await supabase
-          .from("ai_generated_posts")
-          .delete()
-          .eq("ai_bot_service_id", service.id)
-          .eq("status", "scheduled");
-        
-        setGeneratedPosts([]);
-      }
-
       // Stop service if running and ANY settings changed
       if (anySettingsChanged && service?.is_running) {
         await supabase
@@ -813,6 +802,37 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
           .eq("id", service.id);
 
         setService({ ...service, is_running: false });
+
+        // Check notification settings before creating notification
+        const { data: settings } = await supabase
+          .from('notification_settings')
+          .select('bot_status_enabled')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        const isEnabled = settings?.bot_status_enabled ?? true;
+
+        if (isEnabled) {
+          // Create notification about bot stop
+          await supabase.from('notifications').insert({
+            user_id: userId,
+            type: 'bot_stopped',
+            title: 'AI бот зупинено',
+            message: `AI бот для каналу "${targetChannel}" був автоматично зупинений через зміну налаштувань`,
+            link: '/my-channels'
+          });
+        }
+      }
+
+      // Clear scheduled posts when ANY settings changed
+      if (anySettingsChanged && service?.id) {
+        await supabase
+          .from("ai_generated_posts")
+          .delete()
+          .eq("ai_bot_service_id", service.id)
+          .eq("status", "scheduled");
+        
+        setGeneratedPosts([]);
       }
 
       let serviceId = service?.id;
@@ -882,6 +902,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
           use_custom_prompt: useCustomPrompt,
           custom_prompt: useCustomPrompt ? customPrompt : null,
           generate_tags: generateTags,
+        }, {
+          onConflict: 'ai_bot_service_id'
         });
 
       if (settingsError) throw settingsError;
@@ -1427,15 +1449,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
                     }
                   }}
                   onBlur={(e) => {
-                    const value = parseInt(e.target.value) || 10;
-                    setPostInterval(Math.max(10, Math.min(300, value)));
+                    const value = parseInt(e.target.value) || 60;
+                    setPostInterval(Math.max(60, Math.min(300, value)));
                   }}
                   onFocus={(e) => e.target.select()}
                   disabled={!enableTimerPublish}
-                  placeholder="10"
+                  placeholder="60"
                 />
                 <p className="text-sm text-muted-foreground">
-                  {postInterval === 10 ? 'Мінімум' : postInterval === 60 ? 'За замовчуванням' : `${postInterval} хвилин`} (від 10 до 300 хвилин)
+                  {postInterval === 60 ? 'За замовчуванням' : `${postInterval} хвилин`} (від 60 до 300 хвилин)
                 </p>
               </div>
             )}
