@@ -141,14 +141,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get photo URL if available
     if (entity.photo) {
       try {
-        // Get photo file reference
-        const photoLocation = entity.photo.photoSmall || entity.photo.photoBig;
+        console.log('[Spy Get Channel Info] Downloading channel photo...');
         
-        if (photoLocation) {
-          // Generate photo URL (simplified - you'd need to download and host it)
-          // For now, return a placeholder or skip
-          channelInfo.photo_url = `https://api.telegram.org/file/bot${channelInfo.id}`;
-          console.log('[Spy Get Channel Info] Photo available but not downloaded (implement hosting)');
+        // Download profile photo as buffer
+        const photoBuffer = await client.downloadProfilePhoto(entity, {
+          isBig: true,
+        });
+        
+        if (photoBuffer && Buffer.isBuffer(photoBuffer)) {
+          // Upload to Supabase Storage
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+          );
+          
+          const fileName = `channel_${channelInfo.id}_${Date.now()}.jpg`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('channel-avatars')
+            .upload(fileName, photoBuffer, {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+          
+          if (uploadError) {
+            console.error('[Spy Get Channel Info] Upload error:', uploadError);
+          } else {
+            // Get public URL
+            const { data: urlData } = supabase.storage
+              .from('channel-avatars')
+              .getPublicUrl(fileName);
+            
+            channelInfo.photo_url = urlData.publicUrl;
+            console.log('[Spy Get Channel Info] Photo uploaded:', channelInfo.photo_url);
+          }
         }
       } catch (photoErr) {
         console.error('[Spy Get Channel Info] Failed to process photo:', photoErr);
