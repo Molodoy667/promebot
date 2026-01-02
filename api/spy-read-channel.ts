@@ -1,9 +1,6 @@
 import { Api, TelegramClient } from 'telegram';
-import { StringSession } from 'telegram/sessions';
-
-export const config = {
-  runtime: 'nodejs',
-};
+import { StringSession } from 'telegram/sessions/index.js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 interface RequestBody {
   session_string: string;
@@ -13,7 +10,15 @@ interface RequestBody {
   limit?: number;
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
