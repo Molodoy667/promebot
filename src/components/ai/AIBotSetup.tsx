@@ -774,22 +774,20 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
       return;
     }
 
-    // Check if categories or prompt changed
+    // Check if ANY settings changed
     const categoriesChanged = JSON.stringify(selectedCategories.sort()) !== JSON.stringify(originalSettings.categories.sort());
     const promptModeChanged = useCustomPrompt !== originalSettings.useCustomPrompt;
     const promptTextChanged = useCustomPrompt && customPrompt !== originalSettings.customPrompt;
-    const contentSettingsChanged = categoriesChanged || promptModeChanged || promptTextChanged;
-
-    // Check if any other settings changed
     const timeFilterChanged = enableTimeFilter !== originalSettings.enableTimeFilter;
     const timeFromChanged = timeFrom !== originalSettings.timeFrom;
     const timeToChanged = timeTo !== originalSettings.timeTo;
     const intervalChanged = postInterval !== originalSettings.postInterval;
     const mediaChanged = includeMedia !== originalSettings.includeMedia;
     const tagsChanged = generateTags !== originalSettings.generateTags;
-    const otherSettingsChanged = timeFilterChanged || timeFromChanged || timeToChanged || intervalChanged || mediaChanged || tagsChanged;
 
-    const anySettingsChanged = contentSettingsChanged || otherSettingsChanged;
+    const anySettingsChanged = categoriesChanged || promptModeChanged || promptTextChanged || 
+                               timeFilterChanged || timeFromChanged || timeToChanged || 
+                               intervalChanged || mediaChanged || tagsChanged;
 
     try {
       setIsSaving(true);
@@ -957,11 +955,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         generateTags: generateTags,
       });
 
-      // Show appropriate message based on what changed
-      if (contentSettingsChanged) {
+      // Show message about bot stop if it was running
+      if (anySettingsChanged && service?.is_running) {
         toast({
           title: "Успішно",
-          description: "Зміни були успішно збережені, поверніться в Мої канали та запустіть бота",
+          description: "Налаштування збережено. Бот зупинено та згенеровані пости очищено. Запустіть бота знову в розділі 'Мої канали'.",
+          duration: 5000,
         });
       } else {
         toast({
