@@ -48,10 +48,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.connect();
     console.log('[Spy Get Channel Info] Client connected');
 
-    // Resolve channel entity
+    // Resolve channel entity - try to join if it's an invite link
     let entity;
     try {
-      entity = await client.getEntity(channel_identifier);
+      // If it's an invite link (+hash), try to join first
+      if (channel_identifier.startsWith('+')) {
+        console.log('[Spy Get Channel Info] Invite link detected, joining channel...');
+        try {
+          const result = await client.invoke(
+            new Api.messages.ImportChatInvite({
+              hash: channel_identifier.substring(1), // Remove '+'
+            })
+          );
+          console.log('[Spy Get Channel Info] Successfully joined via invite');
+          
+          // Get channel from result
+          if (result.chats && result.chats.length > 0) {
+            entity = result.chats[0];
+          }
+        } catch (joinErr: any) {
+          // If already joined, ignore error and try to get entity
+          if (joinErr.message.includes('INVITE_REQUEST_SENT') || joinErr.message.includes('USER_ALREADY_PARTICIPANT')) {
+            console.log('[Spy Get Channel Info] Already joined, getting entity...');
+          } else {
+            throw joinErr;
+          }
+        }
+      }
+      
+      // If not invite link or join didn't return entity, get it normally
+      if (!entity) {
+        entity = await client.getEntity(channel_identifier);
+      }
+      
       console.log('[Spy Get Channel Info] Entity resolved:', entity.className);
     } catch (err: any) {
       console.error('[Spy Get Channel Info] Failed to resolve entity:', err.message);
