@@ -929,6 +929,15 @@ const BotSetup = () => {
           return;
         }
         
+        // Get active spy for statistics collection
+        const { data: activeSpy } = await supabase
+          .from('telegram_spies')
+          .select('id')
+          .eq('is_active', true)
+          .eq('is_authorized', true)
+          .limit(1)
+          .maybeSingle();
+
         const { data, error } = await supabase
           .from("bot_services")
           .insert({
@@ -943,9 +952,16 @@ const BotSetup = () => {
             is_running: false,
             publish_immediately: false,
             publish_old_posts: false,
+            spy_id: activeSpy?.id || null,
           })
           .select()
           .single();
+        
+        if (activeSpy) {
+          console.log('[Bot Setup] Attached spy for statistics:', activeSpy.id);
+        } else {
+          console.log('[Bot Setup] No active spy available for statistics');
+        }
 
         if (error) throw error;
         console.log("✅ Bot service created via save:", data);

@@ -872,7 +872,16 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             .eq("id", service.id);
         }
 
-        // Create new service for new channel
+        // Get active spy for statistics collection
+        const { data: activeSpy } = await supabase
+          .from('telegram_spies')
+          .select('id')
+          .eq('is_active', true)
+          .eq('is_authorized', true)
+          .limit(1)
+          .maybeSingle();
+
+        // Create new service for new channel with spy attached
         const { data: newService, error: serviceError } = await supabase
           .from("ai_bot_services")
           .insert({
@@ -880,6 +889,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             bot_id: botId,
             target_channel: normalizedChannel,
             service_type: "category_generation",
+            spy_id: activeSpy?.id || null,
           })
           .select()
           .single();
@@ -887,6 +897,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         if (serviceError) throw serviceError;
         serviceId = newService.id;
         setService(newService as AIBotService);
+        
+        if (activeSpy) {
+          console.log('[AI Bot Setup] Attached spy for statistics:', activeSpy.id);
+        } else {
+          console.log('[AI Bot Setup] No active spy available for statistics');
+        }
       }
       // Save publishing settings
       const { error: settingsError } = await supabase
