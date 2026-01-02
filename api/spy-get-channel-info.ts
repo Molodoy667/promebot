@@ -86,8 +86,9 @@ export default async function handler(req: any, res: any) {
           new Api.channels.GetFullChannel({ channel: entity })
         );
         
-        channelInfo.members_count = fullChannel.fullChat.participantsCount || null;
-        channelInfo.description = fullChannel.fullChat.about || null;
+        const fullChat = fullChannel.fullChat as any;
+        channelInfo.members_count = fullChat.participantsCount || null;
+        channelInfo.description = fullChat.about || null;
       } catch (err) {
         console.error('[Spy Get Channel Info] Failed to get full channel:', err);
       }
