@@ -120,7 +120,14 @@ const BotSetup = () => {
   
   const [botService, setBotService] = useState<BotService | null>(null);
   const [sourceChannels, setSourceChannels] = useState<SourceChannel[]>([]);
-  const [pendingSourceChannels, setPendingSourceChannels] = useState<{username: string, title?: string, photo_url?: string}[]>([]); // Локальні джерела до збереження
+  const [pendingSourceChannels, setPendingSourceChannels] = useState<{
+    username: string, 
+    title?: string, 
+    photo_url?: string,
+    is_private?: boolean,
+    invite_hash?: string,
+    spy_id?: string
+  }[]>([]); // Локальні джерела до збереження
   const [newChannelUsername, setNewChannelUsername] = useState("");
   const [newChannelType, setNewChannelType] = useState<"public" | "private">("public");
   const [inviteLink, setInviteLink] = useState("");
@@ -949,6 +956,10 @@ const BotSetup = () => {
           const sourcesToInsert = pendingSourceChannels.map(ch => ({
             bot_service_id: data.id,
             channel_username: ch.username,
+            channel_title: ch.title || null,
+            is_private: ch.is_private || false,
+            invite_hash: ch.invite_hash || null,
+            spy_id: ch.spy_id || null,
             is_active: true,
           }));
           
@@ -1445,7 +1456,10 @@ const BotSetup = () => {
             setPendingSourceChannels(prev => [...prev, { 
               username: channelId,
               title: channelTitle,
-              photo_url: photoUrl
+              photo_url: photoUrl,
+              is_private: true,
+              invite_hash: inviteHash,
+              spy_id: verifyData.channelInfo?.spyId || null
             }]);
           }
           
