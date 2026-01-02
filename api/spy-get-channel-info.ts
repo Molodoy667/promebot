@@ -96,22 +96,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: entity.id?.toString(),
       title: entity.title || 'Unknown',
       username: entity.username || null,
+      photo_url: null,
     };
+
+    console.log('[Spy Get Channel Info] Basic info:', {
+      id: channelInfo.id,
+      title: channelInfo.title,
+      username: channelInfo.username,
+      hasPhoto: !!entity.photo,
+    });
 
     // Get photo URL if available
     if (entity.photo) {
       try {
-        const photo = await client.downloadProfilePhoto(entity, {
-          isBig: true,
-        });
+        // Get photo file reference
+        const photoLocation = entity.photo.photoSmall || entity.photo.photoBig;
         
-        if (photo && Buffer.isBuffer(photo)) {
-          // Convert to base64 or upload to storage
-          // For now, just return null (implement storage later)
-          channelInfo.photo_url = null;
+        if (photoLocation) {
+          // Generate photo URL (simplified - you'd need to download and host it)
+          // For now, return a placeholder or skip
+          channelInfo.photo_url = `https://api.telegram.org/file/bot${channelInfo.id}`;
+          console.log('[Spy Get Channel Info] Photo available but not downloaded (implement hosting)');
         }
       } catch (photoErr) {
-        console.error('[Spy Get Channel Info] Failed to download photo:', photoErr);
+        console.error('[Spy Get Channel Info] Failed to process photo:', photoErr);
       }
     }
 
