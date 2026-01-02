@@ -23,6 +23,7 @@ export type Database = {
           is_running: boolean | null
           last_error: string | null
           last_error_at: string | null
+          last_generation_started_at: string | null
           last_mtproto_sync: string | null
           last_published_at: string | null
           last_scraping_sync: string | null
@@ -45,6 +46,7 @@ export type Database = {
           is_running?: boolean | null
           last_error?: string | null
           last_error_at?: string | null
+          last_generation_started_at?: string | null
           last_mtproto_sync?: string | null
           last_published_at?: string | null
           last_scraping_sync?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           is_running?: boolean | null
           last_error?: string | null
           last_error_at?: string | null
+          last_generation_started_at?: string | null
           last_mtproto_sync?: string | null
           last_published_at?: string | null
           last_scraping_sync?: string | null
@@ -698,6 +701,42 @@ export type Database = {
           id?: string
           updated_at?: string | null
           use_custom_prompt?: boolean | null
+        }
+        Relationships: []
+      }
+      channel_stats_history: {
+        Row: {
+          channel_name: string | null
+          created_at: string | null
+          id: string
+          recorded_at: string | null
+          service_id: string
+          service_type: string
+          subscribers_count: number | null
+          total_reactions: number | null
+          total_views: number | null
+        }
+        Insert: {
+          channel_name?: string | null
+          created_at?: string | null
+          id?: string
+          recorded_at?: string | null
+          service_id: string
+          service_type: string
+          subscribers_count?: number | null
+          total_reactions?: number | null
+          total_views?: number | null
+        }
+        Update: {
+          channel_name?: string | null
+          created_at?: string | null
+          id?: string
+          recorded_at?: string | null
+          service_id?: string
+          service_type?: string
+          subscribers_count?: number | null
+          total_reactions?: number | null
+          total_views?: number | null
         }
         Relationships: []
       }
@@ -1527,24 +1566,42 @@ export type Database = {
       source_channels: {
         Row: {
           bot_service_id: string
+          channel_title: string | null
           channel_username: string
           created_at: string | null
           id: string
+          invite_hash: string | null
           is_active: boolean | null
+          is_private: boolean | null
+          last_sync_at: string | null
+          spammer_id: string | null
+          spy_id: string | null
         }
         Insert: {
           bot_service_id: string
+          channel_title?: string | null
           channel_username: string
           created_at?: string | null
           id?: string
+          invite_hash?: string | null
           is_active?: boolean | null
+          is_private?: boolean | null
+          last_sync_at?: string | null
+          spammer_id?: string | null
+          spy_id?: string | null
         }
         Update: {
           bot_service_id?: string
+          channel_title?: string | null
           channel_username?: string
           created_at?: string | null
           id?: string
+          invite_hash?: string | null
           is_active?: boolean | null
+          is_private?: boolean | null
+          last_sync_at?: string | null
+          spammer_id?: string | null
+          spy_id?: string | null
         }
         Relationships: [
           {
@@ -1552,6 +1609,98 @@ export type Database = {
             columns: ["bot_service_id"]
             isOneToOne: false
             referencedRelation: "bot_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_channels_spammer_id_fkey"
+            columns: ["spammer_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_spammers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_channels_spy_id_fkey"
+            columns: ["spy_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_spies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_posts: {
+        Row: {
+          author_name: string | null
+          bot_service_id: string
+          created_at: string | null
+          forwards_count: number | null
+          has_media: boolean | null
+          id: string
+          is_processed: boolean | null
+          is_published: boolean | null
+          media_type: string | null
+          media_url: string | null
+          original_message_id: number
+          posted_at: string
+          published_at: string | null
+          published_message_id: number | null
+          source_channel_id: string
+          text: string | null
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          author_name?: string | null
+          bot_service_id: string
+          created_at?: string | null
+          forwards_count?: number | null
+          has_media?: boolean | null
+          id?: string
+          is_processed?: boolean | null
+          is_published?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          original_message_id: number
+          posted_at: string
+          published_at?: string | null
+          published_message_id?: number | null
+          source_channel_id: string
+          text?: string | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          author_name?: string | null
+          bot_service_id?: string
+          created_at?: string | null
+          forwards_count?: number | null
+          has_media?: boolean | null
+          id?: string
+          is_processed?: boolean | null
+          is_published?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          original_message_id?: number
+          posted_at?: string
+          published_at?: string | null
+          published_message_id?: number | null
+          source_channel_id?: string
+          text?: string | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_posts_bot_service_id_fkey"
+            columns: ["bot_service_id"]
+            isOneToOne: false
+            referencedRelation: "ai_bot_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_posts_source_channel_id_fkey"
+            columns: ["source_channel_id"]
+            isOneToOne: false
+            referencedRelation: "source_channels"
             referencedColumns: ["id"]
           },
         ]
@@ -1998,6 +2147,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      telegram_spammers: {
+        Row: {
+          authkey: string | null
+          created_at: string | null
+          error_count: number | null
+          id: string
+          is_active: boolean | null
+          is_authorized: boolean | null
+          last_activity_at: string | null
+          last_error: string | null
+          messages_sent: number | null
+          name: string
+          phone_number: string | null
+          tdata_path: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          authkey?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_authorized?: boolean | null
+          last_activity_at?: string | null
+          last_error?: string | null
+          messages_sent?: number | null
+          name: string
+          phone_number?: string | null
+          tdata_path: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          authkey?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_authorized?: boolean | null
+          last_activity_at?: string | null
+          last_error?: string | null
+          messages_sent?: number | null
+          name?: string
+          phone_number?: string | null
+          tdata_path?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       telegram_spies: {
         Row: {
@@ -2497,6 +2697,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      get_unprocessed_posts_count: {
+        Args: { service_id: string }
+        Returns: number
+      }
       get_unread_notifications_count: { Args: never; Returns: number }
       get_user_stats: { Args: never; Returns: Json }
       has_role: {
@@ -2522,6 +2726,15 @@ export type Database = {
       mark_ticket_as_read: { Args: { ticket_id: string }; Returns: undefined }
       miner_manual_click: { Args: { p_user_id: string }; Returns: Json }
       purchase_lottery_ticket: { Args: never; Returns: Json }
+      recalculate_bot_global_stats: {
+        Args: never
+        Returns: {
+          bot_id: string
+          channels: number
+          posts: number
+          users: number
+        }[]
+      }
       reset_user_posts_stats: {
         Args: { user_id_param: string }
         Returns: undefined

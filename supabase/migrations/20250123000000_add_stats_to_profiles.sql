@@ -60,7 +60,7 @@ BEGIN
   INNER JOIN bot_services bs ON sc.bot_service_id = bs.id
   WHERE bs.user_id = user_id_param;
   
-  -- Рахуємо пости за період
+  -- Рахуємо ТІЛЬКИ ОПУБЛІКОВАНІ пости за період
   SELECT 
     COALESCE((
       SELECT COUNT(*) 
@@ -68,6 +68,7 @@ BEGIN
       INNER JOIN bot_services bs ON ph.bot_service_id = bs.id
       WHERE bs.user_id = user_id_param 
         AND ph.created_at >= period_start
+        AND ph.status = 'published'
     ), 0) +
     COALESCE((
       SELECT COUNT(*) 
@@ -75,6 +76,7 @@ BEGIN
       INNER JOIN ai_bot_services abs ON agp.ai_bot_service_id = abs.id
       WHERE abs.user_id = user_id_param 
         AND agp.created_at >= period_start
+        AND agp.status = 'published'
     ), 0)
   INTO posts_count;
   

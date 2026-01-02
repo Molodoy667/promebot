@@ -79,10 +79,16 @@ serve(async (req) => {
 
       const data = await response.json();
 
+      console.log('[Userbot Auth] Code sent, received data:', {
+        hasHash: !!data.phoneCodeHash,
+        hasSession: !!data.sessionString
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
           phoneCodeHash: data.phoneCodeHash,
+          sessionString: data.sessionString, // Pass session for next step
           message: 'Code sent! Check your Telegram app.',
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -120,7 +126,21 @@ serve(async (req) => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to sign in');
+        const errorMessage = error.error || 'Failed to sign in';
+        
+        // Check for specific error types
+        if (errorMessage.includes('PHONE_CODE_EXPIRED')) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Код підтвердження закінчився. Будь ласка, запитайте новий код.',
+              errorType: 'PHONE_CODE_EXPIRED'
+            }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

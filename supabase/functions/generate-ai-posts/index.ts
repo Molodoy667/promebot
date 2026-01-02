@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { serviceId, count = 5 } = await req.json();
+    const { serviceId, count = 1 } = await req.json();
 
     if (!serviceId) {
       return new Response(

@@ -1478,7 +1478,8 @@ const BotSetup = () => {
 
       if (!checkData.ok) {
         setChannelVerificationStatus({ canRead: false, isPublic: false });
-        const errorMsg = isPrivateChannel 
+        const isPrivate = channelId.includes('+') || channelId.includes('joinchat');
+        const errorMsg = isPrivate 
           ? "Бот не має доступу до приватного каналу. Переконайтеся, що бот доданий як учасник каналу."
           : "Канал не знайдено або недоступний. Перевірте правильність введених даних.";
         toast({
@@ -1493,7 +1494,8 @@ const BotSetup = () => {
 
       // For private channels, check if bot is a member
       // For public channels, bot doesn't need to be a member to read posts
-      if (isPrivateChannel) {
+      const isPrivate = channelId.includes('+') || channelId.includes('joinchat');
+      if (isPrivate) {
         setChannelVerificationStatus({ canRead: true, isPublic: null });
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -1804,7 +1806,6 @@ const BotSetup = () => {
                   </div>
                 </AlertDescription>
               </Alert>
-              
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2">

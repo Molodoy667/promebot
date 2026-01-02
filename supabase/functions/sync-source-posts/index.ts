@@ -9,8 +9,8 @@ const corsHeaders = {
 /**
  * Sync Source Posts
  * Читає пости з джерельних каналів:
- * - Публічні канали → через бота
- * - Приватні канали → через спамера
+ * - Публічні канали → через бота (Bot API) - обмежений функціонал
+ * - Приватні канали → через шпигуна (userbot MTProto) - повний доступ
  */
 
 serve(async (req) => {
@@ -53,34 +53,42 @@ serve(async (req) => {
     let posts = [];
 
     if (sourceChannel.is_private) {
-      // Private channel - use spammer via read-private-channel function
-      console.log('[Sync Source Posts] Private channel, using spammer...');
+      // Private channel - use spy (userbot) via MTProto
+      console.log('[Sync Source Posts] Private channel, using spy (userbot)...');
 
-      if (!sourceChannel.spammer_id) {
-        throw new Error('No spammer assigned to private channel');
+      if (!sourceChannel.spy_id) {
+        throw new Error('No spy (userbot) assigned to private channel');
       }
 
-      // Call read-private-channel Edge Function
-      const readResponse = await fetch(
-        `${Deno.env.get('SUPABASE_URL')}/functions/v1/read-private-channel`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          },
-          body: JSON.stringify({
-            spammerId: sourceChannel.spammer_id,
-            channelIdentifier: sourceChannel.channel_username,
-            inviteHash: sourceChannel.invite_hash,
-            limit: 20,
-          }),
-        }
-      );
+      // Get spy info
+      const { data: spy } = await supabaseClient
+        .from('telegram_spies')
+        .select('*')
+        .eq('id', sourceChannel.spy_id)
+        .single();
+
+      if (!spy || !spy.session_string) {
+        throw new Error('Spy not available or not authorized');
+      }
+
+      // Read private channel via spy MTProto
+      const VERCEL_API_URL = Deno.env.get('VERCEL_API_URL') || 'https://promobot.store';
+      
+      const readResponse = await fetch(`${VERCEL_API_URL}/api/spy-read-channel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_string: spy.session_string,
+          channel_identifier: sourceChannel.invite_hash 
+            ? `+${sourceChannel.invite_hash}` 
+            : sourceChannel.channel_username,
+          limit: 20,
+        })
+      });
 
       if (!readResponse.ok) {
         const errorText = await readResponse.text();
-        throw new Error(`Failed to read private channel: ${errorText}`);
+        throw new Error(`Failed to read private channel via spy: ${errorText}`);
       }
 
       const readData = await readResponse.json();
@@ -89,7 +97,7 @@ serve(async (req) => {
         throw new Error(readData.error || 'Failed to read messages');
       }
 
-      console.log(`[Sync Source Posts] Read ${readData.messages?.length || 0} messages from private channel`);
+      console.log(`[Sync Source Posts] Spy read ${readData.messages?.length || 0} messages from private channel`);
 
       // Convert messages to posts format
       posts = (readData.messages || []).map((msg: any) => ({
@@ -103,11 +111,11 @@ serve(async (req) => {
       }));
 
     } else {
-      // Public channel - use bot
+      // Public channel - use bot (Bot API has limited functionality)
       console.log('[Sync Source Posts] Public channel, using bot...');
 
       try {
-        // Get channel info first
+        // Get channel info
         const chatResponse = await fetch(
           `https://api.telegram.org/bot${botService.bot_token}/getChat?chat_id=@${sourceChannel.channel_username}`
         );
@@ -118,25 +126,20 @@ serve(async (req) => {
           throw new Error(chatData.description || 'Failed to get chat');
         }
 
-        const chatId = chatData.result.id;
+        console.log('[Sync Source Posts] Bot connected to public channel:', chatData.result.title);
 
-        // Get recent messages (via getUpdates or using channel ID)
-        // Note: For channels, we need to use different approach
-        // This is simplified - in production you'd need to implement proper message fetching
-
-        console.log('[Sync Source Posts] Bot connected to channel:', chatData.result.title);
-
-        // Mock posts for now
-        posts = [{
-          channel_id: sourceChannel.id,
-          message_id: Date.now(),
-          text: `Post from ${chatData.result.title}`,
-          media_url: null,
-          posted_at: new Date().toISOString(),
-        }];
+        // Note: Bot API cannot read channel messages directly
+        // Bot can only post, not read history from channels
+        // For reading public channel posts, you would need:
+        // 1. Channel forwarding to a group where bot is admin
+        // 2. Or use userbot/spy with MTProto
+        
+        posts = [];
+        console.log('[Sync Source Posts] Note: Bot cannot read public channel posts via Bot API');
+        console.log('[Sync Source Posts] Consider using channel->group forwarding or userbot for full sync');
 
       } catch (error: any) {
-        throw new Error(`Bot failed to read channel: ${error.message}`);
+        throw new Error(`Bot failed to connect: ${error.message}`);
       }
     }
 

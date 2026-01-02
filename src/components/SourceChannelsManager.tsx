@@ -108,6 +108,12 @@ export const SourceChannelsManager = ({
       }
 
       // Verify channel via Edge Function
+      setVerificationStatus({
+        channelAccessible: false,
+        botIsMember: false,
+        message: "Перевірка каналу..."
+      });
+      
       toast({
         title: "Перевірка каналу...",
         description: "Зачекайте, йде підключення",
@@ -126,10 +132,25 @@ export const SourceChannelsManager = ({
       });
 
       if (verifyError || !verifyData?.success) {
+        setVerificationStatus({
+          channelAccessible: false,
+          botIsMember: false,
+          message: verifyData?.error || "Не вдалося перевірити канал"
+        });
         throw new Error(verifyData?.error || "Не вдалося перевірити канал");
       }
 
-      // Add to database
+      // Show channel info after verification
+      const channelType = verifyData.isPrivate ? "Приватний" : "Публічний";
+      const connectionMethod = verifyData.isPrivate ? "через userbot шпигуна" : "через бота";
+      
+      setVerificationStatus({
+        channelAccessible: true,
+        botIsMember: true,
+        message: `✅ Канал доступний\n📺 ${verifyData.channelInfo?.title || channelIdentifier}\n🔒 Статус: ${channelType}\n🔌 Підключення: ${connectionMethod}`
+      });
+
+      // Add to database with spy_id
       const { error } = await supabase
         .from("source_channels")
         .insert({
@@ -138,15 +159,19 @@ export const SourceChannelsManager = ({
           channel_title: verifyData.channelInfo?.title,
           is_private: isPrivate,
           invite_hash: inviteHash,
+          spy_id: verifyData.channelInfo?.spyId || null,
           is_active: true,
         });
 
       if (error) throw error;
 
+      const channelType = verifyData.isPrivate ? "🔒 Приватний" : "🌐 Публічний";
+      const connectionMethod = verifyData.isPrivate ? "через userbot шпигуна" : "через бота";
+      
       toast({
-        title: "Успішно!",
-        description: `Канал "${verifyData.channelInfo?.title || channelIdentifier}" додано`,
-        duration: 3000,
+        title: "✅ Канал успішно додано!",
+        description: `${verifyData.channelInfo?.title || channelIdentifier}\n${channelType} • ${connectionMethod}`,
+        duration: 4000,
       });
 
       setNewChannelInput("");

@@ -114,7 +114,20 @@ export const UserbotAuthDialog = ({
       }
 
       if (data?.error) {
-        console.error('[UserbotAuth] Data error:', data.error);
+        console.error('[UserbotAuth] Data error:', data.error, 'Type:', data.errorType);
+        
+        // Check for specific error types
+        if (data.errorType === 'PHONE_CODE_EXPIRED') {
+          toast({
+            title: "Код застарів",
+            description: data.error,
+            variant: "destructive",
+          });
+          setStep('send_code');
+          setIsLoading(false);
+          return;
+        }
+        
         throw new Error(data.error);
       }
 

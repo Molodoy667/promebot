@@ -125,16 +125,15 @@ Deno.serve(async (req) => {
         // Check if generation is already in progress using lock field
         if (service.last_generation_started_at) {
           const timeSinceLastGen = (Date.now() - new Date(service.last_generation_started_at).getTime()) / 1000;
-          if (timeSinceLastGen < 300) { // Less than 5 minutes
+          if (timeSinceLastGen < 600) { // Less than 10 minutes
             console.log(`Service ${service.id}: generation in progress (${Math.round(timeSinceLastGen)}s ago), skipping`);
             continue;
           }
         }
 
-        // Generate posts to fill queue up to 10
+        // Generate 1 post if queue is below 10
         if (currentScheduled < maxScheduled) {
-          const postsToGenerate = maxScheduled - currentScheduled;
-          console.log(`Service ${service.id}: queue below 10, generating ${postsToGenerate} posts`);
+          console.log(`Service ${service.id}: queue ${currentScheduled}/10, generating 1 post`);
           
           // Set lock before starting generation
           await supabase
@@ -142,7 +141,7 @@ Deno.serve(async (req) => {
             .update({ last_generation_started_at: new Date().toISOString() })
             .eq('id', service.id);
           
-          console.log(`Service ${service.id}: generation lock set`);
+          console.log(`Service ${service.id}: generation lock set (10 min interval)`);
           
           // Fire and forget - don't wait for response (generation takes >60sec)
           fetch(
@@ -155,16 +154,16 @@ Deno.serve(async (req) => {
               },
               body: JSON.stringify({
                 serviceId: service.id,
-                count: postsToGenerate,
+                count: 1,
               }),
             }
           ).catch(err => {
             console.error(`Async generation error for service ${service.id}:`, err.message);
           });
           
-          console.log(`Generation triggered for ${postsToGenerate} posts (async)`);
+          console.log(`Generation triggered for 1 post (next in 10 min)`);
         } else {
-          console.log(`Service ${service.id}: queue is full (${currentScheduled} posts)`);
+          console.log(`Service ${service.id}: queue is full (${currentScheduled} posts), generation paused`);
         }
 
         // Get oldest scheduled post
