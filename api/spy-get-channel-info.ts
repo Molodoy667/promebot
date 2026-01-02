@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (channel_identifier.startsWith('+')) {
         console.log('[Spy Get Channel Info] Invite link detected, joining channel...');
         try {
-          const result = await client.invoke(
+          const result: any = await client.invoke(
             new Api.messages.ImportChatInvite({
               hash: channel_identifier.substring(1), // Remove '+'
             })
