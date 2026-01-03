@@ -788,12 +788,23 @@ export default function ChannelStats() {
           backTo="/my-channels"
           backLabel="Назад до каналів"
         >
-          {isSyncing && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Оновлення статистики...</span>
+          <div className="flex items-center gap-4 mt-4">
+            {isSyncing && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Оновлення статистики...</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>Останнє оновлення: {new Date().toLocaleString("uk-UA", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}</span>
             </div>
-          )}
+          </div>
         </PageHeader>
         
         <div className="mb-6">
