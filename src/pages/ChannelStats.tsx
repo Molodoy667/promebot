@@ -109,6 +109,7 @@ export default function ChannelStats() {
   const [deleteDays, setDeleteDays] = useState<3 | 7 | 30>(3);
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'subscribers' | 'views' | 'reactions'>('all');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const { serviceId, serviceType, channelName } = location.state || {};
   
@@ -797,7 +798,7 @@ export default function ChannelStats() {
             )}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
-              <span>Останнє оновлення: {new Date().toLocaleString("uk-UA", {
+              <span>Останнє оновлення: {lastUpdated.toLocaleString("uk-UA", {
                 day: "2-digit",
                 month: "2-digit",
                 hour: "2-digit",
