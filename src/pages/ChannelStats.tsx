@@ -158,7 +158,6 @@ export default function ChannelStats() {
 
     return () => {
       subscription.unsubscribe();
-      clearInterval(syncInterval);
     };
   }, [serviceId, serviceType]);
 
