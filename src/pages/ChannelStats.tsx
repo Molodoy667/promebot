@@ -515,6 +515,8 @@ export default function ChannelStats() {
       totalReactions,
       avgReactionsPerPost,
     });
+    
+    setLastUpdated(new Date());
   };
 
   const loadAIStats = async () => {
@@ -663,6 +665,8 @@ export default function ChannelStats() {
       totalReactions,
       avgReactionsPerPost,
     });
+    
+    setLastUpdated(new Date());
   };
 
   const handleSyncStats = async (mode: 'hybrid' | 'scraping' | 'userbot' = 'hybrid') => {
