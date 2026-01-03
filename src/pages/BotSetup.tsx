@@ -959,6 +959,24 @@ const BotSetup = () => {
         
         if (activeSpy) {
           console.log('[Bot Setup] Attached spy for statistics:', activeSpy.id);
+          
+          // Try to join channel with spy for statistics collection
+          try {
+            const { error: joinError } = await supabase.functions.invoke('spy-join-channel', {
+              body: { 
+                spy_id: activeSpy.id, 
+                channel_identifier: targetChannel 
+              }
+            });
+            
+            if (joinError) {
+              console.log('[Bot Setup] Spy join warning:', joinError.message);
+            } else {
+              console.log('[Bot Setup] Spy joined target channel for statistics');
+            }
+          } catch (joinErr) {
+            console.log('[Bot Setup] Non-critical: spy join failed (will still collect available stats)');
+          }
         } else {
           console.log('[Bot Setup] No active spy available for statistics');
         }
