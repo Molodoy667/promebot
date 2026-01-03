@@ -153,12 +153,8 @@ export default function ChannelStats() {
       )
       .subscribe();
 
-    // Auto-sync stats every 10 minutes
-    const syncInterval = setInterval(() => {
-      console.log('⏰ Auto-updating stats every hour...');
-      loadStats();
-      loadChannelInfo();
-    }, 3600000); // 1 hour
+    // Stats are auto-updated by bot-worker every 5 minutes
+    // No need for client-side interval
 
     return () => {
       subscription.unsubscribe();
@@ -793,32 +789,12 @@ export default function ChannelStats() {
           backTo="/my-channels"
           backLabel="Назад до каналів"
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                disabled={isSyncing}
-                className="gap-2 mt-4"
-              >
-                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Оновлення...' : 'Оновити статистику'}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleSyncStats('hybrid')}>
-                <Zap className="w-4 h-4 mr-2" />
-                Гібридний (швидко + точно)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSyncStats('scraping')}>
-                <Globe className="w-4 h-4 mr-2" />
-                Тільки Scraping (швидко)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSyncStats('userbot')}>
-                <Eye className="w-4 h-4 mr-2" />
-                Тільки MTProto (точно)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isSyncing && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              <span>Оновлення статистики...</span>
+            </div>
+          )}
         </PageHeader>
         
         <div className="mb-6">
