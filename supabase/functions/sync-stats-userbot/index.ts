@@ -155,6 +155,26 @@ serve(async (req) => {
       .update({ last_mtproto_sync: new Date().toISOString() })
       .eq('id', serviceId);
 
+    // Save to channel_stats_history (навіть якщо пости не оновлені, зберігаємо інфо про канал)
+    if (channelInfo) {
+      const totalViews = Array.from(statsMap.values()).reduce((sum, s) => sum + s.views, 0);
+      const totalReactions = Array.from(statsMap.values()).reduce((sum, s) => sum + s.reactions, 0);
+      
+      await supabaseClient
+        .from('channel_stats_history')
+        .insert({
+          service_id: serviceId,
+          service_type: serviceType,
+          channel_name: channelInfo.title || channelUsername,
+          subscribers_count: channelInfo.participantsCount,
+          total_views: totalViews,
+          total_reactions: totalReactions,
+          recorded_at: new Date().toISOString()
+        });
+      
+      console.log(`[MTProto] Saved stats to history: ${channelInfo.participantsCount} subs, ${totalViews} views, ${updatedCount} posts updated`);
+    }
+
     console.log(`[MTProto] Successfully updated ${updatedCount}/${posts.length} posts`);
     
     return new Response(
@@ -201,40 +221,81 @@ async function getMTProtoPostsStats(username: string, messageIds: number[], spy:
   console.log(`[MTProto] Getting stats for @${username}, ${messageIds.length} posts via Vercel API`);
   
   try {
-    const response = await fetch(`${VERCEL_API_URL}/api/userbot-stats`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiId: spy.api_id,
-        apiHash: spy.api_hash,
-        sessionString: spy.session_string,
-        channelUsername: username,
-        messageIds: messageIds,
-      }),
-    });
+    // First, get channel info using spy-get-channel-info
+    let channelInfo = null;
+    try {
+      const infoResponse = await fetch(`${VERCEL_API_URL}/api/spy-get-channel-info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_string: spy.session_string,
+          api_id: spy.api_id,
+          api_hash: spy.api_hash,
+          channel_identifier: username,
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get stats');
+      if (infoResponse.ok) {
+        const infoData = await infoResponse.json();
+        if (infoData.success && infoData.channelInfo) {
+          channelInfo = {
+            title: infoData.channelInfo.title,
+            participantsCount: infoData.channelInfo.members_count || 0,
+            username: infoData.channelInfo.username || username,
+          };
+          console.log(`[MTProto] Channel info: ${channelInfo.participantsCount} subscribers`);
+        }
+      } else {
+        console.warn(`[MTProto] spy-get-channel-info failed: ${infoResponse.status}`);
+      }
+    } catch (infoError: any) {
+      console.warn(`[MTProto] Failed to get channel info:`, infoError.message);
     }
 
-    const data = await response.json();
-    
+    // Then get posts stats using spy-read-channel (more reliable)
     const statsMap = new Map<number, UserbotStats>();
-    data.stats.forEach((stat: any) => {
-      if (!stat.error) {
-        statsMap.set(stat.messageId, {
-          views: stat.views,
-          forwards: stat.forwards,
-          reactions: stat.reactions,
-          editDate: stat.editDate,
-          postDate: stat.postDate,
-        });
+    
+    try {
+      const response = await fetch(`${VERCEL_API_URL}/api/spy-read-channel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_string: spy.session_string,
+          api_id: spy.api_id,
+          api_hash: spy.api_hash,
+          channel_identifier: username,
+          limit: 100, // Get last 100 messages
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.messages) {
+          console.log(`[MTProto] Read ${data.messages.length} messages from channel`);
+          
+          // Map messages to stats by ID
+          data.messages.forEach((msg: any) => {
+            if (messageIds.includes(msg.id)) {
+              statsMap.set(msg.id, {
+                views: msg.views || 0,
+                forwards: msg.forwards || 0,
+                reactions: msg.reactions || 0,
+                postDate: msg.date,
+              });
+            }
+          });
+          
+          console.log(`[MTProto] Matched ${statsMap.size}/${messageIds.length} posts`);
+        }
+      } else {
+        console.warn(`[MTProto] spy-read-channel failed: ${response.status}`);
       }
-    });
+    } catch (statsError: any) {
+      console.warn(`[MTProto] Failed to get posts stats:`, statsError.message);
+    }
 
     return {
-      channelInfo: data.channelInfo,
+      channelInfo,
       stats: statsMap,
     };
   } catch (error: any) {

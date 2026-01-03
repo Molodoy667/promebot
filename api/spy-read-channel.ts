@@ -72,12 +72,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const msg of result) {
         if (!msg.message && !msg.media) continue;
         
+        // Count reactions
+        let reactionsCount = 0;
+        if (msg.reactions && msg.reactions.results) {
+          reactionsCount = msg.reactions.results.reduce((sum: number, r: any) => {
+            return sum + (r.count || 0);
+          }, 0);
+        }
+
         const messageData: any = {
           id: msg.id,
           text: msg.message || '',
           date: msg.date ? new Date(msg.date * 1000).toISOString() : new Date().toISOString(),
           views: msg.views || 0,
           forwards: msg.forwards || 0,
+          reactions: reactionsCount,
         };
 
         // Handle media
