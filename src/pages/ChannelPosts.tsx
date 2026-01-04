@@ -3,292 +3,519 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/Loading";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import { PageHeader } from "@/components/PageHeader";
 import { 
-  ArrowLeft, 
   MessageSquare, 
   Calendar,
-  Eye,
-  Image as ImageIcon,
-  ExternalLink
+  Award,
+  Trash2,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { StatsDisplay } from "@/components/StatsDisplay";
 
-interface Post {
+// Copied from ChannelStats.tsx (lines 69-78)
+interface TopPost {
   id: string;
   content: string;
   views: number;
+  reactions: number;
   created_at: string;
-  status: string;
-  image_url?: string;
   message_id?: number;
+  scraping_stats?: any;
+  mtproto_stats?: any;
 }
 
 export default function ChannelPosts() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const postsPerPage = 20;
-
+  
   const { serviceId, serviceType, channelName } = location.state || {};
+  
+  // Copied from ChannelStats.tsx (lines 107-109)
+  const [isLoading, setIsLoading] = useState(true);
+  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDays, setDeleteDays] = useState<3 | 7 | 30>(3);
+  
+  // Additional states for posts statistics
+  const [publishedPosts, setPublishedPosts] = useState(0);
+  const [scheduledPosts, setScheduledPosts] = useState(0);
+  const [todayPosts, setTodayPosts] = useState(0);
+  const [weekPosts, setWeekPosts] = useState(0);
+  const [monthPosts, setMonthPosts] = useState(0);
+  const [lastPostDate, setLastPostDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!serviceId || !serviceType) {
-      toast({
-        title: "Помилка",
-        description: "Не вказано канал",
-        variant: "destructive",
-      });
       navigate("/my-channels");
       return;
     }
+    loadAllData();
+  }, [serviceId, serviceType]);
 
-    loadPosts();
-  }, [serviceId, serviceType, page]);
+  const loadAllData = async () => {
+    setIsLoading(true);
+    await Promise.all([
+      loadTopPosts(),
+      loadStats()
+    ]);
+    setIsLoading(false);
+  };
 
-  const loadPosts = async () => {
+  // Copied from ChannelStats.tsx (lines 474-498 for plagiarist, 639-648 for ai)
+  const loadTopPosts = async () => {
     try {
-      setIsLoading(true);
-      
-      const from = (page - 1) * postsPerPage;
-      const to = from + postsPerPage - 1;
-
       if (serviceType === 'plagiarist') {
+        // For plagiarist bots - load all published posts and sort by views
         const { data, error } = await supabase
           .from("posts_history")
-          .select("id, post_content, views, created_at, status, image_url, message_id")
+          .select("*")
           .eq("bot_service_id", serviceId)
-          .in("status", ["published", "success"])
-          .order("created_at", { ascending: false })
-          .range(from, to);
-
-        if (error) throw error;
-        
-        const mapped = (data || []).map((d: any) => ({
-          id: d.id,
-          content: d.post_content || "",
-          views: d.views ?? 0,
-          created_at: d.created_at,
-          status: d.status,
-          image_url: d.image_url ?? undefined,
-          message_id: d.message_id ?? undefined,
-        }));
-        
-        if (page === 1) {
-          setPosts(mapped);
-        } else {
-          setPosts(prev => [...prev, ...mapped]);
-        }
-        
-        setHasMore(data?.length === postsPerPage);
-      } else if (serviceType === 'ai') {
-        const { data, error } = await supabase
-          .from("ai_generated_posts")
-          .select("id, content, views, created_at, status, image_url")
-          .eq("ai_bot_service_id", serviceId)
           .eq("status", "published")
           .order("created_at", { ascending: false })
-          .range(from, to);
+          .limit(20);
 
         if (error) throw error;
-        
-        if (page === 1) {
-          setPosts(data || []);
-        } else {
-          setPosts(prev => [...prev, ...(data || [])]);
-        }
-        
-        setHasMore(data?.length === postsPerPage);
+
+        // Sort by views and take top 5
+        const sorted = (data || [])
+          .sort((a, b) => {
+            const aViews = a.scraping_stats?.views || a.mtproto_stats?.views || 0;
+            const bViews = b.scraping_stats?.views || b.mtproto_stats?.views || 0;
+            return bViews - aViews;
+          })
+          .slice(0, 5);
+
+        setTopPosts(sorted);
+      } else {
+        // For AI bots - load top 5 directly from database
+        const { data, error } = await supabase
+          .from("ai_generated_posts")
+          .select("*")
+          .eq("ai_bot_service_id", serviceId)
+          .eq("status", "published")
+          .order("views", { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setTopPosts(data || []);
       }
     } catch (error) {
-      console.error("Error loading posts:", error);
-      toast({
-        title: "Помилка",
-        description: "Не вдалося завантажити пости",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      console.error("Error loading top posts:", error);
     }
   };
 
-  const loadMore = () => {
-    setPage(prev => prev + 1);
+  const loadStats = async () => {
+    try {
+      const table = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
+      const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
+      
+      // Count published posts
+      const { count: published, error: publishedError } = await (supabase as any)
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq(idField, serviceId)
+        .eq('status', 'published');
+
+      if (publishedError) throw publishedError;
+      setPublishedPosts(published || 0);
+
+      // Count today posts (Copied from ChannelStats.tsx logic)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: today_count } = await (supabase as any)
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq(idField, serviceId)
+        .eq('status', 'published')
+        .gte('created_at', today.toISOString());
+      setTodayPosts(today_count || 0);
+
+      // Count week posts
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const { count: week_count } = await (supabase as any)
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq(idField, serviceId)
+        .eq('status', 'published')
+        .gte('created_at', weekAgo.toISOString());
+      setWeekPosts(week_count || 0);
+
+      // Count month posts
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      const { count: month_count } = await (supabase as any)
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq(idField, serviceId)
+        .eq('status', 'published')
+        .gte('created_at', monthAgo.toISOString());
+      setMonthPosts(month_count || 0);
+
+      // Get last post date
+      const { data: lastPost } = await (supabase as any)
+        .from(table)
+        .select('created_at')
+        .eq(idField, serviceId)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setLastPostDate(lastPost?.created_at || null);
+
+      // Count scheduled posts (only for AI bots)
+      if (serviceType === 'ai') {
+        const { count: scheduled, error: scheduledError } = await (supabase as any)
+          .from(table)
+          .select('*', { count: 'exact', head: true })
+          .eq(idField, serviceId)
+          .eq('status', 'scheduled');
+
+        if (scheduledError) throw scheduledError;
+        setScheduledPosts(scheduled || 0);
+      }
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
   };
 
-  if (isLoading && page === 1) return <Loading />;
+  // Copied from ChannelStats.tsx (lines 750-780)
+  const handleDeletePosts = async () => {
+    try {
+      const dateLimit = new Date();
+      dateLimit.setDate(dateLimit.getDate() - deleteDays);
+      
+      const table = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
+      const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
+      
+      const { error, count } = await (supabase as any)
+        .from(table as any)
+        .delete({ count: 'exact' })
+        .eq(idField, serviceId)
+        .lte('created_at', dateLimit.toISOString());
+
+      if (error) throw error;
+
+      toast({
+        title: "Історія очищена",
+        description: `Видалено ${count || 0} постів старіших за ${deleteDays} ${deleteDays === 3 ? 'дні' : deleteDays === 7 ? 'днів' : 'днів'}`,
+      });
+
+      setDeleteDialogOpen(false);
+      loadAllData(); // Reload all data
+    } catch (error: any) {
+      console.error("Error deleting posts:", error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося очистити історію",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) return <Loading />;
 
   return (
     <div className="min-h-screen">
       <PageBreadcrumbs />
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/channel-stats", { 
-              state: { serviceId, serviceType, channelName } 
-            })}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Назад до статистики
-          </Button>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Опубліковані пости</h1>
-              <p className="text-muted-foreground">{channelName}</p>
-            </div>
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <PageHeader
+          icon={MessageSquare}
+          title={`Публікації: ${channelName}`}
+          description={`Всі публікації каналу @${channelName}`}
+          backTo="/my-channels"
+          backLabel="Назад до каналів"
+        >
+          <div className="flex items-center gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate("/channel-stats", { 
+                state: { 
+                  serviceId, 
+                  serviceType, 
+                  channelName
+                } 
+              })}
+            >
+              <BarChart3 className="w-3 h-3 mr-1" />
+              Статистика
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Очистити історію
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { setDeleteDays(3); setDeleteDialogOpen(true); }}>
+                  Очистити за 3 дні
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setDeleteDays(7); setDeleteDialogOpen(true); }}>
+                  Очистити за 7 днів
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setDeleteDays(30); setDeleteDialogOpen(true); }}>
+                  Очистити за 30 днів
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </div>
+        </PageHeader>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                <Card className="glass-effect">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold">{posts.length}</div>
-                    <p className="text-xs text-muted-foreground">Завантажено</p>
-                  </CardContent>
-                </Card>
-                <Card className="glass-effect">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold">
-                      {posts.reduce((sum, p) => sum + (p.views || 0), 0).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Всього переглядів</p>
-                  </CardContent>
-                </Card>
-                <Card className="glass-effect">
-                  <CardContent className="p-4">
-                    <div className="text-2xl font-bold">
-                      {posts.length > 0 ? Math.round(posts.reduce((sum, p) => sum + (p.views || 0), 0) / posts.length) : 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Середньо на пост</p>
-                  </CardContent>
-                </Card>
-        </div>
+        {/* Published and Scheduled Stats - Copied from ChannelStats.tsx (lines 900-979) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+          {/* Published Posts */}
+          <Card className="glass-effect">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-5 h-5 text-success" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-2xl font-bold text-success">{publishedPosts}</div>
+                  <p className="text-sm text-muted-foreground truncate">Опубліковано постів</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate("/all-posts", { 
+                    state: { 
+                      serviceId, 
+                      serviceType, 
+                      channelName
+                    } 
+                  })}
+                >
+                  <MessageSquare className="w-3 h-3 mr-1" />
+                  Переглянути
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Posts List */}
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <Card key={post.id} className="glass-effect hover:bg-accent/50 transition-colors">
-              <CardContent className="p-6">
-                <div className="flex gap-4">
-                  {post.image_url && (
-                    <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-muted">
-                      <img 
-                        src={post.image_url} 
-                        alt="Post media" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-4">
-                        {post.content}
-                      </p>
-                      {post.image_url && !post.content && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <ImageIcon className="w-4 h-4" />
-                          <span className="text-sm">Медіа контент</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-4 mt-3">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Eye className="w-4 h-4" />
-                        <span className="font-semibold">{post.views?.toLocaleString() || 0}</span>
-                        <span>переглядів</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          {new Date(post.created_at).toLocaleString("uk-UA", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                      
-                      <Badge variant="outline" className="bg-success/10 text-success border-success/30">
-                        Опубліковано
-                      </Badge>
-                      
-                      {post.message_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-auto"
-                          onClick={() => {
-                            const link = channelName.startsWith('@') 
-                              ? `https://t.me/${channelName.substring(1)}/${post.message_id}`
-                              : `https://t.me/c/${channelName.replace('-100', '')}/${post.message_id}`;
-                            window.open(link, '_blank');
-                          }}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Відкрити в Telegram
-                        </Button>
-                      )}
-                    </div>
+          {/* Scheduled Posts (AI only) - Copied from ChannelStats.tsx (lines 951-979) */}
+          {serviceType === 'ai' && (
+            <Card className="glass-effect">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-5 h-5 text-amber-500" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-2xl font-bold text-amber-500">{scheduledPosts}/10</div>
+                    <p className="text-sm text-muted-foreground truncate">В черзі на публікацію</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate("/queue-management", { 
+                      state: { 
+                        serviceId, 
+                        serviceType, 
+                        channelName
+                      } 
+                    })}
+                  >
+                    <Clock className="w-3 h-3 mr-1" />
+                    Керувати
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
 
-        {/* Load More Button */}
-        {hasMore && !isLoading && (
-          <div className="mt-6 text-center">
-            <Button
-              variant="outline"
-              onClick={loadMore}
-              disabled={isLoading}
-            >
-              {isLoading ? "Завантаження..." : "Завантажити ще"}
-            </Button>
-          </div>
-        )}
-
-        {isLoading && page > 1 && (
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">Завантаження...</p>
-          </div>
-        )}
-
-        {posts.length === 0 && !isLoading && (
+        {/* Today/Week/Month/Last Post Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
+          {/* Today Posts */}
           <Card className="glass-effect">
-            <CardContent className="p-12 text-center">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Немає опублікованих постів</h3>
-              <p className="text-muted-foreground">
-                Пости з'являться тут після публікації в каналі
-              </p>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xl font-bold text-primary">{todayPosts}</div>
+                  <p className="text-xs text-muted-foreground truncate">Сьогодні</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Week Posts */}
+          <Card className="glass-effect">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xl font-bold">{weekPosts}</div>
+                  <p className="text-xs text-muted-foreground truncate">За тиждень</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Month Posts */}
+          <Card className="glass-effect">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-4 h-4 text-purple-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xl font-bold">{monthPosts}</div>
+                  <p className="text-xs text-muted-foreground truncate">За місяць</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Last Post - Copied from ChannelStats.tsx (lines 979-1004) */}
+          <Card className="glass-effect col-span-2">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold truncate">
+                    {lastPostDate 
+                      ? new Date(lastPostDate).toLocaleString("uk-UA", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Немає постів"
+                    }
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">Останній пост</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Posts Section - Copied from ChannelStats.tsx (lines 1354-1406) */}
+        {topPosts.length > 0 && (
+          <div id="top-posts-section" className="mt-8">
+            <Card className="glass-effect">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Топ-5 публікацій за переглядами
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topPosts.map((post, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 rounded-lg bg-accent/50 border border-border/30 hover:bg-accent/70 transition-colors"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${
+                            index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                            index === 1 ? 'bg-gray-400/20 text-gray-400' :
+                            index === 2 ? 'bg-orange-600/20 text-orange-600' :
+                            'bg-primary/10 text-primary'
+                          }`}>
+                            {index + 1}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground mb-2 line-clamp-3">
+                            {post.content}
+                          </p>
+                          <div className="space-y-2">
+                            <StatsDisplay post={post} showDetails={false} />
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>
+                                {new Date(post.created_at).toLocaleDateString("uk-UA", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </main>
+
+      {/* Delete Confirmation Dialog - Copied from ChannelStats.tsx (lines 1411-1445) */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Підтвердіть очищення історії
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Ви збираєтеся видалити всі пости старіші за <strong>{deleteDays} {deleteDays === 3 ? 'дні' : 'днів'}</strong> з історії в додатку.
+              </p>
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <p className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    <strong>Важливо:</strong> Пости будуть видалені тільки з історії в додатку. 
+                    В Telegram каналі вони залишаться без змін.
+                  </span>
+                </p>
+              </div>
+              <p className="text-sm">Цю дію неможливо скасувати.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePosts}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Так, очистити історію
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

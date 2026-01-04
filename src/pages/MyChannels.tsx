@@ -35,7 +35,8 @@ import {
   Clock,
   Filter,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -1218,6 +1219,35 @@ const MyChannels = () => {
                   )}
                 </div>
 
+                {/* Start/Stop Button - MOVED UP */}
+                <Button
+                  onClick={() => {
+                    console.log('🎯 Button clicked!', group.service.id);
+                    handleToggleBotStatus(group);
+                  }} 
+                  size="default" 
+                  variant={group.service.is_running ? "destructive" : "default"} 
+                  className="gap-2 w-full mt-3"
+                  disabled={cooldowns[group.service.id] > 0}
+                >
+                  {cooldowns[group.service.id] > 0 ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      <span>Зачекайте {cooldowns[group.service.id]} сек</span>
+                    </>
+                  ) : group.service.is_running ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      <span>Зупинити бота</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      <span>Запустити бота</span>
+                    </>
+                  )}
+                </Button>
+
                 {/* Collapsible Extended Content */}
                 <Collapsible
                   open={isExpanded}
@@ -1236,7 +1266,7 @@ const MyChannels = () => {
                   <CollapsibleTrigger asChild>
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-between mt-3"
+                      className="w-full justify-between mt-2"
                       size="sm"
                     >
                       <span className="text-sm">{isExpanded ? 'Згорнути' : 'Розгорнути'}</span>
@@ -1505,39 +1535,26 @@ const MyChannels = () => {
                       </div>
                     )}
 
-                    <Separator />
-
-                    {/* Start/Stop Button */}
-                    <Button
-                      onClick={() => {
-                        console.log('🖱️ Button clicked!', group.service.id);
-                        handleToggleBotStatus(group);
-                      }} 
-                      size="default" 
-                      variant={group.service.is_running ? "destructive" : "default"} 
-                      className="gap-2 w-full"
-                      disabled={cooldowns[group.service.id] > 0}
-                    >
-                      {cooldowns[group.service.id] > 0 ? (
-                        <>
-                          <Clock className="w-4 h-4" />
-                          <span>Зачекайте {cooldowns[group.service.id]} сек</span>
-                        </>
-                      ) : group.service.is_running ? (
-                        <>
-                          <Pause className="w-4 h-4" />
-                          <span>Зупинити бота</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" />
-                          <span>Запустити бота</span>
-                        </>
-                      )}
-                    </Button>
 
                     {/* Action Buttons */}
                     <div className="space-y-2">
+                      <Button 
+                        onClick={() => {
+                          navigate("/channel-posts", { 
+                            state: { 
+                              serviceId: group.service.id,
+                              serviceType: group.type,
+                              channelName: group.service.target_channel
+                            } 
+                          });
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Публікації каналу
+                      </Button>
+                      
                       <Button 
                         onClick={() => {
                           navigate("/channel-stats", { 

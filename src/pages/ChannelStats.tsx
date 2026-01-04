@@ -67,17 +67,6 @@ interface ChannelStats {
   avgReactionsPerPost: number;
 }
 
-interface TopPost {
-  id: string;
-  content: string;
-  views: number;
-  reactions: number;
-  created_at: string;
-  message_id?: number;
-  scraping_stats?: any;
-  mtproto_stats?: any;
-}
-
 interface ChannelInfo {
   title: string;
   username: string;
@@ -104,9 +93,6 @@ export default function ChannelStats() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<ChannelStats | null>(null);
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
-  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteDays, setDeleteDays] = useState<3 | 7 | 30>(3);
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'subscribers' | 'views' | 'reactions'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -471,33 +457,6 @@ export default function ChannelStats() {
     const avgReactionsPerPost = publishedPosts ? Math.round(totalReactions / publishedPosts) : 0;
     console.log('Total reactions:', totalReactions, 'Avg per post:', avgReactionsPerPost);
 
-    // Get top posts by views (with hybrid stats)
-    const { data: topPostsRaw } = await supabase
-      .from("posts_history")
-      .select("id, post_content, reactions, created_at, message_id, scraping_stats, mtproto_stats")
-      .eq("bot_service_id", serviceId)
-      .in("status", ["published", "success"])
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    const mappedTopPosts: TopPost[] = (topPostsRaw || []).map((post: any) => {
-      const scrapingViews = post.scraping_stats?.views ?? 0;
-      const mtprotoViews = post.mtproto_stats?.views ?? 0;
-      const views = Math.max(scrapingViews, mtprotoViews);
-      return {
-        id: post.id,
-        content: post.post_content || "",
-        views,
-        reactions: post.reactions || 0,
-        created_at: post.created_at,
-        message_id: post.message_id ?? undefined,
-        scraping_stats: post.scraping_stats,
-        mtproto_stats: post.mtproto_stats,
-      };
-    }).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
-
-    setTopPosts(mappedTopPosts);
-
     setStats({
       totalPosts: totalPosts || 0,
       publishedPosts: publishedPosts || 0,
@@ -637,17 +596,6 @@ export default function ChannelStats() {
     console.log('Total AI reactions:', totalReactions, 'Avg per post:', avgReactionsPerPost);
 
     // Get top posts by views (with hybrid stats)
-    const { data: topPostsData } = await supabase
-      .from("ai_generated_posts")
-      .select("id, content, views, reactions, created_at, message_id, scraping_stats, mtproto_stats")
-      .eq("ai_bot_service_id", serviceId)
-      .eq("status", "published")
-      .not("views", "is", null)
-      .order("views", { ascending: false })
-      .limit(5);
-
-    setTopPosts(topPostsData || []);
-
     setStats({
       totalPosts: totalPosts,
       publishedPosts: publishedPosts || 0,
@@ -744,39 +692,6 @@ export default function ChannelStats() {
       });
     } finally {
       setIsSyncing(false);
-    }
-  };
-
-  const handleDeletePosts = async () => {
-    try {
-      const dateLimit = new Date();
-      dateLimit.setDate(dateLimit.getDate() - deleteDays);
-      
-      const table = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
-      const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
-      
-      const { error, count } = await (supabase as any)
-        .from(table as any)
-        .delete({ count: 'exact' })
-        .eq(idField, serviceId)
-        .lte('created_at', dateLimit.toISOString());
-
-      if (error) throw error;
-
-      toast({
-        title: "Історія очищена",
-        description: `Видалено ${count || 0} постів старіших за ${deleteDays} ${deleteDays === 3 ? 'дні' : deleteDays === 7 ? 'днів' : 'днів'}`,
-      });
-
-      setDeleteDialogOpen(false);
-      loadStats(); // Reload stats
-    } catch (error: any) {
-      console.error("Error deleting posts:", error);
-      toast({
-        title: "Помилка",
-        description: "Не вдалося очистити історію",
-        variant: "destructive",
-      });
     }
   };
 
@@ -897,9 +812,9 @@ export default function ChannelStats() {
               </Card>
             )}
 
-            {/* Published Posts */}
+            {/* Published Posts - Link moved to ChannelPosts page */}
             {activeTab === 'all' && (
-            <Card className="glass-effect col-span-2" key="published-posts">
+            <Card className="glass-effect" key="published-posts">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
@@ -909,48 +824,28 @@ export default function ChannelStats() {
                     <div className="text-xl font-bold text-success">{stats.publishedPosts}</div>
                     <p className="text-xs text-muted-foreground truncate">Опубліковано</p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate("/channel-posts", { 
-                        state: { 
-                          serviceId, 
-                          serviceType, 
-                          channelName 
-                        } 
-                      })}
-                    >
-                      <MessageSquare className="w-3 h-3 mr-1" />
-                      Переглянути
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setDeleteDays(3); setDeleteDialogOpen(true); }}>
-                          Очистити за 3 дні
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setDeleteDays(7); setDeleteDialogOpen(true); }}>
-                          Очистити за 7 днів
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setDeleteDays(30); setDeleteDialogOpen(true); }}>
-                          Очистити за 30 днів
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate("/channel-posts", { 
+                      state: { 
+                        serviceId, 
+                        serviceType, 
+                        channelName 
+                      } 
+                    })}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Переглянути
+                  </Button>
                 </div>
               </CardContent>
             </Card>
             )}
 
-            {/* Scheduled Posts (AI only) */}
+            {/* Scheduled Posts (AI only) - Queue management moved to ChannelPosts page */}
             {serviceType === 'ai' && activeTab === 'all' && (
-              <Card className="glass-effect col-span-2">
+              <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
@@ -1350,98 +1245,7 @@ export default function ChannelStats() {
           </div>
           </>
         )}
-
-        {/* Top Posts Section */}
-        {topPosts.length > 0 && (
-          <div className="mt-8">
-            <Card className="glass-effect">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-primary" />
-                  Топ-5 публікацій за переглядами
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topPosts.map((post, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-lg bg-accent/50 border border-border/30 hover:bg-accent/70 transition-colors"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${
-                            index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                            index === 1 ? 'bg-gray-400/20 text-gray-400' :
-                            index === 2 ? 'bg-orange-600/20 text-orange-600' :
-                            'bg-primary/10 text-primary'
-                          }`}>
-                            {index + 1}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground mb-2 line-clamp-3">
-                            {post.content}
-                          </p>
-                          <div className="space-y-2">
-                            <StatsDisplay post={post} showDetails={false} />
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Calendar className="w-3.5 h-3.5" />
-                              <span>
-                                {new Date(post.created_at).toLocaleDateString("uk-UA", {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </main>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              Підтвердіть очищення історії
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                Ви збираєтеся видалити всі пости старіші за <strong>{deleteDays} {deleteDays === 3 ? 'дні' : 'днів'}</strong> з історії в додатку.
-              </p>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <p className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>
-                    <strong>Важливо:</strong> Пости будуть видалені тільки з історії в додатку. 
-                    В Telegram каналі вони залишаться без змін.
-                  </span>
-                </p>
-              </div>
-              <p className="text-sm">Цю дію неможливо скасувати.</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeletePosts}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Так, очистити історію
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

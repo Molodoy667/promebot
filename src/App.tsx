@@ -16,6 +16,7 @@ import AIBotConfig from "./pages/AIBotConfig";
 import MyChannels from "./pages/MyChannels";
 import ChannelStats from "./pages/ChannelStats";
 import ChannelPosts from "./pages/ChannelPosts";
+import AllPosts from "./pages/AllPosts";
 import QueueManagement from "./pages/QueueManagement";
 import Admin from "./pages/Admin";
 import Moderator from "./pages/Moderator";
@@ -178,6 +179,7 @@ const AppContent = () => {
         <Route path="/my-channels" element={<Layout><ProtectedRoute><MyChannels /></ProtectedRoute></Layout>} />
         <Route path="/channel-stats" element={<Layout><ProtectedRoute><ChannelStats /></ProtectedRoute></Layout>} />
         <Route path="/channel-posts" element={<Layout><ProtectedRoute><ChannelPosts /></ProtectedRoute></Layout>} />
+        <Route path="/all-posts" element={<Layout><ProtectedRoute><AllPosts /></ProtectedRoute></Layout>} />
         <Route path="/queue-management" element={<Layout><ProtectedRoute><QueueManagement /></ProtectedRoute></Layout>} />
         <Route path="/ai-chat" element={<Layout><ProtectedRoute><AIChat /></ProtectedRoute></Layout>} />
         <Route path="/reviews" element={<Layout><ProtectedRoute><Reviews /></ProtectedRoute></Layout>} />

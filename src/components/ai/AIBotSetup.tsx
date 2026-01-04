@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Sparkles, Save, Loader2, CheckCircle2, Info, HelpCircle, Bot, Play, Square, X, ChevronDown, ChevronUp, Pause, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { attachSpyToBotService } from "@/lib/spy-manager";
 import addBotInstruction from "@/assets/add-bot-instruction.jpg";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -872,14 +873,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             .eq("id", service.id);
         }
 
-        // Get active spy for statistics collection
-        const { data: activeSpy } = await supabase
-          .from('telegram_spies')
-          .select('id')
-          .eq('is_active', true)
-          .eq('is_authorized', true)
-          .limit(1)
-          .maybeSingle();
+        // Підключаємо юзербота для збору статистики
+        const spyId = await attachSpyToBotService(normalizedChannel);
 
         // Create new service for new channel with spy attached
         const { data: newService, error: serviceError } = await supabase
@@ -889,7 +884,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
             bot_id: botId,
             target_channel: normalizedChannel,
             service_type: "category_generation",
-            spy_id: activeSpy?.id || null,
+            spy_id: spyId,
           })
           .select()
           .single();
@@ -897,30 +892,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
         if (serviceError) throw serviceError;
         serviceId = newService.id;
         setService(newService as AIBotService);
-        
-        if (activeSpy) {
-          console.log('[AI Bot Setup] Attached spy for statistics:', activeSpy.id);
-          
-          // Try to join channel with spy for statistics collection
-          try {
-            const { error: joinError } = await supabase.functions.invoke('spy-join-channel', {
-              body: { 
-                spy_id: activeSpy.id, 
-                channel_identifier: normalizedChannel 
-              }
-            });
-            
-            if (joinError) {
-              console.log('[AI Bot Setup] Spy join warning:', joinError.message);
-            } else {
-              console.log('[AI Bot Setup] Spy joined target channel for statistics');
-            }
-          } catch (joinErr) {
-            console.log('[AI Bot Setup] Non-critical: spy join failed (will still collect available stats)');
-          }
-        } else {
-          console.log('[AI Bot Setup] No active spy available for statistics');
-        }
       }
       // Save publishing settings
       const { error: settingsError } = await supabase
