@@ -1060,7 +1060,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-sky-500">
-                        {channelInfo.viewsWeek > 0 ? '+' : ''}{channelInfo.viewsWeek.toLocaleString()}
+                        {(channelInfo?.viewsWeek || 0) > 0 ? '+' : ''}{(channelInfo?.viewsWeek || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Переглядів/тиждень</p>
                     </div>
@@ -1079,7 +1079,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-cyan-500">
-                        {channelInfo.viewsMonth > 0 ? '+' : ''}{channelInfo.viewsMonth.toLocaleString()}
+                        {(channelInfo?.viewsMonth || 0) > 0 ? '+' : ''}{(channelInfo?.viewsMonth || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Переглядів/місяць</p>
                     </div>
@@ -1098,7 +1098,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-pink-500">
-                        {channelInfo.reactionsToday > 0 ? '+' : ''}{channelInfo.reactionsToday.toLocaleString()}
+                        {(channelInfo?.reactionsToday || 0) > 0 ? '+' : ''}{(channelInfo?.reactionsToday || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Реакцій/день</p>
                     </div>
@@ -1117,7 +1117,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-rose-500">
-                        {channelInfo.reactionsWeek > 0 ? '+' : ''}{channelInfo.reactionsWeek.toLocaleString()}
+                        {(channelInfo?.reactionsWeek || 0) > 0 ? '+' : ''}{(channelInfo?.reactionsWeek || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Реакцій/тиждень</p>
                     </div>
@@ -1136,7 +1136,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-red-500">
-                        {channelInfo.reactionsMonth > 0 ? '+' : ''}{channelInfo.reactionsMonth.toLocaleString()}
+                        {(channelInfo?.reactionsMonth || 0) > 0 ? '+' : ''}{(channelInfo?.reactionsMonth || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Реакцій/місяць</p>
                     </div>
