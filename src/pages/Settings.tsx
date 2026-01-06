@@ -109,52 +109,40 @@ const Settings = () => {
     setIsUploadingAvatar(true);
 
     try {
-      // Delete old avatar from storage if exists
-      if (avatarUrl && avatarUrl.includes('avatars/')) {
-        try {
-          const oldPath = avatarUrl.split('/avatars/')[1];
-          if (oldPath) {
-            await supabase.storage
-              .from("avatars")
-              .remove([oldPath]);
+      // Convert to base64 and save to profiles directly (workaround for RLS)
+      const reader = new FileReader();
+      
+      await new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            const base64 = reader.result as string;
+            
+            // Update profile with base64 avatar
+            const { error: updateError } = await supabase
+              .from("profiles")
+              .update({ avatar_url: base64 })
+              .eq("id", user.id);
+
+            if (updateError) throw updateError;
+
+            setAvatarUrl(base64);
+            toast({
+              title: "Успіх",
+              description: "Аватар оновлено",
+            });
+            resolve(true);
+          } catch (err) {
+            reject(err);
           }
-        } catch (err) {
-          console.error("Error deleting old avatar:", err);
-          // Continue even if deletion fails
-        }
-      }
-
-      const compressedFile = await compressImage(file);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, compressedFile, { upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: publicUrl })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-
-      setAvatarUrl(publicUrl);
-      toast({
-        title: "Успіх",
-        description: "Аватар оновлено",
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
+
     } catch (error: any) {
       toast({
         title: "Помилка",
-        description: error.message,
+        description: error.message || "Не вдалося завантажити аватар",
         variant: "destructive",
       });
     } finally {

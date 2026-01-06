@@ -35,6 +35,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatsDisplay } from "@/components/StatsDisplay";
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  Area,
+  AreaChart
+} from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Copied from ChannelStats.tsx (lines 69-78)
 interface TopPost {
@@ -68,6 +80,14 @@ export default function ChannelPosts() {
   const [weekPosts, setWeekPosts] = useState(0);
   const [monthPosts, setMonthPosts] = useState(0);
   const [lastPostDate, setLastPostDate] = useState<string | null>(null);
+  const [showAllTopPosts, setShowAllTopPosts] = useState(false);
+  const [postsHeatmap, setPostsHeatmap] = useState<Record<string, number>>({});
+  const [postsTimeline, setPostsTimeline] = useState<Array<{ date: string; count: number }>>([]);
+  const [postsTimelineRaw, setPostsTimelineRaw] = useState<Array<{ datetime: string; count: number }>>([]);
+  const [channelCreatedAt, setChannelCreatedAt] = useState<string | null>(null);
+  const [timelineRange, setTimelineRange] = useState<'3d' | '7d' | '14d' | '30d' | 'all'>('all');
+  const [hourFilter, setHourFilter] = useState<number | 'all'>('all');
+  const [dayFilter, setDayFilter] = useState<number | 'all'>('all');
 
   useEffect(() => {
     if (!serviceId || !serviceType) {
@@ -80,10 +100,32 @@ export default function ChannelPosts() {
   const loadAllData = async () => {
     setIsLoading(true);
     await Promise.all([
+      loadChannelCreatedDate(),
       loadTopPosts(),
-      loadStats()
+      loadStats(),
+      loadPostsHeatmap()
     ]);
     setIsLoading(false);
+  };
+
+  const loadChannelCreatedDate = async () => {
+    try {
+      const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data, error } = await supabase
+        .from(table)
+        .select('created_at')
+        .eq('id', serviceId)
+        .single();
+
+      if (error) throw error;
+      setChannelCreatedAt(data?.created_at || null);
+    } catch (error) {
+      console.error("Error loading channel created date:", error);
+      // Fallback to 1 month ago if can't get creation date
+      const fallback = new Date();
+      fallback.setMonth(fallback.getMonth() - 1);
+      setChannelCreatedAt(fallback.toISOString());
+    }
   };
 
   // Copied from ChannelStats.tsx (lines 474-498 for plagiarist, 639-648 for ai)
@@ -126,6 +168,74 @@ export default function ChannelPosts() {
       }
     } catch (error) {
       console.error("Error loading top posts:", error);
+    }
+  };
+
+  const loadPostsHeatmap = async () => {
+    try {
+      const table = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
+      const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
+      
+      // Use channel creation date as start, or fallback to 1 month ago
+      const startDate = channelCreatedAt 
+        ? new Date(channelCreatedAt) 
+        : (() => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 1);
+            return d;
+          })();
+
+      const { data: posts, error } = await supabase
+        .from(table)
+        .select('created_at')
+        .eq(idField, serviceId)
+        .gte('created_at', startDate.toISOString());
+
+      if (error) throw error;
+
+      // Group by full datetime (keep hours)
+      const heatmap: Record<string, number> = {};
+      posts?.forEach(post => {
+        const dateTime = post.created_at; // Keep full ISO string with time
+        heatmap[dateTime] = (heatmap[dateTime] || 0) + 1;
+      });
+
+      setPostsHeatmap(heatmap);
+
+      // Store raw data with full datetime for filtering
+      const rawTimeline: Array<{ datetime: string; count: number }> = [];
+      posts?.forEach(post => {
+        rawTimeline.push({
+          datetime: post.created_at,
+          count: 1
+        });
+      });
+      setPostsTimelineRaw(rawTimeline);
+
+      // Also prepare aggregated timeline data by date
+      const timelineMap: Record<string, number> = {};
+      posts?.forEach(post => {
+        const date = new Date(post.created_at).toISOString().split('T')[0];
+        timelineMap[date] = (timelineMap[date] || 0) + 1;
+      });
+
+      // Fill gaps: create timeline with all days (even if count is 0)
+      const timeline: Array<{ date: string; count: number }> = [];
+      const endDate = new Date();
+      const currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        timeline.push({
+          date: dateStr,
+          count: timelineMap[dateStr] || 0
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      setPostsTimeline(timeline);
+    } catch (error) {
+      console.error("Error loading posts heatmap:", error);
     }
   };
 
@@ -408,13 +518,28 @@ export default function ChannelPosts() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold truncate">
                     {lastPostDate 
-                      ? new Date(lastPostDate).toLocaleString("uk-UA", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
+                      ? (() => {
+                          const date = new Date(lastPostDate);
+                          const now = new Date();
+                          const diffMs = now.getTime() - date.getTime();
+                          const diffMins = Math.floor(diffMs / 60000);
+                          const diffHours = Math.floor(diffMs / 3600000);
+                          const diffDays = Math.floor(diffMs / 86400000);
+                          
+                          if (diffMins < 1) return "Щойно";
+                          if (diffMins < 60) return `${diffMins} хв тому`;
+                          if (diffHours < 24) return `${diffHours} год тому`;
+                          if (diffDays === 1) return "Вчора";
+                          if (diffDays < 7) return `${diffDays} дн тому`;
+                          
+                          return date.toLocaleString("uk-UA", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+                        })()
                       : "Немає постів"
                     }
                   </div>
@@ -437,7 +562,7 @@ export default function ChannelPosts() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {topPosts.map((post, index) => (
+                  {topPosts.slice(0, showAllTopPosts ? 5 : 1).map((post, index) => (
                     <div 
                       key={index}
                       className="p-4 rounded-lg bg-accent/50 border border-border/30 hover:bg-accent/70 transition-colors"
@@ -474,7 +599,226 @@ export default function ChannelPosts() {
                       </div>
                     </div>
                   ))}
+                  
+                  {!showAllTopPosts && topPosts.length > 1 && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setShowAllTopPosts(true)}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Завантажити ще ({topPosts.length - 1})
+                    </Button>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+
+        {/* Timeline Chart (like TradingView) */}
+        {!isLoading && (
+          <div className="mt-8">
+            <Card className="glass-effect">
+              <CardHeader>
+                <div className="flex items-start justify-between flex-wrap gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      Динаміка Публікацій
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Графік активності з моменту додавання каналу
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2 flex-wrap">
+                    {/* Time Range */}
+                    <Select value={timelineRange} onValueChange={(value: any) => setTimelineRange(value)}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3d">3 дні</SelectItem>
+                        <SelectItem value="7d">7 днів</SelectItem>
+                        <SelectItem value="14d">14 днів</SelectItem>
+                        <SelectItem value="30d">30 днів</SelectItem>
+                        <SelectItem value="all">Весь час</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Day Filter */}
+                    <Select value={String(dayFilter)} onValueChange={(value) => setDayFilter(value === 'all' ? 'all' : Number(value))}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="День тижня" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі дні</SelectItem>
+                        <SelectItem value="1">Понеділок</SelectItem>
+                        <SelectItem value="2">Вівторок</SelectItem>
+                        <SelectItem value="3">Середа</SelectItem>
+                        <SelectItem value="4">Четвер</SelectItem>
+                        <SelectItem value="5">П'ятниця</SelectItem>
+                        <SelectItem value="6">Субота</SelectItem>
+                        <SelectItem value="0">Неділя</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Hour Filter */}
+                    <Select value={String(hourFilter)} onValueChange={(value) => setHourFilter(value === 'all' ? 'all' : Number(value))}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="Година" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі години</SelectItem>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {i}:00 - {i}:59
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  // Start with raw data if we need hour filtering, otherwise use aggregated
+                  let filteredRaw = [...postsTimelineRaw];
+                  
+                  // Apply hour filter first (on raw data)
+                  if (hourFilter !== 'all') {
+                    filteredRaw = filteredRaw.filter(item => {
+                      const date = new Date(item.datetime);
+                      return date.getHours() === hourFilter;
+                    });
+                  }
+                  
+                  // Apply day of week filter
+                  if (dayFilter !== 'all') {
+                    filteredRaw = filteredRaw.filter(item => {
+                      const date = new Date(item.datetime);
+                      return date.getDay() === dayFilter;
+                    });
+                  }
+                  
+                  // Apply time range filter
+                  if (timelineRange !== 'all') {
+                    const now = new Date();
+                    const daysAgo = timelineRange === '3d' ? 3 : 
+                                   timelineRange === '7d' ? 7 : 
+                                   timelineRange === '14d' ? 14 : 30;
+                    const cutoffDate = new Date(now);
+                    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+                    
+                    filteredRaw = filteredRaw.filter(item => 
+                      new Date(item.datetime) >= cutoffDate
+                    );
+                  }
+                  
+                  // Aggregate filtered data by date
+                  const aggregated: Record<string, number> = {};
+                  filteredRaw.forEach(item => {
+                    const date = new Date(item.datetime).toISOString().split('T')[0];
+                    aggregated[date] = (aggregated[date] || 0) + 1;
+                  });
+                  
+                  // Convert to array and fill gaps
+                  const startDate = timelineRange === 'all' && channelCreatedAt 
+                    ? new Date(channelCreatedAt)
+                    : (() => {
+                        const d = new Date();
+                        const days = timelineRange === '3d' ? 3 : 
+                                    timelineRange === '7d' ? 7 : 
+                                    timelineRange === '14d' ? 14 : 
+                                    timelineRange === '30d' ? 30 : 180;
+                        d.setDate(d.getDate() - days);
+                        return d;
+                      })();
+                  
+                  const filteredData: Array<{ date: string; count: number }> = [];
+                  const endDate = new Date();
+                  const currentDate = new Date(startDate);
+                  
+                  while (currentDate <= endDate) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    
+                    // Check if this day matches day filter (if active)
+                    const matchesDay = dayFilter === 'all' || currentDate.getDay() === dayFilter;
+                    
+                    if (matchesDay) {
+                      filteredData.push({
+                        date: dateStr,
+                        count: aggregated[dateStr] || 0
+                      });
+                    }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                  }
+                  
+                  return filteredData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={filteredData}>
+                      <defs>
+                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#888"
+                        tick={{ fill: '#888', fontSize: 12 }}
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
+                        }}
+                      />
+                      <YAxis 
+                        stroke="#888"
+                        tick={{ fill: '#888', fontSize: 12 }}
+                        label={{ value: 'Кількість', angle: -90, position: 'insideLeft', fill: '#888' }}
+                      />
+                      <RechartsTooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                          border: '1px solid #6366f1',
+                          borderRadius: '8px',
+                          color: '#fff'
+                        }}
+                        labelFormatter={(value) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString('uk-UA', { 
+                            day: '2-digit', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          });
+                        }}
+                        formatter={(value: any) => [`${value} постів`, 'Кількість']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="count" 
+                        stroke="#6366f1" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorCount)"
+                        dot={{ fill: '#6366f1', r: 4 }}
+                        activeDot={{ r: 6, fill: '#818cf8' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  ) : (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p>Немає даних для графіка</p>
+                    </div>
+                  </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>

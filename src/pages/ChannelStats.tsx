@@ -48,6 +48,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsDisplay } from "@/components/StatsDisplay";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer 
+} from "recharts";
 
 interface ChannelStats {
   totalPosts: number;
@@ -96,6 +106,12 @@ export default function ChannelStats() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'subscribers' | 'views' | 'reactions'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // Timeline data for charts
+  const [viewsTimeline, setViewsTimeline] = useState<Array<{ date: string; count: number }>>([]);
+  const [reactionsTimeline, setReactionsTimeline] = useState<Array<{ date: string; count: number }>>([]);
+  const [subscribersTimeline, setSubscribersTimeline] = useState<Array<{ date: string; count: number }>>([]);
+  const [timelineRange, setTimelineRange] = useState<'7d' | '14d' | '30d' | 'all'>('30d');
 
   const { serviceId, serviceType, channelName } = location.state || {};
   
@@ -147,6 +163,53 @@ export default function ChannelStats() {
       subscription.unsubscribe();
     };
   }, [serviceId, serviceType]);
+
+  useEffect(() => {
+    if (serviceId && serviceType) {
+      loadTimelines();
+    }
+  }, [timelineRange]);
+
+  const loadTimelines = async () => {
+    try {
+      const daysAgo = timelineRange === '7d' ? 7 : timelineRange === '14d' ? 14 : timelineRange === '30d' ? 30 : 365;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysAgo);
+
+      const { data: history } = await (supabase
+        .from('channel_stats_history' as any)
+        .select('recorded_at, subscribers_count, total_views, total_reactions')
+        .eq('service_id', serviceId)
+        .eq('service_type', serviceType)
+        .gte('recorded_at', startDate.toISOString())
+        .order('recorded_at', { ascending: true }) as any);
+
+      if (history) {
+        // Views timeline
+        const viewsData = history.map((h: any) => ({
+          date: new Date(h.recorded_at).toLocaleDateString('uk-UA'),
+          count: h.total_views || 0
+        }));
+        setViewsTimeline(viewsData);
+
+        // Reactions timeline
+        const reactionsData = history.map((h: any) => ({
+          date: new Date(h.recorded_at).toLocaleDateString('uk-UA'),
+          count: h.total_reactions || 0
+        }));
+        setReactionsTimeline(reactionsData);
+
+        // Subscribers timeline
+        const subsData = history.map((h: any) => ({
+          date: new Date(h.recorded_at).toLocaleDateString('uk-UA'),
+          count: h.subscribers_count || 0
+        }));
+        setSubscribersTimeline(subsData);
+      }
+    } catch (error) {
+      console.error('Error loading timelines:', error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -296,7 +359,7 @@ export default function ChannelStats() {
           reactionsMonth = currentReactions - (monthRow.total_reactions || 0);
         }
         
-        await supabase
+        const { data: upsertResult } = await supabase
           .from('channel_stats_history' as any)
           .upsert({
             service_id: serviceId,
@@ -306,7 +369,14 @@ export default function ChannelStats() {
             total_views: stats?.totalViews || 0,
             total_reactions: stats?.totalReactions || 0,
             recorded_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'service_id,service_type,recorded_at' })
+          .select('recorded_at')
+          .single();
+
+        // Get last update time from history
+        if (upsertResult) {
+          setLastUpdated(new Date(upsertResult.recorded_at));
+        }
         }
         
         setChannelInfo({
@@ -475,7 +545,19 @@ export default function ChannelStats() {
       avgReactionsPerPost,
     });
     
-    setLastUpdated(new Date());
+    // Get last update time from history table
+    const { data: lastHistory } = await supabase
+      .from('channel_stats_history' as any)
+      .select('recorded_at')
+      .eq('service_id', serviceId)
+      .eq('service_type', serviceType)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (lastHistory) {
+      setLastUpdated(new Date(lastHistory.recorded_at));
+    }
   };
 
   const loadAIStats = async () => {
@@ -614,7 +696,19 @@ export default function ChannelStats() {
       avgReactionsPerPost,
     });
     
-    setLastUpdated(new Date());
+    // Get last update time from history table
+    const { data: lastHistory } = await supabase
+      .from('channel_stats_history' as any)
+      .select('recorded_at')
+      .eq('ai_bot_service_id', serviceId)
+      .eq('service_type', serviceType)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (lastHistory) {
+      setLastUpdated(new Date(lastHistory.recorded_at));
+    }
   };
 
   const handleSyncStats = async (mode: 'hybrid' | 'scraping' | 'userbot' = 'hybrid') => {
@@ -1030,6 +1124,156 @@ export default function ChannelStats() {
                       <p className="text-xs text-muted-foreground truncate">Реакцій/місяць</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Timeline Charts */}
+          <div className="mt-8 space-y-6">
+            {/* Views Chart */}
+            {(activeTab === 'all' || activeTab === 'views') && (
+              <Card className="glass-effect">
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-primary" />
+                      <CardTitle>Динаміка Переглядів</CardTitle>
+                    </div>
+                    <Select value={timelineRange} onValueChange={(value: any) => setTimelineRange(value)}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">7 днів</SelectItem>
+                        <SelectItem value="14d">14 днів</SelectItem>
+                        <SelectItem value="30d">30 днів</SelectItem>
+                        <SelectItem value="all">Весь час</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {viewsTimeline.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={viewsTimeline}>
+                        <defs>
+                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
+                        <XAxis dataKey="date" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #6366f1', borderRadius: '8px', color: '#fff' }}
+                          formatter={(value: any) => [`${value}`, 'Переглядів']}
+                        />
+                        <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={3} fill="url(#colorViews)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">Немає даних</div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reactions Chart */}
+            {(activeTab === 'all' || activeTab === 'reactions') && (
+              <Card className="glass-effect">
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-rose-500" />
+                      <CardTitle>Динаміка Реакцій</CardTitle>
+                    </div>
+                    <Select value={timelineRange} onValueChange={(value: any) => setTimelineRange(value)}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">7 днів</SelectItem>
+                        <SelectItem value="14d">14 днів</SelectItem>
+                        <SelectItem value="30d">30 днів</SelectItem>
+                        <SelectItem value="all">Весь час</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {reactionsTimeline.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={reactionsTimeline}>
+                        <defs>
+                          <linearGradient id="colorReactions" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
+                        <XAxis dataKey="date" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #f43f5e', borderRadius: '8px', color: '#fff' }}
+                          formatter={(value: any) => [`${value}`, 'Реакцій']}
+                        />
+                        <Area type="monotone" dataKey="count" stroke="#f43f5e" strokeWidth={3} fill="url(#colorReactions)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">Немає даних</div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Subscribers Chart */}
+            {(activeTab === 'all' || activeTab === 'subscribers') && (
+              <Card className="glass-effect">
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-green-500" />
+                      <CardTitle>Динаміка Підписників</CardTitle>
+                    </div>
+                    <Select value={timelineRange} onValueChange={(value: any) => setTimelineRange(value)}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">7 днів</SelectItem>
+                        <SelectItem value="14d">14 днів</SelectItem>
+                        <SelectItem value="30d">30 днів</SelectItem>
+                        <SelectItem value="all">Весь час</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {subscribersTimeline.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={subscribersTimeline}>
+                        <defs>
+                          <linearGradient id="colorSubscribers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
+                        <XAxis dataKey="date" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #10b981', borderRadius: '8px', color: '#fff' }}
+                          formatter={(value: any) => [`${value}`, 'Підписників']}
+                        />
+                        <Area type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} fill="url(#colorSubscribers)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">Немає даних</div>
+                  )}
                 </CardContent>
               </Card>
             )}

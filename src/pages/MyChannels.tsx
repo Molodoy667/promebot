@@ -918,21 +918,57 @@ const MyChannels = () => {
     if (!groupToDelete) return;
 
     try {
-      const table = groupToDelete.type === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const serviceId = groupToDelete.service.id;
+      const serviceType = groupToDelete.type;
       
+      // Delete posts history
+      if (serviceType === 'plagiarist') {
+        await supabase
+          .from("posts_history")
+          .delete()
+          .eq("bot_service_id", serviceId);
+      } else {
+        await supabase
+          .from("ai_generated_posts")
+          .delete()
+          .eq("ai_bot_service_id", serviceId);
+      }
+
+      // Delete channel stats history
+      await (supabase
+        .from('channel_stats_history' as any)
+        .delete()
+        .eq('service_id', serviceId)
+        .eq('service_type', serviceType) as any);
+
+      // Delete source channels or categories
+      if (serviceType === 'plagiarist') {
+        await supabase
+          .from("source_channels")
+          .delete()
+          .eq("bot_service_id", serviceId);
+      } else {
+        await supabase
+          .from("ai_bot_categories")
+          .delete()
+          .eq("ai_bot_service_id", serviceId);
+      }
+
+      // Finally delete the service itself
+      const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
       const { error: serviceError } = await supabase
         .from(table)
         .delete()
-        .eq("id", groupToDelete.service.id);
+        .eq("id", serviceId);
 
       if (serviceError) throw serviceError;
 
       // Update local state
-      setChannelGroups(channelGroups.filter(g => g.service.id !== groupToDelete.service.id));
+      setChannelGroups(channelGroups.filter(g => g.service.id !== serviceId));
 
       toast({
         title: "Канал видалено",
-        description: "Канал та вся його історія успішно видалені",
+        description: "Канал, пости та статистика успішно видалені",
         duration: 2000,
       });
       
