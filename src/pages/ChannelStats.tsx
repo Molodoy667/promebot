@@ -501,17 +501,17 @@ export default function ChannelStats() {
       avgPostsPerDay = daysSinceFirst > 0 ? publishedPosts / daysSinceFirst : 0;
     }
 
-    // Calculate views (from hybrid stats, views column may not exist in DB)
+    // Calculate views (from MTProto stats only)
     const { data: postsWithViewStats } = await supabase
       .from("posts_history")
-      .select("scraping_stats, mtproto_stats")
+      .select("mtproto_stats, views")
       .eq("bot_service_id", serviceId)
       .in("status", ["published", "success"]);
 
     const totalViews = (postsWithViewStats || []).reduce((sum, post: any) => {
-      const scrapingViews = post.scraping_stats?.views ?? 0;
       const mtprotoViews = post.mtproto_stats?.views ?? 0;
-      return sum + Math.max(scrapingViews, mtprotoViews);
+      const directViews = post.views ?? 0;
+      return sum + Math.max(mtprotoViews, directViews);
     }, 0);
     const avgViewsPerPost = publishedPosts ? Math.round(totalViews / publishedPosts) : 0;
 
@@ -677,7 +677,7 @@ export default function ChannelStats() {
     const avgReactionsPerPost = publishedPosts ? Math.round(totalReactions / publishedPosts) : 0;
     console.log('Total AI reactions:', totalReactions, 'Avg per post:', avgReactionsPerPost);
 
-    // Get top posts by views (with hybrid stats)
+    // Get top posts by views (MTProto stats)
     setStats({
       totalPosts: totalPosts,
       publishedPosts: publishedPosts || 0,
@@ -711,11 +711,28 @@ export default function ChannelStats() {
     }
   };
 
-  const handleSyncStats = async (mode: 'hybrid' | 'scraping' | 'userbot' = 'hybrid') => {
+  const handleSyncStats = async () => {
     setIsSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("sync-stats-scraping", {
-        body: { serviceId, serviceType, mode },
+      // Get spy_id from service
+      const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data: service } = await supabase
+        .from(table)
+        .select('spy_id')
+        .eq('id', serviceId)
+        .single();
+
+      if (!service?.spy_id) {
+        throw new Error('Юзербот не підключений до каналу');
+      }
+
+      // Call MTProto sync only
+      const { data, error } = await supabase.functions.invoke("sync-stats-userbot", {
+        body: { 
+          serviceId, 
+          serviceType,
+          spyId: service.spy_id
+        },
       });
 
 
