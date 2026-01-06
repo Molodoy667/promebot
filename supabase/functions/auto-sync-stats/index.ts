@@ -28,15 +28,11 @@ serve(async (req) => {
     // Get all active services with hybrid method
     const { data: botServices, error: botErr } = await supabaseClient
       .from('bot_services')
-      .select('id, target_channel, spy_id, stats_method, is_running')
-      .eq('is_running', true)
-      .in('stats_method', ['hybrid', 'scraping', 'mtproto']);
+      .select('id, target_channel, spy_id');
 
     const { data: aiServices, error: aiErr } = await supabaseClient
       .from('ai_bot_services')
-      .select('id, target_channel, spy_id, stats_method, is_active')
-      .eq('is_active', true)
-      .in('stats_method', ['hybrid', 'scraping', 'mtproto']);
+      .select('id, target_channel, spy_id');
 
     if (botErr || aiErr) {
       throw new Error('Failed to fetch services');
@@ -56,7 +52,7 @@ serve(async (req) => {
     // Process each service
     for (const service of allServices) {
       try {
-        const method = service.stats_method || 'hybrid';
+        const method = 'hybrid'; // Default to hybrid method
         
         // Scraping (швидкий)
         if (method === 'scraping' || method === 'hybrid') {
