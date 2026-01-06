@@ -975,7 +975,7 @@ export default function ChannelStats() {
             )}
 
             {/* Subscribers Today */}
-            {shouldShowCard('subscribers') && channelInfo?.subscribersToday !== undefined && (
+            {shouldShowCard('subscribers') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -994,7 +994,7 @@ export default function ChannelStats() {
             )}
             
             {/* Subscribers Week */}
-            {shouldShowCard('subscribers') && channelInfo?.subscribersWeek !== undefined && (
+            {shouldShowCard('subscribers') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1013,7 +1013,7 @@ export default function ChannelStats() {
             )}
             
             {/* Subscribers Month */}
-            {shouldShowCard('subscribers') && channelInfo?.subscribersMonth !== undefined && (
+            {shouldShowCard('subscribers') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1032,7 +1032,7 @@ export default function ChannelStats() {
             )}
             
             {/* Views Today */}
-            {shouldShowCard('views') && channelInfo?.viewsToday !== undefined && (
+            {shouldShowCard('views') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1051,7 +1051,7 @@ export default function ChannelStats() {
             )}
             
             {/* Views Week */}
-            {shouldShowCard('views') && channelInfo?.viewsWeek !== undefined && (
+            {shouldShowCard('views') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1070,7 +1070,7 @@ export default function ChannelStats() {
             )}
             
             {/* Views Month */}
-            {shouldShowCard('views') && channelInfo?.viewsMonth !== undefined && (
+            {shouldShowCard('views') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1089,7 +1089,7 @@ export default function ChannelStats() {
             )}
             
             {/* Reactions Today */}
-            {shouldShowCard('reactions') && channelInfo?.reactionsToday !== undefined && (
+            {shouldShowCard('reactions') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1108,7 +1108,7 @@ export default function ChannelStats() {
             )}
             
             {/* Reactions Week */}
-            {shouldShowCard('reactions') && channelInfo?.reactionsWeek !== undefined && (
+            {shouldShowCard('reactions') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
@@ -1127,7 +1127,7 @@ export default function ChannelStats() {
             )}
             
             {/* Reactions Month */}
-            {shouldShowCard('reactions') && channelInfo?.reactionsMonth !== undefined && (
+            {shouldShowCard('reactions') && (
               <Card className="glass-effect">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
