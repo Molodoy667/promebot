@@ -984,7 +984,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-green-500">
-                        {channelInfo.subscribersToday > 0 ? '+' : ''}{channelInfo.subscribersToday.toLocaleString()}
+                        {(channelInfo?.subscribersToday || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersToday || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/день</p>
                     </div>
@@ -1003,7 +1003,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-emerald-500">
-                        {channelInfo.subscribersWeek > 0 ? '+' : ''}{channelInfo.subscribersWeek.toLocaleString()}
+                        {(channelInfo?.subscribersWeek || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersWeek || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/тиждень</p>
                     </div>
@@ -1022,7 +1022,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-teal-500">
-                        {channelInfo.subscribersMonth > 0 ? '+' : ''}{channelInfo.subscribersMonth.toLocaleString()}
+                        {(channelInfo?.subscribersMonth || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersMonth || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/місяць</p>
                     </div>
@@ -1041,7 +1041,7 @@ export default function ChannelStats() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xl font-bold text-blue-500">
-                        {channelInfo.viewsToday > 0 ? '+' : ''}{channelInfo.viewsToday.toLocaleString()}
+                        {(channelInfo?.viewsToday || 0) > 0 ? '+' : ''}{(channelInfo?.viewsToday || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Переглядів/день</p>
                     </div>
