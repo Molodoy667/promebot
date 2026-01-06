@@ -2,9 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 /**
- * Автоматичний гібридний збір статистики
- * Викликається по cron кожні 15 хвилин
- * Збирає дані обома методами (scraping + MTProto) паралельно
+ * Автоматичний збір статистики через MTProto (юзербот)
+ * Викликається по cron кожні 5 хвилин
+ * Збирає точні дані з Telegram API
  */
 
 const corsHeaders = {
@@ -23,7 +23,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('[Auto-Sync] Starting hybrid stats collection...');
+    console.log('[Auto-Sync] Starting MTProto stats collection...');
 
     // Get all active services with hybrid method
     const { data: botServices, error: botErr } = await supabaseClient
@@ -43,74 +43,53 @@ serve(async (req) => {
       ...(aiServices || []).map(s => ({ ...s, type: 'ai' }))
     ];
 
-    console.log(`[Auto-Sync] Found ${allServices.length} active services`);
+    console.log(`[Auto-Sync] Found ${allServices.length} services`);
 
-    let scrapingCount = 0;
-    let mtprotoCount = 0;
+    let successCount = 0;
+    let skippedCount = 0;
     const errors: string[] = [];
 
-    // Process each service
+    // Process each service - MTProto only
     for (const service of allServices) {
       try {
-        const method = 'hybrid'; // Default to hybrid method
-        
-        // Scraping (швидкий)
-        if (method === 'scraping' || method === 'hybrid') {
-          try {
-            const { error: scrapingErr } = await supabaseClient.functions.invoke('sync-stats-scraping', {
-              body: {
-                serviceId: service.id,
-                serviceType: service.type
-              }
-            });
-            
-            if (!scrapingErr) {
-              scrapingCount++;
-              await supabaseClient
-                .from(service.type === 'plagiarist' ? 'bot_services' : 'ai_bot_services')
-                .update({ last_scraping_sync: new Date().toISOString() })
-                .eq('id', service.id);
-            } else {
-              errors.push(`Scraping ${service.id}: ${scrapingErr.message}`);
-            }
-          } catch (err: any) {
-            errors.push(`Scraping ${service.id}: ${err.message}`);
-          }
+        // Skip if no spy_id (no userbot connected)
+        if (!service.spy_id) {
+          skippedCount++;
+          console.log(`[Auto-Sync] Skipping ${service.id} - no spy_id`);
+          continue;
         }
 
-        // MTProto (точний, якщо є шпигун)
-        if ((method === 'mtproto' || method === 'hybrid') && service.spy_id) {
-          try {
-            const { error: mtprotoErr } = await supabaseClient.functions.invoke('sync-stats-userbot', {
-              body: {
-                serviceId: service.id,
-                serviceType: service.type,
-                spyId: service.spy_id
-              }
-            });
-            
-            if (!mtprotoErr) {
-              mtprotoCount++;
-              await supabaseClient
-                .from(service.type === 'plagiarist' ? 'bot_services' : 'ai_bot_services')
-                .update({ last_mtproto_sync: new Date().toISOString() })
-                .eq('id', service.id);
-            } else {
-              errors.push(`MTProto ${service.id}: ${mtprotoErr.message}`);
+        // MTProto through userbot
+        try {
+          const { error: mtprotoErr } = await supabaseClient.functions.invoke('sync-stats-userbot', {
+            body: {
+              serviceId: service.id,
+              serviceType: service.type,
+              spyId: service.spy_id
             }
-          } catch (err: any) {
-            errors.push(`MTProto ${service.id}: ${err.message}`);
+          });
+          
+          if (!mtprotoErr) {
+            successCount++;
+            await supabaseClient
+              .from(service.type === 'plagiarist' ? 'bot_services' : 'ai_bot_services')
+              .update({ last_mtproto_sync: new Date().toISOString() })
+              .eq('id', service.id);
+          } else {
+            errors.push(`${service.id}: ${mtprotoErr.message}`);
           }
+        } catch (err: any) {
+          errors.push(`${service.id}: ${err.message}`);
         }
 
         // Small delay between services
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (err: any) {
-        errors.push(`Service ${service.id}: ${err.message}`);
+        errors.push(`${service.id}: ${err.message}`);
       }
     }
 
-    console.log(`[Auto-Sync] Completed: ${scrapingCount} scraping, ${mtprotoCount} MTProto`);
+    console.log(`[Auto-Sync] Completed: ${successCount} synced, ${skippedCount} skipped (no userbot)`);
     if (errors.length > 0) {
       console.error(`[Auto-Sync] Errors:`, errors);
     }
@@ -119,9 +98,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         services: allServices.length,
-        scrapingCount,
-        mtprotoCount,
-        errors: errors.slice(0, 10), // Показуємо max 10 помилок
+        synced: successCount,
+        skipped: skippedCount,
+        errors: errors.slice(0, 10),
         timestamp: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
