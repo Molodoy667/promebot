@@ -11,8 +11,16 @@ import {
   Calendar,
   Eye,
   Heart,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft,
+  TrendingUp,
+  Globe,
+  Lock,
+  Users,
+  Sparkles,
+  Bot
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Pagination,
@@ -46,6 +54,7 @@ export default function AllPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [channelInfo, setChannelInfo] = useState<any>(null);
   const postsPerPage = 10;
   const maxPosts = 100;
 
@@ -54,8 +63,35 @@ export default function AllPosts() {
       navigate("/my-channels");
       return;
     }
+    loadChannelInfo();
     loadPosts();
   }, [serviceId, serviceType, currentPage]);
+
+  const loadChannelInfo = async () => {
+    try {
+      const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data } = await supabase
+        .from(table)
+        .select('target_channel, spy_id')
+        .eq('id', serviceId)
+        .single();
+
+      if (data?.spy_id) {
+        // Get from spy
+        const { data: spy } = await supabase
+          .from('telegram_spies')
+          .select('channel_info')
+          .eq('id', data.spy_id)
+          .single();
+
+        if (spy?.channel_info) {
+          setChannelInfo(spy.channel_info);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading channel info:', error);
+    }
+  };
 
   const loadPosts = async () => {
     setIsLoading(true);
@@ -141,29 +177,91 @@ export default function AllPosts() {
     <div className="min-h-screen">
       <PageBreadcrumbs />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <PageHeader
-          icon={MessageSquare}
-          title={`Всі публікації: ${channelName}`}
-          description={`Топ-${totalPosts} публікацій за переглядами`}
-          backTo="/channel-posts"
-          backLabel="Назад до публікацій"
-        >
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/channel-posts", { 
-              state: { 
-                serviceId, 
-                serviceType, 
-                channelName
-              } 
-            })}
-            className="mt-4"
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Повернутись до публікацій
-          </Button>
-        </PageHeader>
+        {/* Channel Header (identical to ChannelStats) */}
+        <div className="mb-6">
+          <Card className="glass-effect">
+            <CardContent className="p-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/channel-posts", { 
+                  state: { serviceId, serviceType, channelName } 
+                })}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад до публікацій
+              </Button>
+              
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {channelInfo?.photo ? (
+                    <img 
+                      src={channelInfo.photo} 
+                      alt={channelInfo.title}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="w-10 h-10 text-primary" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Channel Info */}
+                <div className="flex-1 min-w-0">
+                  {/* Title */}
+                  <h1 className="text-2xl font-bold mb-1 truncate">
+                    {channelInfo?.title || channelName}
+                  </h1>
+                  
+                  {/* Username & Status */}
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <span className="text-muted-foreground">
+                      @{channelInfo?.username || channelName}
+                    </span>
+                    <Badge variant={channelInfo?.isPrivate ? "secondary" : "default"}>
+                      {channelInfo?.isPrivate ? (
+                        <>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Приватний
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="w-3 h-3 mr-1" />
+                          Публічний
+                        </>
+                      )}
+                    </Badge>
+                    <Badge variant="outline" className="flex-shrink-0">
+                      {serviceType === 'ai' ? (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          AI Бот
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-3 h-3 mr-1" />
+                          Плагіат-бот
+                        </>
+                      )}
+                    </Badge>
+                    {channelInfo?.membersCount && (
+                      <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex-shrink-0">
+                        <Users className="w-3 h-3 mr-1" />
+                        {channelInfo.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Subtitle */}
+                  <h2 className="text-lg font-semibold">Топ публікацій</h2>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Posts List */}
         <div className="mt-8 space-y-4">

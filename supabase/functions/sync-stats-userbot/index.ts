@@ -133,6 +133,7 @@ serve(async (req) => {
             .from(postsTable)
             .update({
               views: stats.views,
+              reactions: stats.reactions,
               mtproto_stats: mtprotoStats,
             })
             .eq('id', post.id);
@@ -152,10 +153,29 @@ serve(async (req) => {
     // Update service last sync time
     await supabaseClient
       .from(serviceTable)
-      .update({ last_mtproto_sync: new Date().toISOString() })
+      .update({ last_stats_sync: new Date().toISOString() })
       .eq('id', serviceId);
 
-    // Save to channel_stats_history (навіть якщо пости не оновлені, зберігаємо інфо про канал)
+    // Save channel info to spy
+    if (channelInfo) {
+      await supabaseClient
+        .from('telegram_spies')
+        .update({
+          channel_info: {
+            title: channelInfo.title,
+            username: channelInfo.username || channelUsername,
+            photo: channelInfo.photo || null,
+            isPrivate: channelInfo.broadcast === false,
+            participantsCount: channelInfo.participantsCount || 0,
+            membersCount: channelInfo.participantsCount || 0,
+          }
+        })
+        .eq('id', spyId);
+      
+      console.log(`[MTProto] Saved channel info to spy: ${channelInfo.title}`);
+    }
+
+    // Save to channel_stats_history (для графіків)
     if (channelInfo) {
       const totalViews = Array.from(statsMap.values()).reduce((sum, s) => sum + s.views, 0);
       const totalReactions = Array.from(statsMap.values()).reduce((sum, s) => sum + s.reactions, 0);
@@ -172,7 +192,7 @@ serve(async (req) => {
           recorded_at: new Date().toISOString()
         });
       
-      console.log(`[MTProto] Saved stats to history: ${channelInfo.participantsCount} subs, ${totalViews} views, ${updatedCount} posts updated`);
+      console.log(`[MTProto] Saved stats to history: ${channelInfo.participantsCount} subs, ${totalViews} views, ${totalReactions} reactions`);
     }
 
     console.log(`[MTProto] Successfully updated ${updatedCount}/${posts.length} posts`);

@@ -15,7 +15,11 @@ import {
   AlertTriangle,
   RefreshCw,
   Loader2,
-  Sparkles
+  Sparkles,
+  Globe,
+  Lock,
+  Users,
+  Bot
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -60,6 +64,7 @@ export default function QueueManagement() {
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
+  const [channelInfo, setChannelInfo] = useState<any>(null);
 
   const { serviceId, serviceType, channelName } = location.state || {};
 
@@ -74,6 +79,7 @@ export default function QueueManagement() {
       return;
     }
 
+    loadChannelInfo();
     loadQueue();
 
     // Real-time subscription
@@ -98,6 +104,30 @@ export default function QueueManagement() {
       subscription.unsubscribe();
     };
   }, [serviceId]);
+
+  const loadChannelInfo = async () => {
+    try {
+      const { data } = await supabase
+        .from('ai_bot_services')
+        .select('target_channel, spy_id')
+        .eq('id', serviceId)
+        .single();
+
+      if (data?.spy_id) {
+        const { data: spy } = await supabase
+          .from('telegram_spies')
+          .select('channel_info')
+          .eq('id', data.spy_id)
+          .single();
+
+        if (spy?.channel_info) {
+          setChannelInfo(spy.channel_info);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading channel info:', error);
+    }
+  };
 
   const loadQueue = async () => {
     try {
@@ -258,45 +288,91 @@ export default function QueueManagement() {
       <PageBreadcrumbs />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/channel-stats", { 
-              state: { serviceId, serviceType, channelName } 
-            })}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Назад до статистики
-          </Button>
           
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Clock className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Черга публікації</h1>
-                <p className="text-muted-foreground">{channelName}</p>
-                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span>
-                    Автогенерація: <strong className="text-foreground">кожні 10 хвилин</strong> до 10 постів
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+          <Card className="glass-effect">
+            <CardContent className="p-6">
+              {/* Back Button */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={loadQueue}
-                disabled={isGenerating}
+                onClick={() => navigate("/channel-posts", { 
+                  state: { serviceId, serviceType, channelName } 
+                })}
+                className="mb-4"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Оновити
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад до публікацій
               </Button>
-            </div>
-          </div>
+              
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {channelInfo?.photo ? (
+                    <img 
+                      src={channelInfo.photo} 
+                      alt={channelInfo.title}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Clock className="w-10 h-10 text-primary" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Channel Info */}
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold mb-1 truncate">
+                    {channelInfo?.title || channelName}
+                  </h1>
+                  
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <span className="text-muted-foreground">
+                      @{channelInfo?.username || channelName}
+                    </span>
+                    <Badge variant={channelInfo?.isPrivate ? "secondary" : "default"}>
+                      {channelInfo?.isPrivate ? (
+                        <>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Приватний
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="w-3 h-3 mr-1" />
+                          Публічний
+                        </>
+                      )}
+                    </Badge>
+                    <Badge variant="outline">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      AI Бот
+                    </Badge>
+                    {channelInfo?.membersCount && (
+                      <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                        <Users className="w-3 h-3 mr-1" />
+                        {channelInfo.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <h2 className="text-lg font-semibold mb-2">Черга публікацій</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Автогенерація кожні 10 хвилин • {scheduledPosts.length} постів в черзі
+                  </p>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadQueue}
+                  disabled={isGenerating}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Оновити
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Generation Status Banner */}
           {isGenerating && generationStatus && (

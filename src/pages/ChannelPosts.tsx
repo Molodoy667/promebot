@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/Loading";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { PageHeader } from "@/components/PageHeader";
@@ -15,7 +16,13 @@ import {
   BarChart3,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  ArrowLeft,
+  Globe,
+  Lock,
+  Users,
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -70,6 +77,7 @@ export default function ChannelPosts() {
   // Copied from ChannelStats.tsx (lines 107-109)
   const [isLoading, setIsLoading] = useState(true);
   const [topPosts, setTopPosts] = useState<TopPost[]>([]);
+  const [channelInfo, setChannelInfo] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteDays, setDeleteDays] = useState<3 | 7 | 30>(3);
   
@@ -94,8 +102,34 @@ export default function ChannelPosts() {
       navigate("/my-channels");
       return;
     }
+    loadChannelInfo();
     loadAllData();
   }, [serviceId, serviceType]);
+
+  const loadChannelInfo = async () => {
+    try {
+      const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data } = await supabase
+        .from(table)
+        .select('target_channel, spy_id')
+        .eq('id', serviceId)
+        .single();
+
+      if (data?.spy_id) {
+        const { data: spy } = await supabase
+          .from('telegram_spies')
+          .select('channel_info')
+          .eq('id', data.spy_id)
+          .single();
+
+        if (spy?.channel_info) {
+          setChannelInfo(spy.channel_info);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading channel info:', error);
+    }
+  };
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -354,30 +388,103 @@ export default function ChannelPosts() {
     <div className="min-h-screen">
       <PageBreadcrumbs />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <PageHeader
-          icon={MessageSquare}
-          title={`Публікації: ${channelName}`}
-          description={`Всі публікації каналу @${channelName}`}
-          backTo="/my-channels"
-          backLabel="Назад до каналів"
-        >
-          <div className="flex items-center gap-2 mt-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate("/channel-stats", { 
-                state: { 
-                  serviceId, 
-                  serviceType, 
-                  channelName
-                } 
-              })}
-            >
-              <BarChart3 className="w-3 h-3 mr-1" />
-              Статистика
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+        {/* Channel Header */}
+        <div className="mb-6">
+          <Card className="glass-effect">
+            <CardContent className="p-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/my-channels")}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад до каналів
+              </Button>
+              
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {channelInfo?.photo ? (
+                    <img 
+                      src={channelInfo.photo} 
+                      alt={channelInfo.title}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="w-10 h-10 text-primary" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Channel Info */}
+                <div className="flex-1 min-w-0">
+                  {/* Title */}
+                  <h1 className="text-2xl font-bold mb-1 truncate">
+                    {channelInfo?.title || channelName}
+                  </h1>
+                  
+                  {/* Username & Status */}
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <span className="text-muted-foreground">
+                      @{channelInfo?.username || channelName}
+                    </span>
+                    <Badge variant={channelInfo?.isPrivate ? "secondary" : "default"}>
+                      {channelInfo?.isPrivate ? (
+                        <>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Приватний
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="w-3 h-3 mr-1" />
+                          Публічний
+                        </>
+                      )}
+                    </Badge>
+                    <Badge variant="outline" className="flex-shrink-0">
+                      {serviceType === 'ai' ? (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          AI Бот
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-3 h-3 mr-1" />
+                          Плагіат-бот
+                        </>
+                      )}
+                    </Badge>
+                    {channelInfo?.membersCount && (
+                      <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex-shrink-0">
+                        <Users className="w-3 h-3 mr-1" />
+                        {channelInfo.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Subtitle */}
+                  <h2 className="text-lg font-semibold mb-3">Всі публікації каналу</h2>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate("/channel-stats", { 
+                        state: { 
+                          serviceId, 
+                          serviceType, 
+                          channelName
+                        } 
+                      })}
+                    >
+                      <BarChart3 className="w-3 h-3 mr-1" />
+                      Статистика
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Trash2 className="w-3 h-3 mr-1" />
                   Очистити історію
@@ -395,8 +502,12 @@ export default function ChannelPosts() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </PageHeader>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Published and Scheduled Stats - Copied from ChannelStats.tsx (lines 900-979) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">

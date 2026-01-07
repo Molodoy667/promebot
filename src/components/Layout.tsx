@@ -67,7 +67,7 @@ export const Layout = ({ children }: LayoutProps) => {
       )
       .subscribe();
 
-    // Real-time profile updates for balance changes
+    // Real-time profile updates (balance, avatar, username, etc.)
     const profileSubscription = supabase
       .channel('profile_changes')
       .on(
@@ -80,10 +80,10 @@ export const Layout = ({ children }: LayoutProps) => {
         },
         (payload) => {
           console.log('Profile updated:', payload);
+          // Оновлюємо весь профіль (включаючи avatar_url, username, etc.)
           setProfile((prev: any) => ({
             ...prev,
-            balance: payload.new.balance,
-            bonus_balance: payload.new.bonus_balance,
+            ...payload.new,
           }));
         }
       )
@@ -103,6 +103,55 @@ export const Layout = ({ children }: LayoutProps) => {
         () => {
           console.log('VIP subscription changed');
           checkVipStatus(profile.id);
+        }
+      )
+      .subscribe();
+
+    // Real-time channels count updates
+    const channelsSubscription = supabase
+      .channel('channels_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bot_services',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => {
+          console.log('Bot services changed');
+          loadChannelsCount(profile.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ai_bot_services',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => {
+          console.log('AI services changed');
+          loadChannelsCount(profile.id);
+        }
+      )
+      .subscribe();
+
+    // Real-time notifications updates
+    const notificationsSubscription = supabase
+      .channel('notifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => {
+          console.log('Notifications changed');
+          checkUnreadNotifications(profile.id);
         }
       )
       .subscribe();
@@ -202,6 +251,8 @@ export const Layout = ({ children }: LayoutProps) => {
       profileSubscription.unsubscribe();
       vipSubscription.unsubscribe();
       wheelSpinsSubscription.unsubscribe();
+      channelsSubscription.unsubscribe();
+      notificationsSubscription.unsubscribe();
       subscriptionChannel.unsubscribe();
       botServicesChannel.unsubscribe();
       aiServicesChannel.unsubscribe();

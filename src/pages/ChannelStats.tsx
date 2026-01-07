@@ -218,6 +218,18 @@ export default function ChannelStats() {
       // Load channel info from Telegram
       await loadChannelInfo();
       
+      // Get last_stats_sync from service
+      const serviceTable = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data: serviceData } = await supabase
+        .from(serviceTable)
+        .select('last_stats_sync')
+        .eq('id', serviceId)
+        .single();
+      
+      if (serviceData?.last_stats_sync) {
+        setLastUpdated(new Date(serviceData.last_stats_sync));
+      }
+      
       if (serviceType === 'plagiarist') {
         await loadPlagiaristStats();
       } else if (serviceType === 'ai') {
@@ -295,68 +307,103 @@ export default function ChannelStats() {
         let viewsToday = 0, viewsWeek = 0, viewsMonth = 0;
         let reactionsToday = 0, reactionsWeek = 0, reactionsMonth = 0;
         
-        const currentViews = stats?.totalViews || 0;
-        const currentReactions = stats?.totalReactions || 0;
-        
-        if (membersCount || currentViews || currentReactions) {
+        if (membersCount) {
+          // Рахуємо ПОСТИ за періоди на основі created_at
+          const postsTable = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
+          const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
+          
+          // За сьогодні (від 00:00)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const { data: todayPosts } = await supabase
+            .from(postsTable)
+            .select('views, reactions')
+            .eq(idField, serviceId)
+            .in('status', ['published', 'success'])
+            .gte('created_at', today.toISOString());
+          
+          if (todayPosts) {
+            viewsToday = todayPosts.reduce((sum, p) => sum + (p.views || 0), 0);
+            reactionsToday = todayPosts.reduce((sum, p) => sum + (p.reactions || 0), 0);
+          }
+          
+          // За тиждень (останні 7 днів)
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          weekAgo.setHours(0, 0, 0, 0);
+          const { data: weekPosts } = await supabase
+            .from(postsTable)
+            .select('views, reactions')
+            .eq(idField, serviceId)
+            .in('status', ['published', 'success'])
+            .gte('created_at', weekAgo.toISOString());
+          
+          if (weekPosts) {
+            viewsWeek = weekPosts.reduce((sum, p) => sum + (p.views || 0), 0);
+            reactionsWeek = weekPosts.reduce((sum, p) => sum + (p.reactions || 0), 0);
+          }
+          
+          // За місяць (останні 30 днів)
+          const monthAgo = new Date();
+          monthAgo.setDate(monthAgo.getDate() - 30);
+          monthAgo.setHours(0, 0, 0, 0);
+          const { data: monthPosts } = await supabase
+            .from(postsTable)
+            .select('views, reactions')
+            .eq(idField, serviceId)
+            .in('status', ['published', 'success'])
+            .gte('created_at', monthAgo.toISOString());
+          
+          if (monthPosts) {
+            viewsMonth = monthPosts.reduce((sum, p) => sum + (p.views || 0), 0);
+            reactionsMonth = monthPosts.reduce((sum, p) => sum + (p.reactions || 0), 0);
+          }
+          
+          // Рахуємо ПІДПИСНИКІВ через історію (різниця)
           // За сьогодні
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const { data: todayRecord } = await (supabase
-          .from('channel_stats_history' as any)
-          .select('subscribers_count, total_views, total_reactions')
-          .eq('service_id', serviceId)
-          .eq('service_type', serviceType)
-          .gte('recorded_at', today.toISOString())
-          .order('recorded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle() as any);
-        
-        const todayRow: any = todayRecord;
-        if (todayRow) {
-          subscribersToday = (membersCount || 0) - (todayRow.subscribers_count || 0);
-          viewsToday = currentViews - (todayRow.total_views || 0);
-          reactionsToday = currentReactions - (todayRow.total_reactions || 0);
-        }
-        
-        // За тиждень
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const { data: weekRecord } = await (supabase
-          .from('channel_stats_history' as any)
-          .select('subscribers_count, total_views, total_reactions')
-          .eq('service_id', serviceId)
-          .eq('service_type', serviceType)
-          .lte('recorded_at', weekAgo.toISOString())
-          .order('recorded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle() as any);
-        
-        const weekRow: any = weekRecord;
-        if (weekRow) {
-          subscribersWeek = (membersCount || 0) - (weekRow.subscribers_count || 0);
-          viewsWeek = currentViews - (weekRow.total_views || 0);
-          reactionsWeek = currentReactions - (weekRow.total_reactions || 0);
-        }
-        
-        // За місяць
-        const monthAgo = new Date();
-        monthAgo.setDate(monthAgo.getDate() - 30);
-        const { data: monthRecord } = await (supabase
-          .from('channel_stats_history' as any)
-          .select('subscribers_count, total_views, total_reactions')
-          .eq('service_id', serviceId)
-          .eq('service_type', serviceType)
-          .lte('recorded_at', monthAgo.toISOString())
-          .order('recorded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle() as any);
-        
-        const monthRow: any = monthRecord;
-        if (monthRow) {
-          subscribersMonth = (membersCount || 0) - (monthRow.subscribers_count || 0);
-          viewsMonth = currentViews - (monthRow.total_views || 0);
-          reactionsMonth = currentReactions - (monthRow.total_reactions || 0);
+          const { data: todayHistory } = await supabase
+            .from('channel_stats_history')
+            .select('subscribers_count')
+            .eq('service_id', serviceId)
+            .eq('service_type', serviceType)
+            .gte('recorded_at', today.toISOString())
+            .order('recorded_at', { ascending: true })
+            .limit(1)
+            .single();
+          
+          if (todayHistory) {
+            subscribersToday = Math.max(0, membersCount - (todayHistory.subscribers_count || 0));
+          }
+          
+          // За тиждень
+          const { data: weekHistory } = await supabase
+            .from('channel_stats_history')
+            .select('subscribers_count')
+            .eq('service_id', serviceId)
+            .eq('service_type', serviceType)
+            .gte('recorded_at', weekAgo.toISOString())
+            .order('recorded_at', { ascending: true })
+            .limit(1)
+            .single();
+          
+          if (weekHistory) {
+            subscribersWeek = Math.max(0, membersCount - (weekHistory.subscribers_count || 0));
+          }
+          
+          // За місяць
+          const { data: monthHistory } = await supabase
+            .from('channel_stats_history')
+            .select('subscribers_count')
+            .eq('service_id', serviceId)
+            .eq('service_type', serviceType)
+            .gte('recorded_at', monthAgo.toISOString())
+            .order('recorded_at', { ascending: true })
+            .limit(1)
+            .single();
+          
+          if (monthHistory) {
+            subscribersMonth = Math.max(0, membersCount - (monthHistory.subscribers_count || 0));
+          }
         }
         
         const { data: upsertResult } = await supabase
@@ -376,7 +423,6 @@ export default function ChannelStats() {
         // Get last update time from history
         if (upsertResult) {
           setLastUpdated(new Date(upsertResult.recorded_at));
-        }
         }
         
         setChannelInfo({
@@ -812,87 +858,111 @@ export default function ChannelStats() {
     <div className="min-h-screen">
       <PageBreadcrumbs />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <PageHeader
-          icon={BarChart3}
-          title={`Статистика: ${channelInfo?.title || channelName}`}
-          description={`Детальна аналітика публікацій та активності каналу @${channelInfo?.username || channelName}`}
-          backTo="/my-channels"
-          backLabel="Назад до каналів"
-        >
-          <div className="flex items-center gap-4 mt-4">
-            {isSyncing && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Оновлення статистики...</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span>Останнє оновлення: {lastUpdated.toLocaleString("uk-UA", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}</span>
-            </div>
-          </div>
-        </PageHeader>
-        
+        {/* Channel Header with Avatar */}
         <div className="mb-6">
-          {/* Channel Info Badge */}
-          <Card className="glass-effect mb-6">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="flex-shrink-0">
-                  {serviceType === 'ai' ? (
-                    <>
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Бот
-                    </>
+          <Card className="glass-effect">
+            <CardContent className="p-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/my-channels")}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад до каналів
+              </Button>
+              
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {channelInfo?.photo ? (
+                    <img 
+                      src={channelInfo.photo} 
+                      alt={channelInfo.title}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                    />
                   ) : (
-                    <>
-                      <Bot className="w-3 h-3 mr-1" />
-                      Плагіатор
-                    </>
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="w-10 h-10 text-primary" />
+                    </div>
                   )}
-                </Badge>
+                </div>
                 
-                {channelInfo?.description && (
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                    {channelInfo.description}
-                  </p>
-                )}
-                
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{channelInfo?.type || 'Канал'}</Badge>
-                  </div>
-                  <div className="flex items-center gap-1.5">
+                {/* Channel Info */}
+                <div className="flex-1 min-w-0">
+                  {/* Title */}
+                  <h1 className="text-2xl font-bold mb-1 truncate">
+                    {channelInfo?.title || channelName}
+                  </h1>
+                  
+                  {/* Username & Status */}
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <span className="text-muted-foreground">
+                      @{channelInfo?.username || channelName}
+                    </span>
+                    <Badge variant={channelInfo?.isPrivate ? "secondary" : "default"}>
                       {channelInfo?.isPrivate ? (
                         <>
-                          <Lock className="w-4 h-4 text-amber-500" />
-                          <span className="text-muted-foreground">Приватний</span>
+                          <Lock className="w-3 h-3 mr-1" />
+                          Приватний
                         </>
                       ) : (
                         <>
-                          <Globe className="w-4 h-4 text-green-500" />
-                          <span className="text-muted-foreground">Публічний</span>
+                          <Globe className="w-3 h-3 mr-1" />
+                          Публічний
                         </>
                       )}
+                    </Badge>
+                    <Badge variant="outline" className="flex-shrink-0">
+                      {serviceType === 'ai' ? (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          AI Бот
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-3 h-3 mr-1" />
+                          Плагіат-бот
+                        </>
+                      )}
+                    </Badge>
+                    {channelInfo?.membersCount && (
+                      <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex-shrink-0">
+                        <Users className="w-3 h-3 mr-1" />
+                        {channelInfo.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Subtitle */}
+                  <h2 className="text-lg font-semibold mb-3">Статистика каналу</h2>
+                  
+                  {/* Last Update & Sync Status */}
+                  <div className="flex items-center gap-4 flex-wrap text-sm text-muted-foreground">
+                    {isSyncing && (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Оновлення...</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      <span>
+                        Оновлено: {lastUpdated.toLocaleString("uk-UA", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
-                    {channelInfo?.membersCount !== undefined && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span className="font-semibold">{channelInfo.membersCount.toLocaleString()}</span>
-                      <span>підписників</span>
-                    </div>
-                  )}
+                    <span className="text-xs">• Автооновлення кожні 10 хв</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
         {stats && (
           <>
             {/* Tabs for filtering */}
