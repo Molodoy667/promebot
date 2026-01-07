@@ -111,10 +111,11 @@ export default function ChannelPosts() {
       const table = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
       const { data } = await supabase
         .from(table)
-        .select('target_channel, spy_id')
+        .select('target_channel, spy_id, bot_id')
         .eq('id', serviceId)
         .single();
 
+      // Спочатку пробуємо з spy
       if (data?.spy_id) {
         const { data: spy } = await supabase
           .from('telegram_spies')
@@ -124,6 +125,54 @@ export default function ChannelPosts() {
 
         if (spy?.channel_info) {
           setChannelInfo(spy.channel_info);
+          return;
+        }
+      }
+
+      // Fallback: завантажуємо через Bot API
+      if (data?.bot_id && data?.target_channel) {
+        const { data: bot } = await supabase
+          .from('telegram_bots')
+          .select('bot_token')
+          .eq('id', data.bot_id)
+          .single();
+
+        if (bot?.bot_token) {
+          const response = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getChat?chat_id=${data.target_channel}`);
+          const apiData = await response.json();
+
+          if (apiData.ok) {
+            const chat = apiData.result;
+            let membersCount = chat.members_count;
+            
+            if (!membersCount && (chat.type === 'channel' || chat.type === 'supergroup')) {
+              const membersResponse = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getChatMemberCount?chat_id=${data.target_channel}`);
+              const membersData = await membersResponse.json();
+              if (membersData.ok) membersCount = membersData.result;
+            }
+
+            // Отримуємо фото каналу
+            let photoUrl = undefined;
+            if (chat.photo?.big_file_id) {
+              try {
+                const fileResponse = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getFile?file_id=${chat.photo.big_file_id}`);
+                const fileData = await fileResponse.json();
+                if (fileData.ok) {
+                  photoUrl = `https://api.telegram.org/file/bot${bot.bot_token}/${fileData.result.file_path}`;
+                }
+              } catch (err) {
+                console.error("Error getting photo:", err);
+              }
+            }
+
+            setChannelInfo({
+              title: chat.title || data.target_channel,
+              username: chat.username || data.target_channel,
+              isPrivate: !chat.username,
+              membersCount,
+              photo: photoUrl,
+            });
+          }
         }
       }
     } catch (error) {

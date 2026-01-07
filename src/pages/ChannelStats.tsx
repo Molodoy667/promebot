@@ -199,11 +199,22 @@ export default function ChannelStats() {
         }));
         setReactionsTimeline(reactionsData);
 
-        // Subscribers timeline
-        const subsData = history.map((h: any) => ({
-          date: new Date(h.recorded_at).toLocaleDateString('uk-UA'),
-          count: h.subscribers_count || 0
-        }));
+        // Subscribers timeline - показуємо ЗМІНУ (різницю між днями)
+        const subsData: Array<{ date: string; count: number }> = [];
+        for (let i = 0; i < history.length; i++) {
+          const current = history[i];
+          const previous = i > 0 ? history[i - 1] : null;
+          
+          // Різниця з попереднім днем (може бути + або -)
+          const change = previous 
+            ? (current.subscribers_count || 0) - (previous.subscribers_count || 0)
+            : 0; // Для першого запису показуємо 0
+          
+          subsData.push({
+            date: new Date(current.recorded_at).toLocaleDateString('uk-UA'),
+            count: change
+          });
+        }
         setSubscribersTimeline(subsData);
       }
     } catch (error) {
@@ -360,69 +371,109 @@ export default function ChannelStats() {
           }
           
           // Рахуємо ПІДПИСНИКІВ через історію (різниця)
-          // За сьогодні
+          // За сьогодні - берем найстарішу запис ДО сьогодні (вчора або раніше)
           const { data: todayHistory } = await supabase
             .from('channel_stats_history')
             .select('subscribers_count')
             .eq('service_id', serviceId)
             .eq('service_type', serviceType)
-            .gte('recorded_at', today.toISOString())
-            .order('recorded_at', { ascending: true })
+            .lt('recorded_at', today.toISOString())
+            .order('recorded_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
           
           if (todayHistory) {
-            subscribersToday = Math.max(0, membersCount - (todayHistory.subscribers_count || 0));
+            // Рахуємо різницю (може бути + або -)
+            subscribersToday = membersCount - (todayHistory.subscribers_count || 0);
+          } else {
+            // Якщо немає історії - 0 (не показуємо зміну)
+            subscribersToday = 0;
           }
           
-          // За тиждень
+          // За тиждень - берем запис 7 днів тому або раніше
           const { data: weekHistory } = await supabase
             .from('channel_stats_history')
             .select('subscribers_count')
             .eq('service_id', serviceId)
             .eq('service_type', serviceType)
-            .gte('recorded_at', weekAgo.toISOString())
-            .order('recorded_at', { ascending: true })
+            .lt('recorded_at', weekAgo.toISOString())
+            .order('recorded_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
           
           if (weekHistory) {
-            subscribersWeek = Math.max(0, membersCount - (weekHistory.subscribers_count || 0));
+            subscribersWeek = membersCount - (weekHistory.subscribers_count || 0);
+          } else {
+            subscribersWeek = 0;
           }
           
-          // За місяць
+          // За місяць - берем запис 30 днів тому або раніше
           const { data: monthHistory } = await supabase
             .from('channel_stats_history')
             .select('subscribers_count')
             .eq('service_id', serviceId)
             .eq('service_type', serviceType)
-            .gte('recorded_at', monthAgo.toISOString())
-            .order('recorded_at', { ascending: true })
+            .lt('recorded_at', monthAgo.toISOString())
+            .order('recorded_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
           
           if (monthHistory) {
-            subscribersMonth = Math.max(0, membersCount - (monthHistory.subscribers_count || 0));
+            subscribersMonth = membersCount - (monthHistory.subscribers_count || 0);
+          } else {
+            subscribersMonth = 0;
           }
         }
         
-        const { data: upsertResult } = await supabase
-          .from('channel_stats_history' as any)
-          .upsert({
-            service_id: serviceId,
-            service_type: serviceType,
-            channel_name: channelName,
-            subscribers_count: membersCount,
-            total_views: stats?.totalViews || 0,
-            total_reactions: stats?.totalReactions || 0,
-            recorded_at: new Date().toISOString(),
-          }, { onConflict: 'service_id,service_type,recorded_at' })
-          .select('recorded_at')
-          .single();
-
-        // Get last update time from history
-        if (upsertResult) {
-          setLastUpdated(new Date(upsertResult.recorded_at));
+        // Save to channel_stats_history (оновлюємо сьогоднішній запис або створюємо новий)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const { data: existingRecord } = await supabase
+          .from('channel_stats_history')
+          .select('id')
+          .eq('service_id', serviceId)
+          .eq('service_type', serviceType)
+          .gte('recorded_at', today.toISOString())
+          .lt('recorded_at', tomorrow.toISOString())
+          .maybeSingle();
+        
+        const currentTime = new Date().toISOString();
+        
+        if (existingRecord) {
+          // Оновлюємо існуючий запис
+          await supabase
+            .from('channel_stats_history')
+            .update({
+              subscribers_count: membersCount,
+              total_views: stats?.totalViews || 0,
+              total_reactions: stats?.totalReactions || 0,
+              recorded_at: currentTime
+            })
+            .eq('id', existingRecord.id);
+          
+          setLastUpdated(new Date(currentTime));
+        } else {
+          // Створюємо новий запис
+          const { data: insertResult } = await supabase
+            .from('channel_stats_history')
+            .insert({
+              service_id: serviceId,
+              service_type: serviceType,
+              channel_name: channelName,
+              subscribers_count: membersCount,
+              total_views: stats?.totalViews || 0,
+              total_reactions: stats?.totalReactions || 0,
+              recorded_at: currentTime
+            })
+            .select('recorded_at')
+            .single();
+          
+          if (insertResult) {
+            setLastUpdated(new Date(insertResult.recorded_at));
+          }
         }
         
         setChannelInfo({
@@ -938,25 +989,30 @@ export default function ChannelStats() {
                   <h2 className="text-lg font-semibold mb-3">Статистика каналу</h2>
                   
                   {/* Last Update & Sync Status */}
-                  <div className="flex items-center gap-4 flex-wrap text-sm text-muted-foreground">
-                    {isSyncing && (
+                  <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      {isSyncing && (
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Оновлення...</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Оновлення...</span>
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          Оновлено: {lastUpdated.toLocaleString("uk-UA", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>
-                        Оновлено: {lastUpdated.toLocaleString("uk-UA", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <span className="text-xs">• Автооновлення кожні 10 хв</span>
                     </div>
-                    <span className="text-xs">• Автооновлення кожні 10 хв</span>
+                    <div className="text-xs opacity-80">
+                      ℹ️ Дані збираються з моменту додавання каналу, лише з опублікованих ботом постів
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1053,7 +1109,11 @@ export default function ChannelStats() {
                       <Users className="w-4 h-4 text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xl font-bold text-green-500">
+                      <div className={`text-xl font-bold ${
+                        (channelInfo?.subscribersToday || 0) > 0 ? 'text-green-500' : 
+                        (channelInfo?.subscribersToday || 0) < 0 ? 'text-red-500' : 
+                        'text-muted-foreground'
+                      }`}>
                         {(channelInfo?.subscribersToday || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersToday || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/день</p>
@@ -1072,7 +1132,11 @@ export default function ChannelStats() {
                       <Users className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xl font-bold text-emerald-500">
+                      <div className={`text-xl font-bold ${
+                        (channelInfo?.subscribersWeek || 0) > 0 ? 'text-emerald-500' : 
+                        (channelInfo?.subscribersWeek || 0) < 0 ? 'text-red-500' : 
+                        'text-muted-foreground'
+                      }`}>
                         {(channelInfo?.subscribersWeek || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersWeek || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/тиждень</p>
@@ -1091,7 +1155,11 @@ export default function ChannelStats() {
                       <Users className="w-4 h-4 text-teal-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xl font-bold text-teal-500">
+                      <div className={`text-xl font-bold ${
+                        (channelInfo?.subscribersMonth || 0) > 0 ? 'text-teal-500' : 
+                        (channelInfo?.subscribersMonth || 0) < 0 ? 'text-red-500' : 
+                        'text-muted-foreground'
+                      }`}>
                         {(channelInfo?.subscribersMonth || 0) > 0 ? '+' : ''}{(channelInfo?.subscribersMonth || 0).toLocaleString()}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">Підписників/місяць</p>

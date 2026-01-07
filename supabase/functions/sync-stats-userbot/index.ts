@@ -175,24 +175,55 @@ serve(async (req) => {
       console.log(`[MTProto] Saved channel info to spy: ${channelInfo.title}`);
     }
 
-    // Save to channel_stats_history (для графіків)
+    // Save to channel_stats_history (оновлюємо сьогоднішній запис або створюємо новий)
     if (channelInfo) {
       const totalViews = Array.from(statsMap.values()).reduce((sum, s) => sum + s.views, 0);
       const totalReactions = Array.from(statsMap.values()).reduce((sum, s) => sum + s.reactions, 0);
       
-      await supabaseClient
-        .from('channel_stats_history')
-        .insert({
-          service_id: serviceId,
-          service_type: serviceType,
-          channel_name: channelInfo.title || channelUsername,
-          subscribers_count: channelInfo.participantsCount,
-          total_views: totalViews,
-          total_reactions: totalReactions,
-          recorded_at: new Date().toISOString()
-        });
+      // Перевіряємо чи є запис за сьогодні
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
       
-      console.log(`[MTProto] Saved stats to history: ${channelInfo.participantsCount} subs, ${totalViews} views, ${totalReactions} reactions`);
+      const { data: existingRecord } = await supabaseClient
+        .from('channel_stats_history')
+        .select('id')
+        .eq('service_id', serviceId)
+        .eq('service_type', serviceType)
+        .gte('recorded_at', today.toISOString())
+        .lt('recorded_at', tomorrow.toISOString())
+        .single();
+      
+      if (existingRecord) {
+        // Оновлюємо існуючий запис
+        await supabaseClient
+          .from('channel_stats_history')
+          .update({
+            subscribers_count: channelInfo.participantsCount,
+            total_views: totalViews,
+            total_reactions: totalReactions,
+            recorded_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+        
+        console.log(`[MTProto] Updated today's stats: ${channelInfo.participantsCount} subs, ${totalViews} views, ${totalReactions} reactions`);
+      } else {
+        // Створюємо новий запис
+        await supabaseClient
+          .from('channel_stats_history')
+          .insert({
+            service_id: serviceId,
+            service_type: serviceType,
+            channel_name: channelInfo.title || channelUsername,
+            subscribers_count: channelInfo.participantsCount,
+            total_views: totalViews,
+            total_reactions: totalReactions,
+            recorded_at: new Date().toISOString()
+          });
+        
+        console.log(`[MTProto] Created new stats record: ${channelInfo.participantsCount} subs, ${totalViews} views, ${totalReactions} reactions`);
+      }
     }
 
     console.log(`[MTProto] Successfully updated ${updatedCount}/${posts.length} posts`);

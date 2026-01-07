@@ -65,6 +65,8 @@ export default function QueueManagement() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [channelInfo, setChannelInfo] = useState<any>(null);
+  const [timeFrom, setTimeFrom] = useState<string | null>(null);
+  const [timeTo, setTimeTo] = useState<string | null>(null);
 
   const { serviceId, serviceType, channelName } = location.state || {};
 
@@ -109,10 +111,11 @@ export default function QueueManagement() {
     try {
       const { data } = await supabase
         .from('ai_bot_services')
-        .select('target_channel, spy_id')
+        .select('target_channel, spy_id, bot_id')
         .eq('id', serviceId)
         .single();
 
+      // Спочатку пробуємо з spy
       if (data?.spy_id) {
         const { data: spy } = await supabase
           .from('telegram_spies')
@@ -122,6 +125,54 @@ export default function QueueManagement() {
 
         if (spy?.channel_info) {
           setChannelInfo(spy.channel_info);
+          return;
+        }
+      }
+
+      // Fallback: завантажуємо через Bot API
+      if (data?.bot_id && data?.target_channel) {
+        const { data: bot } = await supabase
+          .from('telegram_bots')
+          .select('bot_token')
+          .eq('id', data.bot_id)
+          .single();
+
+        if (bot?.bot_token) {
+          const response = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getChat?chat_id=${data.target_channel}`);
+          const apiData = await response.json();
+
+          if (apiData.ok) {
+            const chat = apiData.result;
+            let membersCount = chat.members_count;
+            
+            if (!membersCount && (chat.type === 'channel' || chat.type === 'supergroup')) {
+              const membersResponse = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getChatMemberCount?chat_id=${data.target_channel}`);
+              const membersData = await membersResponse.json();
+              if (membersData.ok) membersCount = membersData.result;
+            }
+
+            // Отримуємо фото каналу
+            let photoUrl = undefined;
+            if (chat.photo?.big_file_id) {
+              try {
+                const fileResponse = await fetch(`https://api.telegram.org/bot${bot.bot_token}/getFile?file_id=${chat.photo.big_file_id}`);
+                const fileData = await fileResponse.json();
+                if (fileData.ok) {
+                  photoUrl = `https://api.telegram.org/file/bot${bot.bot_token}/${fileData.result.file_path}`;
+                }
+              } catch (err) {
+                console.error("Error getting photo:", err);
+              }
+            }
+
+            setChannelInfo({
+              title: chat.title || data.target_channel,
+              username: chat.username || data.target_channel,
+              isPrivate: !chat.username,
+              membersCount,
+              photo: photoUrl,
+            });
+          }
         }
       }
     } catch (error) {
@@ -145,7 +196,7 @@ export default function QueueManagement() {
       // Load settings
       const { data: settings } = await supabase
         .from("ai_publishing_settings")
-        .select("post_interval_minutes")
+        .select("post_interval_minutes, time_from, time_to")
         .eq("ai_bot_service_id", serviceId)
         .single();
 
@@ -157,6 +208,8 @@ export default function QueueManagement() {
 
       setPublishInterval(settings?.post_interval_minutes || 60);
       setLastPublishedAt(service?.last_published_at || null);
+      setTimeFrom(settings?.time_from || null);
+      setTimeTo(settings?.time_to || null);
     } catch (error) {
       console.error("Error loading queue:", error);
       toast({
@@ -358,6 +411,11 @@ export default function QueueManagement() {
                   <h2 className="text-lg font-semibold mb-2">Черга публікацій</h2>
                   <p className="text-sm text-muted-foreground">
                     Автогенерація кожні 10 хвилин • {scheduledPosts.length} постів в черзі
+                    {timeFrom && timeTo && (
+                      <span className="ml-2">
+                        • ⏰ Публікація: {timeFrom} - {timeTo}
+                      </span>
+                    )}
                   </p>
                 </div>
                 
@@ -435,27 +493,52 @@ export default function QueueManagement() {
                           
                           <div className="flex flex-wrap items-center gap-2 mb-3">
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">
+                              <Clock className="w-3 h-3 mr-1" />
                               {(() => {
                                 const now = Date.now();
                                 const createdAt = new Date(post.created_at).getTime();
                                 
+                                // Перший пост
+                                let publishTime;
                                 if (index === 0) {
                                   if (!lastPublishedAt) {
-                                    const minutesSinceCreation = Math.floor((now - createdAt) / 60000);
-                                    const minutesLeft = Math.max(0, 5 - minutesSinceCreation);
-                                    return minutesLeft === 0 ? "Публікується..." : `Через ${minutesLeft} хв`;
+                                    publishTime = createdAt + (5 * 60000); // Через 5 хв після створення
                                   } else {
-                                    const lastPublish = new Date(lastPublishedAt).getTime();
-                                    const minutesSincePublish = Math.floor((now - lastPublish) / 60000);
-                                    const minutesLeft = Math.max(0, publishInterval - minutesSincePublish);
-                                    return minutesLeft === 0 ? "Публікується..." : `Через ${minutesLeft} хв`;
+                                    publishTime = new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
                                   }
                                 } else {
-                                  const totalMinutes = lastPublishedAt 
-                                    ? publishInterval * index
-                                    : 5 + publishInterval * (index - 1);
-                                  return `Через ~${totalMinutes} хв`;
+                                  // Інші пости - рахуємо від ПЕРШОГО поста
+                                  const firstPostTime = !lastPublishedAt 
+                                    ? new Date(scheduledPosts[0].created_at).getTime() + (5 * 60000)
+                                    : new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
+                                  
+                                  publishTime = firstPostTime + (publishInterval * index * 60000);
                                 }
+                                
+                                // Якщо встановлено фільтр часу - перевіряємо чи час публікації в дозволеному діапазоні
+                                if (timeFrom && timeTo) {
+                                  const publishDate = new Date(publishTime);
+                                  const publishHour = publishDate.getHours();
+                                  const publishMinute = publishDate.getMinutes();
+                                  const publishTimeStr = `${publishHour.toString().padStart(2, '0')}:${publishMinute.toString().padStart(2, '0')}`;
+                                  
+                                  // Якщо час публікації поза дозволеним діапазоном
+                                  if (publishTimeStr < timeFrom || publishTimeStr >= timeTo) {
+                                    return `⏰ Чекає ${timeFrom}`;
+                                  }
+                                }
+                                
+                                // Якщо час публікації вже настав
+                                if (publishTime <= now) {
+                                  return "Публікується...";
+                                }
+                                
+                                // Показуємо точний час публікації
+                                const publishDate = new Date(publishTime);
+                                return publishDate.toLocaleTimeString('uk-UA', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                });
                               })()}
                             </Badge>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
