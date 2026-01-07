@@ -159,7 +159,8 @@ const MyChannels = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<ChannelGroup | null>(null);
   const [deleteStats, setDeleteStats] = useState<{
-    postsCount: number;
+    publishedCount: number;
+    scheduledCount: number;
     sourceChannelsCount: number;
   } | null>(null);
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
@@ -879,27 +880,41 @@ const MyChannels = () => {
 
   const handleDeleteChannel = async (group: ChannelGroup) => {
     try {
-      let postsCount = 0;
+      let publishedCount = 0;
+      let scheduledCount = 0;
       let sourceCount = 0;
 
       if (group.type === 'plagiarist') {
-        const { count } = await supabase
+        // Для плагіата всі пости - опубліковані
+        const { count: published } = await supabase
           .from("posts_history")
           .select("*", { count: 'exact', head: true })
-          .eq("bot_service_id", group.service.id);
-        postsCount = count || 0;
+          .eq("bot_service_id", group.service.id)
+          .in("status", ["published", "success"]);
+        publishedCount = published || 0;
         sourceCount = group.sourceChannels?.length || 0;
       } else {
-        const { count } = await supabase
+        // Для AI - рахуємо опубліковані та в черзі окремо
+        const { count: published } = await supabase
           .from("ai_generated_posts")
           .select("*", { count: 'exact', head: true })
-          .eq("ai_bot_service_id", group.service.id);
-        postsCount = count || 0;
+          .eq("ai_bot_service_id", group.service.id)
+          .eq("status", "published");
+        
+        const { count: scheduled } = await supabase
+          .from("ai_generated_posts")
+          .select("*", { count: 'exact', head: true })
+          .eq("ai_bot_service_id", group.service.id)
+          .eq("status", "scheduled");
+        
+        publishedCount = published || 0;
+        scheduledCount = scheduled || 0;
         sourceCount = group.categories?.length || 0;
       }
       
       setDeleteStats({
-        postsCount,
+        publishedCount,
+        scheduledCount,
         sourceChannelsCount: sourceCount,
       });
       setGroupToDelete(group);
@@ -1660,11 +1675,23 @@ const MyChannels = () => {
                     <ul className="space-y-1 text-sm">
                       <li className="flex items-center gap-2">
                         <span className="w-2 h-2 bg-destructive rounded-full" />
-                        <span><strong>{deleteStats.sourceChannelsCount}</strong> каналів-джерел</span>
+                        <span><strong>{deleteStats.sourceChannelsCount}</strong> {groupToDelete?.type === 'ai' ? 'категорій' : 'каналів-джерел'}</span>
                       </li>
+                      {deleteStats.publishedCount > 0 && (
+                        <li className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-destructive rounded-full" />
+                          <span><strong>{deleteStats.publishedCount}</strong> опублікованих постів</span>
+                        </li>
+                      )}
+                      {deleteStats.scheduledCount > 0 && (
+                        <li className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-destructive rounded-full" />
+                          <span><strong>{deleteStats.scheduledCount}</strong> згенерованих постів (в черзі)</span>
+                        </li>
+                      )}
                       <li className="flex items-center gap-2">
                         <span className="w-2 h-2 bg-destructive rounded-full" />
-                        <span><strong>{deleteStats.postsCount}</strong> записів історії публікацій</span>
+                        <span>Всю статистику каналу</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="w-2 h-2 bg-destructive rounded-full" />
