@@ -19,16 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const statusLabels: Record<string, { label: string; variant: any; color?: string }> = {
   pending_moderation: { label: "На модерації", variant: "secondary" },
@@ -218,7 +208,7 @@ export const MyTasksList = () => {
   });
 
   const canEdit = (status: string) => 
-    ["pending_moderation", "rejected", "needs_revision"].includes(status);
+    ["pending_moderation"].includes(status);
   
   const canCancel = (status: string) => 
     ["active", "approved"].includes(status);
@@ -297,6 +287,14 @@ export const MyTasksList = () => {
             {/* Description preview */}
             <p className="text-muted-foreground line-clamp-2 text-sm">{task.description}</p>
             
+            {/* Rejection reason for rejected tasks */}
+            {task.status === "rejected" && task.rejection_reason && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg mb-2">
+                <p className="text-xs font-semibold text-destructive mb-1">Причина відхилення:</p>
+                <p className="text-xs text-destructive/80">{task.rejection_reason}</p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between pt-2 border-t text-sm">
               <span className="text-muted-foreground">Виконань:</span>
               <span className="font-medium">{submissionsCount}</span>
