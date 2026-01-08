@@ -218,27 +218,24 @@ Deno.serve(async (req) => {
         const postCreatedAt = new Date(postToCheck.created_at);
         const minutesSinceCreation = (now.getTime() - postCreatedAt.getTime()) / (1000 * 60);
         
-        // Check if we should publish this post
+        // Check if we should publish this post based on interval
         let shouldPublish = false;
         let publishReason = '';
         
         if (serviceData?.last_published_at) {
-          // Check interval from last publish
+          // Check interval from last publish - ALWAYS respect interval
           const lastPublishTime = new Date(serviceData.last_published_at);
           const minutesSinceLastPublish = (now.getTime() - lastPublishTime.getTime()) / (1000 * 60);
           
           if (minutesSinceLastPublish >= intervalMinutes) {
             shouldPublish = true;
             publishReason = `interval reached (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`;
-          } else if (minutesSinceCreation > 10) {
-            // If post is old (>10 min) and we're in time window, publish anyway to avoid stuck posts
-            shouldPublish = true;
-            publishReason = `post waiting too long (${Math.round(minutesSinceCreation)} min), publishing to avoid queue jam`;
           } else {
-            console.log(`Service ${service.id} - interval not reached yet (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min), post age: ${Math.round(minutesSinceCreation)} min`);
+            console.log(`Service ${service.id} - interval not reached yet (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`);
             continue;
           }
         } else {
+          // First post - publish immediately if in time window
           shouldPublish = true;
           publishReason = 'first post';
         }

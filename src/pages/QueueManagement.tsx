@@ -505,7 +505,7 @@ export default function QueueManagement() {
                                 const currentMinute = localTime.getMinutes();
                                 const currentTimeInMinutes = currentHour * 60 + currentMinute;
                                 
-                                // Перший пост - публікується зараз якщо в діапазоні
+                                // Перший пост
                                 if (index === 0) {
                                   if (timeFrom && timeTo) {
                                     const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
@@ -522,7 +522,33 @@ export default function QueueManagement() {
                                   return "Публікується...";
                                 }
                                 
-                                // Інші пости - показуємо приблизний час
+                                // Інші пости - рахуємо час з урахуванням інтервалу
+                                if (lastPublishedAt) {
+                                  const lastPublishTime = new Date(lastPublishedAt).getTime();
+                                  const estimatedTime = new Date(lastPublishTime + (publishInterval * index * 60000));
+                                  
+                                  // Перевіряємо чи час в дозволеному діапазоні
+                                  if (timeFrom && timeTo) {
+                                    const estHour = estimatedTime.getHours();
+                                    const estMinute = estimatedTime.getMinutes();
+                                    const estTimeInMinutes = estHour * 60 + estMinute;
+                                    const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
+                                    const [toHour, toMinute] = timeTo.split(':').map(Number);
+                                    const fromTimeInMinutes = fromHour * 60 + fromMinute;
+                                    const toTimeInMinutes = toHour * 60 + toMinute;
+                                    
+                                    // Якщо поза вікном - переносимо на наступний день
+                                    if (estTimeInMinutes < fromTimeInMinutes || estTimeInMinutes >= toTimeInMinutes) {
+                                      const tomorrow = new Date(estimatedTime);
+                                      tomorrow.setDate(tomorrow.getDate() + 1);
+                                      tomorrow.setHours(fromHour, fromMinute, 0, 0);
+                                      return `~${tomorrow.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })} (завтра)`;
+                                    }
+                                  }
+                                  
+                                  return `~${estimatedTime.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`;
+                                }
+                                
                                 return `Черга #${index + 1}`;
                               })()}
                             </Badge>
