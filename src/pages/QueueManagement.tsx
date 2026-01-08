@@ -499,42 +499,21 @@ export default function QueueManagement() {
                               <Clock className="w-3 h-3 mr-1" />
                               {(() => {
                                 const now = Date.now();
-                                const createdAt = new Date(post.created_at).getTime();
+                                const timezone = settings.timezone || 'Europe/Kiev';
+                                const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
+                                const currentHour = localTime.getHours();
+                                const currentMinute = localTime.getMinutes();
+                                const currentTimeInMinutes = currentHour * 60 + currentMinute;
                                 
-                                // Перший пост
-                                let publishTime;
+                                // Перший пост - публікується зараз якщо в діапазоні
                                 if (index === 0) {
-                                  if (!lastPublishedAt) {
-                                    publishTime = createdAt; // Публікується зараз якщо в діапазоні
-                                  } else {
-                                    publishTime = new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
-                                  }
-                                } else {
-                                  // Інші пости - рахуємо від ПЕРШОГО поста
-                                  const firstPostTime = !lastPublishedAt 
-                                    ? new Date(scheduledPosts[0].created_at).getTime()
-                                    : new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
-                                  
-                                  publishTime = firstPostTime + (publishInterval * index * 60000);
-                                }
-                                
-                                // СПОЧАТКУ перевіряємо чи час вже настав
-                                if (publishTime <= now) {
-                                  // Якщо є часові обмеження, перевіряємо чи ми в дозволеному вікні
                                   if (timeFrom && timeTo) {
-                                    // Use configured timezone
-                                    const timezone = settings.timezone || 'Europe/Kiev';
-                                    const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
-                                    const currentHour = localTime.getHours();
-                                    const currentMinute = localTime.getMinutes();
-                                    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-                                    
                                     const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
                                     const [toHour, toMinute] = timeTo.split(':').map(Number);
                                     const fromTimeInMinutes = fromHour * 60 + fromMinute;
                                     const toTimeInMinutes = toHour * 60 + toMinute;
                                     
-                                    // Якщо ЗАРАЗ поза дозволеним діапазоном - чекаємо
+                                    // Якщо ЗАРАЗ поза дозволеним діапазоном - чекаємо наступного вікна
                                     if (currentTimeInMinutes < fromTimeInMinutes || currentTimeInMinutes >= toTimeInMinutes) {
                                       return `Чекає ${timeFrom.substring(0, 5)}`;
                                     }
@@ -543,12 +522,8 @@ export default function QueueManagement() {
                                   return "Публікується...";
                                 }
                                 
-                                // Якщо час публікації ще не настав - показуємо коли буде
-                                const publishDate = new Date(publishTime);
-                                return publishDate.toLocaleTimeString('uk-UA', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                });
+                                // Інші пости - показуємо приблизний час
+                                return `Черга #${index + 1}`;
                               })()}
                             </Badge>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

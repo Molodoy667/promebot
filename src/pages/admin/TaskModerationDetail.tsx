@@ -97,14 +97,21 @@ const TaskModerationDetail = () => {
         );
       }
 
+      const updateData: any = {
+        status: status,
+        moderated_by: user.id,
+        moderated_at: new Date().toISOString(),
+        moderation_comment: comment || null,
+      };
+
+      // Add rejection_reason for rejected tasks
+      if (status === "rejected") {
+        updateData.rejection_reason = comment || null;
+      }
+
       const { error } = await supabase
         .from("tasks")
-        .update({
-          status: status,
-          moderated_by: user.id,
-          moderated_at: new Date().toISOString(),
-          moderation_comment: comment || null,
-        })
+        .update(updateData)
         .eq("id", taskId);
 
       if (error) throw error;
@@ -229,6 +236,33 @@ const TaskModerationDetail = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Task images */}
+            {task.images && Array.isArray(task.images) && task.images.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-primary" />
+                  Зображення завдання:
+                </h4>
+                <div className="flex gap-3 flex-wrap">
+                  {task.images.map((img: string, idx: number) => (
+                    <a 
+                      key={idx}
+                      href={img} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Task image ${idx + 1}`}
+                        className="w-40 h-40 object-cover rounded-lg border-2 border-border hover:opacity-80 transition-opacity"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
               <h4 className="font-semibold mb-2 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-primary" />
@@ -238,6 +272,53 @@ const TaskModerationDetail = () => {
             </div>
 
             <div className="grid gap-3 text-sm">
+              {/* Category */}
+              {task.category && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                  <span className="text-muted-foreground">Категорія:</span>
+                  <Badge variant="outline">{task.category}</Badge>
+                </div>
+              )}
+
+              {/* Telegram channel */}
+              {task.telegram_channel_link && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                  <span className="text-muted-foreground">Telegram канал:</span>
+                  <div className="flex items-center gap-2">
+                    {task.channel_info?.photo && (
+                      <img 
+                        src={task.channel_info.photo} 
+                        alt={task.channel_info.title}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    )}
+                    <a 
+                      href={task.telegram_channel_link.startsWith('http') ? task.telegram_channel_link : `https://t.me/${task.telegram_channel_link.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {task.channel_info?.title || task.telegram_channel_link}
+                    </a>
+                    {task.channel_info?.membersCount && (
+                      <Badge variant="secondary" className="text-xs">
+                        {task.channel_info.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Balance type */}
+              {task.balance_type && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                  <span className="text-muted-foreground">Тип балансу:</span>
+                  <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'}>
+                    {task.balance_type === 'main' ? '💰 Основний баланс' : '🎁 Бонусний баланс'}
+                  </Badge>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
                 <Clock className="h-5 w-5 text-primary" />
                 <span>Час на виконання: <strong>{task.time_limit_hours} год</strong></span>

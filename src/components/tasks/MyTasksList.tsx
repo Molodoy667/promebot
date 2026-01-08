@@ -3,12 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, XCircle, Wallet } from "lucide-react";
+import { Eye, Edit, XCircle, Wallet, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +46,7 @@ export const MyTasksList = () => {
   const navigate = useNavigate();
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [cancellingTask, setCancellingTask] = useState<any>(null);
+  const [deletingTask, setDeletingTask] = useState<any>(null);
   const [budgetTask, setBudgetTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [sortBy, setSortBy] = useState<"date" | "budget" | "executions">("date");
@@ -159,6 +170,53 @@ export const MyTasksList = () => {
     },
   });
 
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (task: any) => {
+      // Delete task images from storage if any
+      if (task.images && Array.isArray(task.images) && task.images.length > 0) {
+        const filePaths = task.images
+          .map((url: string) => {
+            const match = url.match(/task-images\/(.+)$/);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean);
+
+        if (filePaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('task-images')
+            .remove(filePaths);
+
+          if (storageError) {
+            console.error('Error deleting images:', storageError);
+          }
+        }
+      }
+
+      // Delete task from database
+      const { error } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("id", task.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Завдання видалено",
+        description: "Завдання та всі пов'язані файли успішно видалено",
+      });
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      setDeletingTask(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message || "Не вдалось видалити завдання",
+        variant: "destructive",
+      });
+    },
+  });
+
   const canEdit = (status: string) => 
     ["pending_moderation", "rejected", "needs_revision"].includes(status);
   
@@ -171,9 +229,17 @@ export const MyTasksList = () => {
 
   if (!tasks || tasks.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Ви ще не створили жодного завдання</p>
-      </div>
+      <Card className="text-center py-12">
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground text-lg">Ви ще не створили жодного завдання</p>
+          <Button 
+            onClick={() => navigate("/task-marketplace/create")}
+            className="mt-4"
+          >
+            Створити завдання
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -354,6 +420,17 @@ export const MyTasksList = () => {
               <Edit className="h-4 w-4" />
             </Button>
           )}
+
+          {task.status === "rejected" && (
+            <Button 
+              variant="destructive"
+              size="icon"
+              onClick={() => setDeletingTask(task)}
+              title="Видалити"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
           
           {canCancel(task.status) && (
             <Button 
@@ -475,17 +552,27 @@ export const MyTasksList = () => {
         )}
         
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              {activeTab === "all" && "Ви ще не створили жодного завдання"}
-              {activeTab === "pending" && "Немає завдань на модерації"}
-              {activeTab === "approved" && "Немає схвалених завдань"}
-              {activeTab === "active" && "Немає активних завдань"}
-              {activeTab === "inactive" && "Немає не активних завдань"}
-              {activeTab === "rejected" && "Немає відхилених завдань"}
-              {activeTab === "cancelled" && "Немає скасованих завдань"}
-            </p>
-          </div>
+          <Card className="text-center py-12">
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-lg">
+                {activeTab === "all" && "Ви ще не створили жодного завдання"}
+                {activeTab === "pending" && "Немає завдань на модерації"}
+                {activeTab === "approved" && "Немає схвалених завдань"}
+                {activeTab === "active" && "Немає активних завдань"}
+                {activeTab === "inactive" && "Немає не активних завдань"}
+                {activeTab === "rejected" && "Немає відхилених завдань"}
+                {activeTab === "cancelled" && "Немає скасованих завдань"}
+              </p>
+              {activeTab === "all" && (
+                <Button 
+                  onClick={() => navigate("/task-marketplace/create")}
+                  className="mt-4"
+                >
+                  Створити завдання
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredTasks.map((task: any) => renderTaskCard(task))}
@@ -530,6 +617,27 @@ export const MyTasksList = () => {
             <AlertDialogCancel>Ні, залишити</AlertDialogCancel>
             <AlertDialogAction onClick={() => cancelTaskMutation.mutate(cancellingTask?.id)}>
               Так, скасувати
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingTask} onOpenChange={(open) => !open && setDeletingTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити завдання?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете видалити завдання "{deletingTask?.title}"? 
+              Завдання та всі пов'язані файли будуть видалені назавжди. Цю дію неможливо скасувати.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteTaskMutation.mutate(deletingTask)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Так, видалити
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

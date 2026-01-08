@@ -149,6 +149,7 @@ const CreateTask = () => {
   const [isCheckingChannel, setIsCheckingChannel] = useState(false);
   const [hasAttemptedCheck, setHasAttemptedCheck] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -199,11 +200,15 @@ const CreateTask = () => {
         max_completions: existingTask.max_completions || 1,
         telegram_channel_link: existingTask.telegram_channel_link || "",
         task_type: existingTask.task_type,
+        balance_type: existingTask.balance_type || "bonus",
       });
       setSelectedCategory(existingTask.category || "");
       setChannelLink(existingTask.telegram_channel_link || "");
       if (existingTask.channel_info) {
         setChannelInfo(existingTask.channel_info);
+      }
+      if (existingTask.images && Array.isArray(existingTask.images)) {
+        setExistingImages(existingTask.images);
       }
     }
   }, [existingTask, isEditMode, form]);
@@ -251,15 +256,20 @@ const CreateTask = () => {
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length + selectedImages.length > 3) {
+    const totalImages = selectedImages.length + existingImages.length;
+    if (files.length + totalImages > 3) {
       toast({ title: "Помилка", description: "Максимум 3 зображення", variant: "destructive" });
       return;
     }
     setSelectedImages([...selectedImages, ...files]);
   };
 
-  const removeImage = (index: number) => {
+  const removeNewImage = (index: number) => {
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingImages(existingImages.filter((_, i) => i !== index));
   };
 
   const uploadImages = async (): Promise<string[]> => {
@@ -428,8 +438,9 @@ const CreateTask = () => {
         throw new Error("Недостатньо коштів на балансі");
       }
 
-      // Upload images first
-      const imageUrls = await uploadImages();
+      // Upload new images and combine with existing
+      const newImageUrls = await uploadImages();
+      const imageUrls = [...existingImages, ...newImageUrls];
 
       // Validate Telegram channel if provided
       if (data.telegram_channel_link && data.category?.startsWith('telegram')) {
@@ -501,6 +512,7 @@ const CreateTask = () => {
     onSuccess: () => {
       toast({ title: "Успішно", description: isEditMode ? "Завдання оновлено та відправлено на модерацію!" : "Завдання створено! Очікуйте модерацію." });
       setSelectedImages([]);
+      setExistingImages([]);
       navigate("/task-marketplace?tab=my-tasks");
     },
     onError: (error: Error) => {
@@ -946,8 +958,28 @@ const CreateTask = () => {
                   Зображення завдання (до 3 шт.)
                 </FormLabel>
                 <div className="grid grid-cols-3 gap-3">
+                  {/* Existing images */}
+                  {existingImages.map((url, index) => (
+                    <div key={`existing-${index}`} className="relative group aspect-square">
+                      <img
+                        src={url}
+                        alt={`Existing ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg border-2 border-border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-7 w-7 p-0 rounded-full shadow-lg"
+                        onClick={() => removeExistingImage(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                  {/* New images */}
                   {selectedImages.map((file, index) => (
-                    <div key={index} className="relative group aspect-square">
+                    <div key={`new-${index}`} className="relative group aspect-square">
                       <img
                         src={URL.createObjectURL(file)}
                         alt={`Preview ${index + 1}`}
@@ -958,13 +990,13 @@ const CreateTask = () => {
                         variant="destructive"
                         size="sm"
                         className="absolute -top-2 -right-2 h-7 w-7 p-0 rounded-full shadow-lg"
-                        onClick={() => removeImage(index)}
+                        onClick={() => removeNewImage(index)}
                       >
                         ×
                       </Button>
                     </div>
                   ))}
-                  {selectedImages.length < 3 && (
+                  {(selectedImages.length + existingImages.length) < 3 && (
                     <label className="aspect-square cursor-pointer group">
                       <div className="w-full h-full flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all">
                         <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
