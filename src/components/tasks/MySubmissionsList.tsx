@@ -83,7 +83,11 @@ export const MySubmissionsList = () => {
           const isExpired = timeRemaining === "Час вийшов";
 
           return (
-            <Card key={submission.id}>
+            <Card 
+              key={submission.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setSelectedSubmission({ ...submission, task })}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
                   <Badge variant={statusLabels[submission.status]?.variant}>
@@ -93,39 +97,21 @@ export const MySubmissionsList = () => {
                     {task.reward_amount.toFixed(2)} ₴
                   </span>
                 </div>
-                <CardTitle className="line-clamp-2">{task.title}</CardTitle>
+                <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
+                <CardDescription className="line-clamp-2 text-xs">
+                  {task.description}
+                </CardDescription>
                 {timeRemaining && (
-                  <CardDescription>
-                    <Clock className="h-4 w-4 inline mr-1" />
+                  <div className="flex items-center gap-1 mt-2">
+                    <Clock className="h-4 w-4" />
                     {isExpired ? (
-                      <span className="text-destructive font-medium">{timeRemaining}</span>
+                      <span className="text-destructive font-medium text-sm">{timeRemaining}</span>
                     ) : (
-                      <span>Залишилось: {timeRemaining}</span>
+                      <span className="text-sm">Залишилось: {timeRemaining}</span>
                     )}
-                  </CardDescription>
-                )}
-              </CardHeader>
-
-              <CardContent>
-                {submission.review_comment && (
-                  <div className="text-sm p-3 bg-muted rounded-lg">
-                    <p className="font-medium mb-1">Коментар:</p>
-                    <p className="text-muted-foreground">{submission.review_comment}</p>
                   </div>
                 )}
-              </CardContent>
-
-              {(submission.status === "in_progress" || submission.status === "revision_requested") && !isExpired && (
-                <CardFooter>
-                  <Button 
-                    className="w-full"
-                    onClick={() => setSelectedSubmission({ ...submission, task })}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Подати звіт
-                  </Button>
-                </CardFooter>
-              )}
+              </CardHeader>
             </Card>
           );
         })}
