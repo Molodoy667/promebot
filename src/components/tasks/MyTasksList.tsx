@@ -528,7 +528,7 @@ export const MyTasksList = () => {
               >
                 За датою
               </Button>
-              {(activeTab === "approved" || activeTab === "active" || activeTab === "inactive") && (
+              {(activeTab === "all" || activeTab === "approved" || activeTab === "active" || activeTab === "inactive") && (
                 <>
                   <Button
                     variant={sortBy === "budget" ? "default" : "outline"}
