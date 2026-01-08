@@ -9,6 +9,7 @@ interface GeneralSettings {
   logo_url: string;
   maintenance_mode: boolean;
   email_confirmation_required?: boolean;
+  timezone?: string;
 }
 
 export const useGeneralSettings = () => {
@@ -19,6 +20,7 @@ export const useGeneralSettings = () => {
     favicon_url: "",
     logo_url: "",
     maintenance_mode: false,
+    timezone: "Europe/Kiev",
   });
   const [isLoading, setIsLoading] = useState(true);
 

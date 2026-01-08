@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/Loading";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { 
   ArrowLeft, 
   Clock,
@@ -53,6 +54,7 @@ export default function QueueManagement() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { settings } = useGeneralSettings();
   const [isLoading, setIsLoading] = useState(true);
   const [scheduledPosts, setScheduledPosts] = useState<Post[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -503,38 +505,45 @@ export default function QueueManagement() {
                                 let publishTime;
                                 if (index === 0) {
                                   if (!lastPublishedAt) {
-                                    publishTime = createdAt + (5 * 60000); // Через 5 хв після створення
+                                    publishTime = createdAt; // Публікується зараз якщо в діапазоні
                                   } else {
                                     publishTime = new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
                                   }
                                 } else {
                                   // Інші пости - рахуємо від ПЕРШОГО поста
                                   const firstPostTime = !lastPublishedAt 
-                                    ? new Date(scheduledPosts[0].created_at).getTime() + (5 * 60000)
+                                    ? new Date(scheduledPosts[0].created_at).getTime()
                                     : new Date(lastPublishedAt).getTime() + (publishInterval * 60000);
                                   
                                   publishTime = firstPostTime + (publishInterval * index * 60000);
                                 }
                                 
-                                // Якщо встановлено фільтр часу - перевіряємо чи час публікації в дозволеному діапазоні
-                                if (timeFrom && timeTo) {
-                                  const publishDate = new Date(publishTime);
-                                  const publishHour = publishDate.getHours();
-                                  const publishMinute = publishDate.getMinutes();
-                                  const publishTimeStr = `${publishHour.toString().padStart(2, '0')}:${publishMinute.toString().padStart(2, '0')}`;
-                                  
-                                  // Якщо час публікації поза дозволеним діапазоном
-                                  if (publishTimeStr < timeFrom || publishTimeStr >= timeTo) {
-                                    return `⏰ Чекає ${timeFrom.substring(0, 5)}`;
-                                  }
-                                }
-                                
-                                // Якщо час публікації вже настав
+                                // СПОЧАТКУ перевіряємо чи час вже настав
                                 if (publishTime <= now) {
+                                  // Якщо є часові обмеження, перевіряємо чи ми в дозволеному вікні
+                                  if (timeFrom && timeTo) {
+                                    // Use configured timezone
+                                    const timezone = settings.timezone || 'Europe/Kiev';
+                                    const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
+                                    const currentHour = localTime.getHours();
+                                    const currentMinute = localTime.getMinutes();
+                                    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+                                    
+                                    const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
+                                    const [toHour, toMinute] = timeTo.split(':').map(Number);
+                                    const fromTimeInMinutes = fromHour * 60 + fromMinute;
+                                    const toTimeInMinutes = toHour * 60 + toMinute;
+                                    
+                                    // Якщо ЗАРАЗ поза дозволеним діапазоном - чекаємо
+                                    if (currentTimeInMinutes < fromTimeInMinutes || currentTimeInMinutes >= toTimeInMinutes) {
+                                      return `Чекає ${timeFrom.substring(0, 5)}`;
+                                    }
+                                  }
+                                  
                                   return "Публікується...";
                                 }
                                 
-                                // Показуємо точний час публікації
+                                // Якщо час публікації ще не настав - показуємо коли буде
                                 const publishDate = new Date(publishTime);
                                 return publishDate.toLocaleTimeString('uk-UA', { 
                                   hour: '2-digit', 

@@ -28,12 +28,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate URL format
-    if (!channelLink.includes('t.me/')) {
+    // Validate URL format - accept t.me links, @username, or plain username
+    const isValidFormat = channelLink.includes('t.me/') || 
+                          channelLink.startsWith('@') || 
+                          (!channelLink.includes('/') && !channelLink.includes('http'));
+    
+    if (!isValidFormat) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid Telegram link format. Must contain t.me/' 
+          error: 'Invalid format. Use t.me/channel, @username, or username' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
@@ -68,13 +72,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    const channelInfo: ChannelInfo = channelData?.channelInfo || {
-      title: 'Unknown Channel',
-      isValid: false
+    // Check if validation was successful
+    const isValid = channelData?.success === true;
+    const channelInfo: ChannelInfo = {
+      ...(channelData?.channelInfo || {
+        title: 'Unknown Channel'
+      }),
+      isValid
     };
 
     // If taskId provided, update the task with validated channel info
-    if (taskId && channelInfo.isValid) {
+    if (taskId && isValid) {
       const { error: updateError } = await supabaseClient
         .from('tasks')
         .update({

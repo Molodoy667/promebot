@@ -14,6 +14,21 @@ import { SubmissionsReviewList } from "./SubmissionsReviewList";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { useState } from "react";
 
+const categoryLabels: Record<string, string> = {
+  telegram_subscription: "Підписка на Telegram канал",
+  telegram_post_view: "Перегляд поста в Telegram",
+  telegram_comment: "Коментар в Telegram",
+  social_subscription: "Підписка на соц. мережу",
+  social_like: "Лайк в соц. мережі",
+  social_share: "Поширення в соц. мережі",
+  website_visit: "Відвідування сайту",
+  app_install: "Встановлення додатку",
+  survey: "Опитування",
+  review: "Відгук",
+  other: "Інше",
+  vip: "VIP",
+};
+
 interface MyTaskDetailsDialogProps {
   task: any;
   open: boolean;
@@ -122,21 +137,102 @@ export const MyTaskDetailsDialog = ({ task, open, onOpenChange }: MyTaskDetailsD
           </TabsList>
 
           <TabsContent value="info" className="space-y-4">
+            {/* Task images */}
+            {task.images && task.images.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Зображення:</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {task.images.map((img: string, idx: number) => (
+                    <a 
+                      key={idx}
+                      href={img} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img 
+                        src={img} 
+                        alt={`Task image ${idx + 1}`}
+                        className="w-32 h-32 object-cover rounded border hover:opacity-80 transition-opacity"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <h4 className="font-semibold mb-2">Опис:</h4>
               <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
             </div>
 
-            <div className="grid gap-2 text-sm">
-              <p>Час на виконання: <strong>{task.time_limit_hours} год</strong></p>
-              <p>
-                Обмеження: <strong>
+            <div className="grid gap-3 text-sm">
+              {/* Category */}
+              {task.category && (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground min-w-[140px]">Категорія:</span>
+                  <Badge variant="outline">{categoryLabels[task.category] || task.category}</Badge>
+                </div>
+              )}
+
+              {/* Telegram channel */}
+              {task.telegram_channel_link && (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground min-w-[140px]">Telegram канал:</span>
+                  <div className="flex items-center gap-2">
+                    {task.channel_info?.photo && (
+                      <img 
+                        src={task.channel_info.photo} 
+                        alt={task.channel_info.title}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    )}
+                    <a 
+                      href={task.telegram_channel_link.startsWith('http') ? task.telegram_channel_link : `https://t.me/${task.telegram_channel_link.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {task.channel_info?.title || task.telegram_channel_link}
+                    </a>
+                    {task.channel_info?.membersCount && (
+                      <Badge variant="secondary" className="text-xs">
+                        {task.channel_info.membersCount.toLocaleString()} підписників
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Balance type */}
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground min-w-[140px]">Тип балансу:</span>
+                <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'}>
+                  {task.balance_type === 'main' ? 'Основний баланс' : 'Бонусний баланс'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground min-w-[140px]">Час на виконання:</span>
+                <strong>{task.time_limit_hours} год</strong>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground min-w-[140px]">Обмеження:</span>
+                <strong>
                   {task.max_completions ? "1 користувач → 1 виконання" : "Безлімітно"}
                 </strong>
-              </p>
-              <p>
-                Скріншот: <strong>{task.requires_screenshot ? "Обов'язковий" : "Не потрібен"}</strong>
-              </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground min-w-[140px]">Скріншот:</span>
+                <strong>{task.requires_screenshot ? "Обов'язковий" : "Не потрібен"}</strong>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground min-w-[140px]">Створено:</span>
+                <span>{new Date(task.created_at).toLocaleString('uk-UA')}</span>
+              </div>
             </div>
 
             {task.moderation_comment && (

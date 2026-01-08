@@ -29,6 +29,7 @@ export const GeneralSettings = () => {
     logo_url: "",
     maintenance_mode: false,
     email_confirmation_required: true,
+    timezone: "Europe/Kiev",
   });
 
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
@@ -84,6 +85,7 @@ export const GeneralSettings = () => {
           logo_url: loadedSettings.logo_url || "",
           maintenance_mode: loadedSettings.maintenance_mode || false,
           email_confirmation_required: loadedSettings.email_confirmation_required !== false,
+          timezone: loadedSettings.timezone || "Europe/Kiev",
         });
       }
     } catch (error: any) {
@@ -488,6 +490,29 @@ export const GeneralSettings = () => {
               onChange={(e) => setSettings({ ...settings, meta_keywords: e.target.value })}
               placeholder="telegram, bot, automation"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Часовий пояс</Label>
+            <select
+              id="timezone"
+              value={settings.timezone}
+              onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="Europe/Kiev">Київ (Europe/Kiev) UTC+2/+3</option>
+              <option value="Europe/Moscow">Москва (Europe/Moscow) UTC+3</option>
+              <option value="Europe/London">Лондон (Europe/London) UTC+0/+1</option>
+              <option value="Europe/Paris">Париж (Europe/Paris) UTC+1/+2</option>
+              <option value="America/New_York">Нью-Йорк (America/New_York) UTC-5/-4</option>
+              <option value="America/Los_Angeles">Лос-Анджелес (America/Los_Angeles) UTC-8/-7</option>
+              <option value="Asia/Tokyo">Токіо (Asia/Tokyo) UTC+9</option>
+              <option value="Asia/Dubai">Дубай (Asia/Dubai) UTC+4</option>
+              <option value="Australia/Sydney">Сідней (Australia/Sydney) UTC+10/+11</option>
+            </select>
+            <p className="text-sm text-muted-foreground">
+              Використовується для планування публікацій AI ботів
+            </p>
           </div>
         </CardContent>
       </Card>

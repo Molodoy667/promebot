@@ -43,6 +43,24 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Load timezone from general settings
+    let timezone = 'Europe/Kiev'; // Default
+    try {
+      const { data: settingsData } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'general_settings')
+        .single();
+      
+      if (settingsData?.value && typeof settingsData.value === 'object') {
+        timezone = (settingsData.value as any).timezone || 'Europe/Kiev';
+      }
+    } catch (error) {
+      console.log('Could not load timezone setting, using default:', timezone);
+    }
+    
+    console.log('Using timezone:', timezone);
+
     // Get all running AI bot services
     const { data: services, error: servicesError } = await supabase
       .from('ai_bot_services')
@@ -87,8 +105,10 @@ Deno.serve(async (req) => {
 
         // Check if we're within the allowed time range
         const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
+        // Use configured timezone from settings
+        const localTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+        const currentHour = localTime.getHours();
+        const currentMinute = localTime.getMinutes();
         const currentTime = currentHour * 60 + currentMinute;
 
         if (publishSettings.time_from && publishSettings.time_to) {
@@ -97,8 +117,8 @@ Deno.serve(async (req) => {
           const fromTime = fromHour * 60 + fromMinute;
           const toTime = toHour * 60 + toMinute;
 
-          if (currentTime < fromTime || currentTime > toTime) {
-            console.log(`Service ${service.id} outside of allowed time range`);
+          if (currentTime < fromTime || currentTime >= toTime) {
+            console.log(`Service ${service.id} outside of allowed time range (${currentHour}:${currentMinute.toString().padStart(2, '0')} not in ${publishSettings.time_from}-${publishSettings.time_to})`);
             continue;
           }
         }
@@ -143,25 +163,38 @@ Deno.serve(async (req) => {
           
           console.log(`Service ${service.id}: generation lock set (10 min interval)`);
           
-          // Fire and forget - don't wait for response (generation takes >60sec)
-          fetch(
-            `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-              },
-              body: JSON.stringify({
-                serviceId: service.id,
-                count: 1,
-              }),
-            }
-          ).catch(err => {
-            console.error(`Async generation error for service ${service.id}:`, err.message);
-          });
+          // Re-check queue count after setting lock to prevent race condition
+          const { count: recheckCount } = await supabase
+            .from('ai_generated_posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('ai_bot_service_id', service.id)
+            .eq('status', 'scheduled');
           
-          console.log(`Generation triggered for 1 post (next in 10 min)`);
+          const currentScheduledAfterLock = recheckCount || 0;
+          
+          if (currentScheduledAfterLock >= maxScheduled) {
+            console.log(`Service ${service.id}: queue became full during lock (${currentScheduledAfterLock}/10), skipping generation`);
+          } else {
+            // Fire and forget - don't wait for response (generation takes >60sec)
+            fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-ai-posts`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
+                  serviceId: service.id,
+                  count: 1,
+                }),
+              }
+            ).catch(err => {
+              console.error(`Async generation error for service ${service.id}:`, err.message);
+            });
+            
+            console.log(`Generation triggered for 1 post (next in 10 min)`);
+          }
         } else {
           console.log(`Service ${service.id}: queue is full (${currentScheduled} posts), generation paused`);
         }
@@ -185,21 +218,36 @@ Deno.serve(async (req) => {
         const postCreatedAt = new Date(postToCheck.created_at);
         const minutesSinceCreation = (now.getTime() - postCreatedAt.getTime()) / (1000 * 60);
         
-        // Publish immediately after generation (no delay)
+        // Check if we should publish this post
+        let shouldPublish = false;
+        let publishReason = '';
+        
         if (serviceData?.last_published_at) {
           // Check interval from last publish
           const lastPublishTime = new Date(serviceData.last_published_at);
           const minutesSinceLastPublish = (now.getTime() - lastPublishTime.getTime()) / (1000 * 60);
           
-          if (minutesSinceLastPublish < intervalMinutes) {
-            console.log(`Service ${service.id} - interval not reached yet (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`);
+          if (minutesSinceLastPublish >= intervalMinutes) {
+            shouldPublish = true;
+            publishReason = `interval reached (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`;
+          } else if (minutesSinceCreation > 10) {
+            // If post is old (>10 min) and we're in time window, publish anyway to avoid stuck posts
+            shouldPublish = true;
+            publishReason = `post waiting too long (${Math.round(minutesSinceCreation)} min), publishing to avoid queue jam`;
+          } else {
+            console.log(`Service ${service.id} - interval not reached yet (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min), post age: ${Math.round(minutesSinceCreation)} min`);
             continue;
           }
-          
-          console.log(`Service ${service.id} - interval reached (${Math.round(minutesSinceLastPublish)}/${intervalMinutes} min)`);
         } else {
-          console.log(`Service ${service.id} - publishing first post immediately`);
+          shouldPublish = true;
+          publishReason = 'first post';
         }
+        
+        if (!shouldPublish) {
+          continue;
+        }
+        
+        console.log(`Service ${service.id} - publishing: ${publishReason}`);
 
         // Get next scheduled post
         const { data: pendingPosts, error: postsError } = await supabase

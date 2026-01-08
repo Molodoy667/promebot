@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, XCircle, Wallet } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
-import { EditTaskDialog } from "./EditTaskDialog";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -33,8 +33,8 @@ const statusLabels: Record<string, { label: string; variant: any; color?: string
 export const MyTasksList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [editingTask, setEditingTask] = useState<any>(null);
   const [cancellingTask, setCancellingTask] = useState<any>(null);
   const [budgetTask, setBudgetTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
@@ -220,30 +220,38 @@ export const MyTasksList = () => {
               {task.task_type === "vip" ? "VIP" : "Бонусне"}
             </Badge>
           </div>
-          <CardTitle className="line-clamp-2">{task.title}</CardTitle>
-          <CardDescription className="line-clamp-2">
+          <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
+          <CardDescription>
             Винагорода: {task.reward_amount.toFixed(2)} ₴
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p>Виконань: {submissionsCount}</p>
+          <div className="space-y-2">
+            {/* Description preview */}
+            <p className="text-muted-foreground line-clamp-2 text-sm">{task.description}</p>
+            
+            <div className="flex items-center justify-between pt-2 border-t text-sm">
+              <span className="text-muted-foreground">Виконань:</span>
+              <span className="font-medium">{submissionsCount}</span>
+            </div>
+
             {submittedCount > 0 && (
-              <p className="text-orange-600 font-medium">
-                Нових звітів: {submittedCount}
-              </p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-orange-600 font-medium">Нових звітів:</span>
+                <span className="text-orange-600 font-medium">{submittedCount}</span>
+              </div>
             )}
             
             {/* Budget info for approved, active and inactive tasks */}
             {(task.status === "approved" || task.status === "active" || task.status === "inactive") && (
-              <div className="pt-2 mt-2 border-t">
+              <div className="pt-2 border-t space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span>Бюджет:</span>
+                  <span className="text-muted-foreground">Бюджет:</span>
                   <span className="font-medium">{task.budget?.toFixed(2) || "0.00"} ₴</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Доступно виконань:</span>
+                  <span className="text-muted-foreground">Доступно виконань:</span>
                   <span className={`font-medium ${(task.available_executions || 0) === 0 ? "text-destructive" : ""}`}>
                     {task.available_executions || 0}
                   </span>
@@ -340,7 +348,7 @@ export const MyTasksList = () => {
             <Button 
               variant="outline"
               size="icon"
-              onClick={() => setEditingTask(task)}
+              onClick={() => navigate(`/task-marketplace/edit/${task.id}`)}
               title="Редагувати"
             >
               <Edit className="h-4 w-4" />
@@ -496,14 +504,6 @@ export const MyTasksList = () => {
           task={selectedTask}
           open={!!selectedTask}
           onOpenChange={(open) => !open && setSelectedTask(null)}
-        />
-      )}
-
-      {editingTask && (
-        <EditTaskDialog
-          task={editingTask}
-          open={!!editingTask}
-          onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
 

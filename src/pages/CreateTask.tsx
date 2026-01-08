@@ -434,7 +434,7 @@ const CreateTask = () => {
       // Validate Telegram channel if provided
       if (data.telegram_channel_link && data.category?.startsWith('telegram')) {
         const { data: validationData, error: validationError } = await supabase.functions.invoke(
-          'validate-telegram-channel',
+          'check-telegram-channel',
           { body: { channelLink: data.telegram_channel_link } }
         );
 
