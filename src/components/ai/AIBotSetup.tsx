@@ -25,6 +25,7 @@ interface AIBotSetupProps {
   botToken: string;
   userId: string;
   serviceId?: string;
+  onSaveSuccess?: () => void;
 }
 
 interface CategoryOption {
@@ -73,7 +74,7 @@ interface UserTariff {
   allow_ai_images?: boolean;
 }
 
-export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: AIBotSetupProps) => {
+export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, onSaveSuccess }: AIBotSetupProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -972,6 +973,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
           title: "Успішно",
           description: "Налаштування збережено",
         });
+      }
+
+      // Call onSaveSuccess callback if provided
+      if (onSaveSuccess) {
+        setTimeout(() => onSaveSuccess(), 1000);
       }
     } catch (error: any) {
       console.error("Error saving settings:", error);
