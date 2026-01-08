@@ -37,7 +37,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
   const addBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
       const rpcFunction = task.balance_type === 'main' 
-        ₴ 'add_task_budget_from_main' 
+        ? 'add_task_budget_from_main' 
         : 'add_task_budget_from_bonus';
       
       const { error } = await supabase.rpc(rpcFunction, {
@@ -48,7 +48,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ₴ '���������' : '���������';
+      const balanceType = task.balance_type === 'main' ? 'основний' : 'бонусний';
       toast({ title: "������", description: `������ ������ ��������� � ${balanceType} �������!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
@@ -67,7 +67,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
   const withdrawBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
       const rpcFunction = task.balance_type === 'main'
-        ₴ 'withdraw_task_budget_to_main'
+        ? 'withdraw_task_budget_to_main'
         : 'withdraw_task_budget';
       
       const { error } = await supabase.rpc(rpcFunction, {
@@ -78,7 +78,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ₴ '��������' : '��������';
+      const balanceType = task.balance_type === 'main' ? '��������' : '��������';
       toast({ title: "������", description: `����� ������ ��������� �� ${balanceType} ������!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
@@ -108,9 +108,9 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
         toast({ title: "�������", description: `̳������� ���� ����������: ${minAmount.toFixed(2)} ₴ (���� 1 ���������)`, variant: "destructive" });
         return;
       }
-      const availableBalance = task.balance_type === 'main' ₴ userBalance : userBonusBalance;
+      const availableBalance = task.balance_type === 'main' ? userBalance : userBonusBalance;
       if (numAmount > availableBalance) {
-        const balanceTypeName = task.balance_type === 'main' ₴ '���������' : '���������';
+        const balanceTypeName = task.balance_type === 'main' ? 'основному' : 'бонусному';
         toast({ title: "�������", description: `����������� ����� �� ${balanceTypeName} ������`, variant: "destructive" });
         return;
       }
@@ -154,15 +154,15 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border-2 border-primary">
                 <span className="text-muted-foreground font-medium">
-                  {task.balance_type === 'main' ₴ '�������� ������:' : '�������� ��lan�:'}
+                  {task.balance_type === 'main' ? '�������� ������:' : '�������� ��lan�:'}
                 </span>
                 <span className="font-bold text-lg text-primary">
-                  {task.balance_type === 'main' ₴ userBalance.toFixed(2) : userBonusBalance.toFixed(2)} ₴
+                  {task.balance_type === 'main' ? userBalance.toFixed(2) : userBonusBalance.toFixed(2)} ₴
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">�������� ������:</span>
-                <span className="font-semibold">{task.budget₴.toFixed(2) || "0.00"} ₴</span>
+                <span className="font-semibold">{task.budget?.toFixed(2) || "0.00"} ₴</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">ֳ�� �� ���������:</span>
@@ -172,7 +172,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
             <div className="space-y-2">
               <Label htmlFor="add-amount">
-                ���� ���������� � {task.balance_type === 'main' ₴ '���������' : '���������'} ������� (₴)
+                Сума поповнення з {task.balance_type === 'main' ? 'основного' : 'бонусного'} балансу (₴)
               </Label>
               <Input
                 id="add-amount"
@@ -262,7 +262,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
               <Input
                 id="withdraw-amount"
                 type="text"
-                placeholder={maxWithdraw > 0 ₴ "������ ����" : "����������� �����"}
+                placeholder={maxWithdraw > 0 ? "Введіть суму" : "Недостатньо коштів"}
                 value={amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -319,16 +319,17 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
             }
           >
             {addBudgetMutation.isPending || withdrawBudgetMutation.isPending
-              ₴ "�������..."
+              ? "Обробка..."
               : activeTab === "add"
-              ₴ "���������"
-              : "�������"}
+              ? "Поповнити"
+              : "Вивести"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
 
 
 
