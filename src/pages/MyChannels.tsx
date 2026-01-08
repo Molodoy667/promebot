@@ -47,6 +47,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { getCategoryIcon } from "@/lib/category-icons";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 interface BotService {
   id: string;
@@ -174,6 +175,10 @@ const MyChannels = () => {
   } | null>(null);
   const [tariff, setTariff] = useState<any>(null);
   const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
+
+  // Scroll reveal hooks
+  const { elementRef: statsRef, isVisible: isStatsVisible } = useScrollReveal();
+  const { elementRef: tabsRef, isVisible: isTabsVisible } = useScrollReveal();
 
   // Load cooldowns from localStorage on mount
   useEffect(() => {
@@ -1066,7 +1071,12 @@ const MyChannels = () => {
 
         {/* Usage Limits */}
         {usageStats && (
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 mb-6">
+          <Card 
+            ref={statsRef}
+            className={`p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 mb-6 transition-all duration-[1500ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-48'
+            }`}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
@@ -1106,7 +1116,14 @@ const MyChannels = () => {
         )}
 
         {/* Tabs and Filters */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ai' | 'plagiarist')} className="mb-6">
+        <Tabs 
+          ref={tabsRef}
+          value={activeTab} 
+          onValueChange={(v) => setActiveTab(v as 'ai' | 'plagiarist')} 
+          className={`mb-6 transition-all duration-[1500ms] ease-out ${
+            isTabsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-40'
+          }`}
+        >
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
             <TabsList className="grid w-full sm:w-auto grid-cols-2">
               <TabsTrigger value="ai" className="gap-2">
@@ -1187,7 +1204,10 @@ const MyChannels = () => {
             return (
               <Card 
                 key={group.service.id} 
-                className="p-4 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-shadow"
+                className={`p-4 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-[1400ms] ease-out ${
+                  isTabsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+                }`}
+                style={{ transitionDelay: `${index * 0.15}s` }}
               >
                 {/* Compact Header - Always Visible */}
                 <div className="flex items-center gap-3">
@@ -1468,7 +1488,7 @@ const MyChannels = () => {
                             {(group.service as AIBotService).publishing_settings?.time_from && 
                              (group.service as AIBotService).publishing_settings?.time_to ? (
                               <span className="font-medium">
-                                {(group.service as AIBotService).publishing_settings!.time_from} - {(group.service as AIBotService).publishing_settings!.time_to}
+                                {(group.service as AIBotService).publishing_settings!.time_from.substring(0, 5)} - {(group.service as AIBotService).publishing_settings!.time_to.substring(0, 5)}
                               </span>
                             ) : (
                               <span className="font-medium text-muted-foreground">

@@ -524,14 +524,206 @@ const Auth = () => {
 
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 pb-20 sm:pb-8 relative z-10">
         <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-16">
-          {/* Bot Image - Smaller on mobile, larger on desktop */}
-          <div className="flex-shrink-0">
-            <img 
-              src={authBotImage} 
-              alt="Telegram Bot" 
-              className="w-48 h-48 lg:w-80 lg:h-80 object-contain animate-scale-in"
-              style={{ animationDuration: '0.6s' }}
-            />
+          {/* Realistic 3D Bot Scene - Smaller on mobile, larger on desktop */}
+          <div className="flex-shrink-0 relative perspective-1000">
+            <div className="w-72 h-72 lg:w-[450px] lg:h-[450px] relative animate-scale-in" style={{ animationDuration: '0.6s', transformStyle: 'preserve-3d' }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
+                  
+                  {/* Ambient lighting */}
+                  <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-transparent to-transparent blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+                  
+                  {/* Main scene container */}
+                  <div className="relative w-full h-full flex items-center justify-center" style={{ transform: 'rotateX(5deg) rotateY(-5deg)', transformStyle: 'preserve-3d' }}>
+                    
+                    {/* Floor shadow */}
+                    <div className="absolute bottom-12 lg:bottom-16 left-1/2 -translate-x-1/2 w-40 h-6 lg:w-56 lg:h-8 bg-black/20 rounded-full blur-xl" style={{ transform: 'rotateX(90deg) translateZ(-20px)' }} />
+                    
+                    {/* Realistic Bot */}
+                    <div className="relative animate-float" style={{ animationDuration: '4s', transformStyle: 'preserve-3d' }}>
+                      
+                      {/* Bot Head */}
+                      <div className="relative w-28 h-32 lg:w-40 lg:h-44 mx-auto" style={{ transformStyle: 'preserve-3d' }}>
+                        {/* Head main body */}
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300 shadow-2xl" style={{ 
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 2px 4px 0 rgba(255, 255, 255, 0.6)',
+                          transform: 'translateZ(20px)'
+                        }}>
+                          {/* Metallic shine */}
+                          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/60 via-transparent to-transparent" style={{ clipPath: 'polygon(0 0, 100% 0, 80% 50%, 0 30%)' }} />
+                          
+                          {/* Side panel lines */}
+                          <div className="absolute left-2 top-6 bottom-6 w-0.5 bg-slate-400/50 rounded-full" />
+                          <div className="absolute right-2 top-6 bottom-6 w-0.5 bg-slate-400/50 rounded-full" />
+                        </div>
+                        
+                        {/* Antenna with glow */}
+                        <div className="absolute -top-8 lg:-top-10 left-1/2 -translate-x-1/2" style={{ transform: 'translateZ(25px)' }}>
+                          <div className="w-1.5 h-8 lg:h-10 bg-gradient-to-t from-slate-400 to-slate-500 rounded-full shadow-lg mx-auto relative">
+                            <div className="absolute inset-y-0 left-0 w-0.5 bg-white/40 rounded-full" />
+                          </div>
+                          <div className="relative w-4 h-4 lg:w-5 lg:h-5 mx-auto -mt-0.5">
+                            <div className="absolute inset-0 rounded-full bg-red-500 shadow-lg shadow-red-500/50 animate-pulse" style={{ animationDuration: '2s' }} />
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-400 to-red-600" />
+                            <div className="absolute inset-1 rounded-full bg-gradient-to-br from-white/60 to-transparent" />
+                            <div className="absolute inset-0 rounded-full bg-red-400 blur-md animate-ping" style={{ animationDuration: '3s' }} />
+                          </div>
+                        </div>
+                        
+                        {/* Eye visor with realistic glass effect */}
+                        <div className="absolute top-10 lg:top-14 left-1/2 -translate-x-1/2 w-20 lg:w-28 h-10 lg:h-14 rounded-2xl overflow-hidden" style={{ 
+                          transform: 'translateZ(22px)',
+                          boxShadow: 'inset 0 2px 10px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(255, 255, 255, 0.5)'
+                        }}>
+                          {/* Glass visor */}
+                          <div className="absolute inset-0 bg-gradient-to-b from-cyan-400 via-blue-500 to-blue-600 opacity-90" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/20" />
+                          
+                          {/* Eyes with light effects */}
+                          <div className="absolute inset-0 flex items-center justify-center gap-3 lg:gap-4">
+                            <div className="relative w-3 h-8 lg:w-4 lg:h-10">
+                              <div className="absolute inset-0 bg-cyan-300 rounded-full blur-sm" />
+                              <div className="absolute inset-0 bg-white rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+                              <div className="absolute inset-0 bg-gradient-to-b from-white to-cyan-200 rounded-full" />
+                              <div className="absolute top-1 left-1 w-1.5 h-3 lg:w-2 lg:h-4 bg-white/80 rounded-full blur-sm" />
+                            </div>
+                            <div className="relative w-3 h-8 lg:w-4 lg:h-10">
+                              <div className="absolute inset-0 bg-cyan-300 rounded-full blur-sm" />
+                              <div className="absolute inset-0 bg-white rounded-full animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.3s' }} />
+                              <div className="absolute inset-0 bg-gradient-to-b from-white to-cyan-200 rounded-full" />
+                              <div className="absolute top-1 left-1 w-1.5 h-3 lg:w-2 lg:h-4 bg-white/80 rounded-full blur-sm" />
+                            </div>
+                          </div>
+                          
+                          {/* Scan line effect */}
+                          <div className="absolute inset-0 overflow-hidden">
+                            <div className="absolute inset-x-0 h-0.5 bg-white/50 animate-scan" style={{ 
+                              animation: 'scan 3s linear infinite',
+                              boxShadow: '0 0 10px rgba(255, 255, 255, 0.8)'
+                            }} />
+                          </div>
+                        </div>
+                        
+                        {/* Mouth line */}
+                        <div className="absolute bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 w-12 lg:w-16 h-1 bg-slate-400 rounded-full shadow-inner" style={{ transform: 'translateZ(20px)' }} />
+                      </div>
+                      
+                      {/* Body with depth */}
+                      <div className="relative w-24 h-20 lg:w-32 lg:h-28 mx-auto -mt-3 rounded-3xl bg-gradient-to-br from-slate-300 via-slate-200 to-slate-400 shadow-2xl" style={{ 
+                        transformStyle: 'preserve-3d',
+                        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.4), inset 0 2px 4px 0 rgba(255, 255, 255, 0.5)',
+                        transform: 'translateZ(15px)'
+                      }}>
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/40 via-transparent to-black/10" />
+                        
+                        {/* Chest circle with glow */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 lg:w-14 lg:h-14" style={{ transform: 'translate(-50%, -50%) translateZ(5px)' }}>
+                          <div className="absolute inset-0 rounded-full bg-blue-400 blur-lg animate-pulse" style={{ animationDuration: '2s' }} />
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg" style={{ boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.3)' }} />
+                          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-cyan-300 to-blue-500" />
+                          <div className="absolute inset-3 rounded-full bg-gradient-to-br from-white/60 to-transparent" />
+                        </div>
+                        
+                        {/* Panel details */}
+                        <div className="absolute top-3 left-3 w-2 h-2 rounded-sm bg-slate-500 shadow-inner" />
+                        <div className="absolute top-3 right-3 w-2 h-2 rounded-sm bg-slate-500 shadow-inner" />
+                      </div>
+                      
+                      {/* Arms with joints */}
+                      <div className="absolute top-[115px] lg:top-[160px] -left-7 lg:-left-10 w-5 h-16 lg:w-7 lg:h-20" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(10px) rotateZ(-10deg)' }}>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-slate-300 via-slate-200 to-slate-400 shadow-xl" style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5)' }} />
+                        <div className="absolute top-0 left-0 right-0 h-3 rounded-full bg-slate-400 shadow-inner" />
+                      </div>
+                      <div className="absolute top-[115px] lg:top-[160px] -right-7 lg:-right-10 w-5 h-16 lg:w-7 lg:h-20" style={{ transformStyle: 'preserve-3d', transform: 'translateZ(10px) rotateZ(10deg)' }}>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-slate-300 via-slate-200 to-slate-400 shadow-xl" style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5)' }} />
+                        <div className="absolute top-0 left-0 right-0 h-3 rounded-full bg-slate-400 shadow-inner" />
+                      </div>
+                    </div>
+                    
+                    {/* Telegram badge with 3D effect */}
+                    <div className="absolute -top-4 -right-4 lg:-top-6 lg:-right-6 w-20 h-20 lg:w-28 lg:h-28 animate-bounce z-30" style={{ 
+                      animationDuration: '2.5s',
+                      transformStyle: 'preserve-3d',
+                      transform: 'translateZ(40px)'
+                    }}>
+                      <div className="absolute inset-0 rounded-full bg-blue-400 blur-xl opacity-60" />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-2xl" style={{ 
+                        boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.6), inset 0 2px 6px rgba(255, 255, 255, 0.4)'
+                      }} />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 via-transparent to-black/20" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="w-10 h-10 lg:w-14 lg:h-14 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    {/* Growth Chart with glass morphism */}
+                    <div className="absolute bottom-0 right-0 lg:bottom-4 lg:right-4 z-20" style={{ transform: 'translateZ(30px)' }}>
+                      <div className="relative w-24 h-20 lg:w-36 lg:h-28 rounded-2xl overflow-hidden" style={{ 
+                        background: 'rgba(15, 23, 42, 0.7)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(96, 165, 250, 0.2)'
+                      }}>
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+                        
+                        {/* Chart bars with realistic shadows */}
+                        <div className="relative h-full flex items-end justify-around p-3 lg:p-4 gap-1.5 lg:gap-2">
+                          {[40, 60, 75, 100].map((height, i) => (
+                            <div key={i} className="relative flex-1" style={{ height: `${height}%` }}>
+                              <div className="absolute inset-0 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-t-lg shadow-lg animate-pulse" style={{ 
+                                animationDelay: `${i * 0.2}s`,
+                                animationDuration: '2s',
+                                boxShadow: `0 -5px 15px -3px ${i === 3 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(59, 130, 246, 0.4)'}`
+                              }}>
+                                {i === 3 && <div className="absolute inset-0 bg-gradient-to-t from-emerald-600 to-green-400 rounded-t-lg" />}
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg" />
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Arrow indicator */}
+                        <div className="absolute -top-3 -right-3 lg:-top-4 lg:-right-4 w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 shadow-lg flex items-center justify-center animate-bounce" style={{ 
+                          animationDuration: '1.5s',
+                          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.5), inset 0 1px 3px rgba(255, 255, 255, 0.3)'
+                        }}>
+                          <svg className="w-5 h-5 lg:w-6 lg:h-6 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Ambient particles */}
+                    {[...Array(6)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full animate-ping"
+                        style={{
+                          top: `${20 + i * 15}%`,
+                          left: `${10 + i * 12}%`,
+                          background: ['#06b6d4', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'][i],
+                          animationDuration: `${2 + i * 0.5}s`,
+                          animationDelay: `${i * 0.3}s`,
+                          boxShadow: `0 0 10px ${['#06b6d4', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'][i]}`,
+                          transform: `translateZ(${20 + i * 5}px)`
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* CSS for scan animation */}
+            <style>{`
+              @keyframes scan {
+                0%, 100% { top: 0; }
+                50% { top: 100%; }
+              }
+            `}</style>
           </div>
 
           <div className="w-full max-w-md">

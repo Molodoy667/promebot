@@ -32,19 +32,21 @@ export const Header = ({ isAuthenticated, profile, userRole, isMobileSidebar, ha
     return (
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/30">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
+          <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 group">
             {settings.logo_url ? (
               <img 
                 src={settings.logo_url} 
                 alt={settings.site_name} 
-                className="h-10 w-auto object-contain"
+                className="h-10 w-auto object-contain animate-pulse hover:scale-110 transition-transform duration-300"
+                style={{ animationDuration: '3s' }}
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-                <Bot className="w-6 h-6 text-primary-foreground" />
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse group-hover:scale-110 transition-transform duration-300" style={{ animationDuration: '3s' }}>
+                <div className="absolute inset-0 rounded-xl bg-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
+                <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
               </div>
             )}
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
               {settings.site_name || "TelePostBot"}
             </span>
           </Link>
@@ -68,19 +70,21 @@ export const Header = ({ isAuthenticated, profile, userRole, isMobileSidebar, ha
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/30">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
+        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 group">
           {settings.logo_url ? (
             <img 
               src={settings.logo_url} 
               alt={settings.site_name} 
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain animate-pulse hover:scale-110 transition-transform duration-300"
+              style={{ animationDuration: '3s' }}
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <Bot className="w-6 h-6 text-primary-foreground" />
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse group-hover:scale-110 transition-transform duration-300" style={{ animationDuration: '3s' }}>
+              <div className="absolute inset-0 rounded-xl bg-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
+              <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
             </div>
           )}
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
             {settings.site_name || "TelePostBot"}
           </span>
         </Link>

@@ -83,6 +83,7 @@ import { BalanceDisplay } from "@/components/BalanceDisplay";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loading } from "@/components/Loading";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -110,6 +111,13 @@ const Dashboard = () => {
   const [showReferralDialog, setShowReferralDialog] = useState(false);
   const browserInfo = useBrowserInfo();
   const { settings } = useGeneralSettings();
+  
+  // Scroll reveal hooks
+  const { elementRef: profileRef, isVisible: isProfileVisible } = useScrollReveal();
+  const { elementRef: balanceRef, isVisible: isBalanceVisible } = useScrollReveal();
+  const { elementRef: subscriptionRef, isVisible: isSubscriptionVisible } = useScrollReveal();
+  const { elementRef: statsRef, isVisible: isStatsVisible } = useScrollReveal();
+  const { elementRef: botServiceRef, isVisible: isBotServiceVisible } = useScrollReveal();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -516,9 +524,14 @@ const Dashboard = () => {
       <PageBreadcrumbs />
       <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8 max-w-7xl">
         {/* Profile Card */}
-        <Card className={`p-4 sm:p-6 mb-4 sm:mb-6 glass-effect relative overflow-hidden max-w-full ${
-          vipStatus ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300" : "border-border/50"
-        }`}>
+        <Card 
+          ref={profileRef}
+          className={`p-4 sm:p-6 mb-4 sm:mb-6 glass-effect relative overflow-hidden max-w-full transition-all duration-[1500ms] ease-out ${
+            isProfileVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-48'
+          } ${
+            vipStatus ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300" : "border-border/50"
+          }`}
+        >
           {vipStatus && (
             <>
               {/* Animated background */}
@@ -642,7 +655,12 @@ const Dashboard = () => {
         </Card>
 
         {/* Balance Card */}
-        <Card className="p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 glass-effect border-primary/20 shadow-card relative overflow-hidden max-w-full">
+        <Card 
+          ref={balanceRef}
+          className={`p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 glass-effect border-primary/20 shadow-card relative overflow-hidden max-w-full transition-all duration-[1500ms] ease-out ${
+            isBalanceVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-56'
+          }`}
+        >
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-primary opacity-10 rounded-full blur-3xl -translate-y-32 translate-x-32 -z-10"></div>
           
           <div className="relative z-10">
@@ -735,7 +753,12 @@ const Dashboard = () => {
         </Card>
 
         {/* Subscription Card */}
-        <Card className="p-4 sm:p-6 mb-6 sm:mb-8 glass-effect border-border/50 overflow-hidden max-w-full">
+        <Card 
+          ref={subscriptionRef}
+          className={`p-4 sm:p-6 mb-6 sm:mb-8 glass-effect border-border/50 overflow-hidden max-w-full transition-all duration-[1500ms] ease-out ${
+            isSubscriptionVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-56'
+          }`}
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4 flex-1">
             {subscription && (() => {
@@ -813,8 +836,17 @@ const Dashboard = () => {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card className="p-6 glass-effect border-border/50 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate("/publications")}>
+        <div 
+          ref={statsRef}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8"
+        >
+          <Card 
+            className={`p-6 glass-effect border-border/50 overflow-hidden cursor-pointer hover:border-primary/30 transition-all duration-[1400ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+            }`}
+            style={{ transitionDelay: '0.1s' }}
+            onClick={() => navigate("/publications")}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-success" />
@@ -825,7 +857,10 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="p-6 glass-effect border-border/50 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
+            className={`p-6 glass-effect border-border/50 overflow-hidden cursor-pointer hover:border-primary/30 transition-all duration-[1400ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+            }`}
+            style={{ transitionDelay: '0.2s' }}
             onClick={() => navigate("/my-channels")}
           >
             <div className="flex items-center justify-between mb-4">
@@ -838,7 +873,10 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 transition-colors overflow-hidden"
+            className={`p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 overflow-hidden transition-all duration-[1400ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+            }`}
+            style={{ transitionDelay: '0.3s' }}
             onClick={() => navigate("/referral")}
           >
             <div className="flex items-center justify-between mb-4">
@@ -850,7 +888,10 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 transition-colors overflow-hidden"
+            className={`p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 overflow-hidden transition-all duration-[1400ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+            }`}
+            style={{ transitionDelay: '0.4s' }}
             onClick={() => navigate("/task-marketplace")}
           >
             <div className="flex items-center justify-between mb-4">
@@ -863,7 +904,10 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 transition-colors relative overflow-hidden"
+            className={`p-6 glass-effect border-border/50 cursor-pointer hover:border-primary/30 relative overflow-hidden transition-all duration-[1400ms] ease-out ${
+              isStatsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-64'
+            }`}
+            style={{ transitionDelay: '0.5s' }}
             onClick={() => navigate("/entertainment")}
           >
             <div className="flex items-center justify-between mb-4">
@@ -883,7 +927,12 @@ const Dashboard = () => {
         </div>
 
         {/* Bot Service Card */}
-        <Card className="p-8 glass-effect border-border/50 overflow-hidden max-w-full">
+        <Card 
+          ref={botServiceRef}
+          className={`p-8 glass-effect border-border/50 overflow-hidden max-w-full transition-all duration-[1500ms] ease-out ${
+            isBotServiceVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-48'
+          }`}
+        >
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-2xl bg-gradient-primary/10 flex items-center justify-center mx-auto mb-6">
               <Bot className="w-10 h-10 text-primary" />

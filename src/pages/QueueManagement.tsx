@@ -413,21 +413,11 @@ export default function QueueManagement() {
                     Автогенерація кожні 10 хвилин • {scheduledPosts.length} постів в черзі
                     {timeFrom && timeTo && (
                       <span className="ml-2">
-                        • ⏰ Публікація: {timeFrom} - {timeTo}
+                        • ⏰ Публікація: {timeFrom.substring(0, 5)} - {timeTo.substring(0, 5)}
                       </span>
                     )}
                   </p>
                 </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadQueue}
-                  disabled={isGenerating}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Оновити
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -449,12 +439,23 @@ export default function QueueManagement() {
         {scheduledPosts.length > 0 ? (
           <Card className="glass-effect border-2 border-primary/30">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Черга постів</span>
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">
-                  {scheduledPosts.length}/10 в черзі
-                </Badge>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3">
+                  <span>Черга постів</span>
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">
+                    {scheduledPosts.length}/10 в черзі
+                  </Badge>
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadQueue}
+                  disabled={isGenerating}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Оновити
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -524,7 +525,7 @@ export default function QueueManagement() {
                                   
                                   // Якщо час публікації поза дозволеним діапазоном
                                   if (publishTimeStr < timeFrom || publishTimeStr >= timeTo) {
-                                    return `⏰ Чекає ${timeFrom}`;
+                                    return `⏰ Чекає ${timeFrom.substring(0, 5)}`;
                                   }
                                 }
                                 
