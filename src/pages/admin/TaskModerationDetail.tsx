@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, X, Clock, DollarSign, Users, Camera, AlertCircle, RefreshCw, ArrowLeft, User } from "lucide-react";
+import { Check, X, Clock, DollarSign, Users, Camera, AlertCircle, ArrowLeft, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { uk } from "date-fns/locale";
@@ -83,18 +83,14 @@ const TaskModerationDetail = () => {
       status,
       comment,
     }: {
-      status: "approved" | "rejected" | "needs_revision";
+      status: "approved" | "rejected";
       comment: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Не авторизовано");
 
-      if ((status === "rejected" || status === "needs_revision") && !comment.trim()) {
-        throw new Error(
-          status === "rejected" 
-            ? "Вкажіть причину відхилення"
-            : "Вкажіть що потрібно виправити"
-        );
+      if (status === "rejected" && !comment.trim()) {
+        throw new Error("Вкажіть причину відхилення");
       }
 
       const updateData: any = {
@@ -117,12 +113,10 @@ const TaskModerationDetail = () => {
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      const action = 
-        variables.status === "approved" ? "схвалено" :
-        variables.status === "needs_revision" ? "відправлено на переробку" :
-        "відхилено";
+      const action = variables.status === "approved" ? "схвалено" : "відхилено";
       toast({ title: "Успішно", description: `Завдання ${action}` });
       queryClient.invalidateQueries({ queryKey: ["pending-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks-moderation"] });
       navigate("/admin/tasks");
     },
     onError: (error: Error) => {
@@ -133,13 +127,13 @@ const TaskModerationDetail = () => {
     },
   });
 
-  const handleModerate = async (status: "approved" | "rejected" | "needs_revision") => {
-    if ((status === "rejected" || status === "needs_revision") && !comment.trim()) {
-      toast({ title: "Помилка", description: 
-        status === "rejected" 
-          ? "Вкажіть причину відхилення у коментарі"
-          : "Вкажіть що потрібно виправити у коментарі"
-      , variant: "destructive" });
+  const handleModerate = async (status: "approved" | "rejected") => {
+    if (status === "rejected" && !comment.trim()) {
+      toast({ 
+        title: "Помилка", 
+        description: "Вкажіть причину відхилення у коментарі",
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -374,15 +368,6 @@ const TaskModerationDetail = () => {
               >
                 <Check className="h-5 w-5 mr-2" />
                 Схвалити
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleModerate("needs_revision")}
-                disabled={isProcessing}
-                className="flex-1 border-warning/50 text-warning hover:bg-warning/10 h-12"
-              >
-                <RefreshCw className="h-5 w-5 mr-2" />
-                На переробку
               </Button>
               <Button
                 variant="destructive"
