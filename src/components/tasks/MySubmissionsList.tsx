@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Upload } from "lucide-react";
 import { useState } from "react";
-import { SubmitTaskDialog } from "./SubmitTaskDialog";
+import { MyTaskSubmissionDialog } from "./MyTaskSubmissionDialog";
 import { differenceInMinutes, addHours } from "date-fns";
 
 const statusLabels: Record<string, { label: string; variant: any }> = {
@@ -118,7 +118,7 @@ export const MySubmissionsList = () => {
       </div>
 
       {selectedSubmission && (
-        <SubmitTaskDialog
+        <MyTaskSubmissionDialog
           submission={selectedSubmission}
           open={!!selectedSubmission}
           onOpenChange={(open) => !open && setSelectedSubmission(null)}
