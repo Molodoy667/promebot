@@ -489,10 +489,16 @@ const CreateTask = () => {
       };
 
       if (isEditMode && taskId) {
-        // Update existing task
+        // Update existing task and clear moderation fields
         const { error } = await supabase
           .from("tasks")
-          .update(taskData)
+          .update({
+            ...taskData,
+            moderated_at: null,
+            moderated_by: null,
+            moderation_comment: null,
+            rejection_reason: null,
+          })
           .eq("id", taskId)
           .eq("user_id", user.id);
 

@@ -208,7 +208,7 @@ export const MyTasksList = () => {
   });
 
   const canEdit = (status: string) => 
-    ["pending_moderation"].includes(status);
+    ["pending_moderation", "rejected"].includes(status);
   
   const canCancel = (status: string) => 
     ["active", "approved"].includes(status);
