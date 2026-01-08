@@ -83,6 +83,7 @@ const AIBotConfig = () => {
           botUsername={selectedBot.bot_username || ""}
           botToken={selectedBot.bot_token}
           userId={user.id}
+          onSaveSuccess={() => navigate('/my-channels')}
           serviceId={location.state?.aiServiceId}
         />
       </div>
@@ -91,3 +92,4 @@ const AIBotConfig = () => {
 };
 
 export default AIBotConfig;
+
