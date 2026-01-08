@@ -75,8 +75,8 @@ const AIBotConfig = () => {
           icon={Zap}
           title={`Налаштування AI бота ${selectedBot.bot_name || ''}`}
           description="Налаштуйте автоматичну генерацію контенту за допомогою штучного інтелекту"
-          backTo="/bot-setup"
-          backLabel="Повернутись до ботів"
+          backTo="/my-channels"
+          backLabel="Повернутись до каналів"
         />
         <AIBotSetup 
           botId={selectedBot.id} 

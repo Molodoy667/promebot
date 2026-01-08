@@ -1247,23 +1247,13 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
       )}
 
 
-      <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <Card className="p-6">
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full flex items-center justify-between p-0 hover:bg-transparent">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Налаштування генерації
-              </h3>
-              {settingsOpen ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-
-          <CollapsibleContent className="mt-4">
+      <Card className="p-6">
+        <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5" />
+          Налаштування генерації
+        </h3>
+        
+        <div className="space-y-6">
             <div className="space-y-6">
           
           {/* Warning alert about settings changes */}
@@ -1511,126 +1501,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId }: 
                 )}
               </Button>
             </div>
-          </CollapsibleContent>
+          </div>
         </Card>
-      </Collapsible>
-
-      {service?.is_running && (
-        <Collapsible open={postsOpen} onOpenChange={setPostsOpen}>
-          <Card className="p-6">
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full flex items-center justify-between p-0 hover:bg-transparent mb-4">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Bot className="w-5 h-5" />
-                  Згенеровані публікації ({generatedPosts.length})
-                </h3>
-                {postsOpen ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-
-            <CollapsibleContent>
-              {generatedPosts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                  <p>Генерація публікацій...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {generatedPosts.map((post) => {
-                    const category = postCategories.find(c => c.value === post.category);
-                    const isExpanded = expandedPostId === post.id;
-                    const postContent = post.post_content || post.content || '';
-                    const shortText = postContent.length > 140
-                      ? postContent.slice(0, 140) + "..."
-                      : postContent;
-                    return (
-                      <Card key={post.id} className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              {category && (
-                                <Badge variant="secondary">
-                                  <span className="flex items-center gap-2">
-                                    {getCategoryIcon(category.emoji, "w-4 h-4")}
-                                    {category.label}
-                                  </span>
-                                </Badge>
-                              )}
-                              <Badge variant={post.status === "pending" ? "outline" : "default"}>
-                                {post.status === "pending" ? "Очікує" : "Заплановано"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setExpandedPostId(isExpanded ? null : post.id)
-                                }
-                              >
-                                {isExpanded ? "Сховати" : "Детальніше"}
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm whitespace-pre-wrap">
-                            {isExpanded ? postContent : shortText}
-                          </p>
-                          <div className="text-xs text-muted-foreground space-y-1">
-                            <div>Створено: {new Date(post.created_at).toLocaleString('uk-UA', { 
-                              year: 'numeric', 
-                              month: '2-digit', 
-                              day: '2-digit', 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}</div>
-                            {post.status === 'scheduled' && (() => {
-                              const settings = enableTimerPublish ? {
-                                post_interval_minutes: postInterval,
-                                time_from: enableTimeFilter ? timeFrom : '',
-                                time_to: enableTimeFilter ? timeTo : '',
-                              } : null;
-                              
-                              const nextPublishTime = calculateNextPublishTime(
-                                generatedPosts,
-                                post,
-                                settings
-                              );
-                              return (
-                                <div className="text-primary font-medium">
-                                  🕐 Публікація: {nextPublishTime ? new Date(nextPublishTime).toLocaleString('uk-UA', { 
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  }) : 'очікує'}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          {isExpanded && post.image_url && (
-                            <div className="mt-3">
-                              <img 
-                                src={post.image_url} 
-                                alt="AI згенероване зображення" 
-                                className="rounded-md max-w-full h-auto shadow-lg"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
     </div>
   );
 };
