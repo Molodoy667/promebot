@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, XCircle, Wallet, Trash2 } from "lucide-react";
+import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
@@ -238,11 +238,8 @@ export const MyTasksList = () => {
     .filter((task: any) => {
       if (activeTab === "all") return true;
       if (activeTab === "pending") return task.status === "pending_moderation";
-      if (activeTab === "approved") return task.status === "approved";
-      if (activeTab === "active") return task.status === "active";
-      if (activeTab === "inactive") return task.status === "inactive";
+      if (activeTab === "approved") return ["approved", "active", "inactive"].includes(task.status);
       if (activeTab === "rejected") return task.status === "rejected";
-      if (activeTab === "cancelled") return task.status === "cancelled";
       return true;
     })
     .sort((a: any, b: any) => {
@@ -337,6 +334,29 @@ export const MyTasksList = () => {
           
           {task.status === "approved" && (
             <>
+              {(task.budget || 0) > 0 ? (
+                <Button 
+                  variant="default"
+                  size="icon"
+                  className="bg-green-500 hover:bg-green-600"
+                  onClick={() => activateTaskMutation.mutate(task.id)}
+                  disabled={activateTaskMutation.isPending}
+                  title="Запустити завдання"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  disabled
+                  title="Поповніть бюджет щоб запустити"
+                  className="opacity-50"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              )}
+              
               <Button 
                 variant="outline"
                 size="icon"
@@ -346,23 +366,22 @@ export const MyTasksList = () => {
               >
                 <Wallet className="h-4 w-4" />
               </Button>
-              
-              {(task.budget || 0) > 0 && (
-                <Button 
-                  variant="default"
-                  className="bg-blue-500 hover:bg-blue-600"
-                  onClick={() => activateTaskMutation.mutate(task.id)}
-                  disabled={activateTaskMutation.isPending}
-                >
-                  {activateTaskMutation.isPending ? "Активація..." : "Активувати"}
-                </Button>
-              )}
             </>
           )}
           
           {task.status === "active" && (
             <>
               <Button 
+                variant="destructive"
+                size="icon"
+                onClick={() => deactivateTaskMutation.mutate(task.id)}
+                disabled={deactivateTaskMutation.isPending}
+                title="Зупинити завдання"
+              >
+                <Square className="h-4 w-4" fill="currentColor" />
+              </Button>
+              
+              <Button 
                 variant="outline"
                 size="icon"
                 onClick={() => setBudgetTask(task)}
@@ -370,21 +389,35 @@ export const MyTasksList = () => {
                 className={(task.available_executions || 0) === 0 ? "border-orange-500 text-orange-500 hover:bg-orange-50" : ""}
               >
                 <Wallet className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="outline"
-                className="border-orange-500 text-orange-500 hover:bg-orange-50"
-                onClick={() => deactivateTaskMutation.mutate(task.id)}
-                disabled={deactivateTaskMutation.isPending}
-              >
-                {deactivateTaskMutation.isPending ? "Деактивація..." : "Деактивувати"}
               </Button>
             </>
           )}
           
           {task.status === "inactive" && (
             <>
+              {(task.budget || 0) > 0 ? (
+                <Button 
+                  variant="default"
+                  size="icon"
+                  className="bg-green-500 hover:bg-green-600"
+                  onClick={() => activateTaskMutation.mutate(task.id)}
+                  disabled={activateTaskMutation.isPending}
+                  title="Запустити завдання"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  disabled
+                  title="Поповніть бюджет щоб запустити"
+                  className="opacity-50"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              )}
+              
               <Button 
                 variant="outline"
                 size="icon"
@@ -394,17 +427,6 @@ export const MyTasksList = () => {
               >
                 <Wallet className="h-4 w-4" />
               </Button>
-              
-              {(task.budget || 0) > 0 && (
-                <Button 
-                  variant="default"
-                  className="bg-blue-500 hover:bg-blue-600"
-                  onClick={() => activateTaskMutation.mutate(task.id)}
-                  disabled={activateTaskMutation.isPending}
-                >
-                  {activateTaskMutation.isPending ? "Активація..." : "Активувати"}
-                </Button>
-              )}
             </>
           )}
           
@@ -486,35 +508,11 @@ export const MyTasksList = () => {
         </Button>
         <Button
           size="sm"
-          variant={activeTab === "active" ? "default" : "outline"}
-          onClick={() => setActiveTab("active")}
-          className={activeTab === "active" ? "bg-gradient-primary" : ""}
-        >
-          Активні <Badge variant="secondary" className="ml-2">{taskCounts.active}</Badge>
-        </Button>
-        <Button
-          size="sm"
-          variant={activeTab === "inactive" ? "default" : "outline"}
-          onClick={() => setActiveTab("inactive")}
-          className={activeTab === "inactive" ? "bg-gradient-primary" : ""}
-        >
-          Не активні <Badge variant="secondary" className="ml-2">{taskCounts.inactive}</Badge>
-        </Button>
-        <Button
-          size="sm"
           variant={activeTab === "rejected" ? "default" : "outline"}
           onClick={() => setActiveTab("rejected")}
           className={activeTab === "rejected" ? "bg-gradient-primary" : ""}
         >
           Відхилені <Badge variant="secondary" className="ml-2">{taskCounts.rejected}</Badge>
-        </Button>
-        <Button
-          size="sm"
-          variant={activeTab === "cancelled" ? "default" : "outline"}
-          onClick={() => setActiveTab("cancelled")}
-          className={activeTab === "cancelled" ? "bg-gradient-primary" : ""}
-        >
-          Скасовані <Badge variant="secondary" className="ml-2">{taskCounts.cancelled}</Badge>
         </Button>
       </div>
 
