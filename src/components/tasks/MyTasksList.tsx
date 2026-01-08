@@ -263,14 +263,24 @@ export const MyTasksList = () => {
       <Card key={task.id}>
         <CardHeader>
           <div className="flex justify-between items-start mb-2">
-            <Badge 
-              variant={statusLabels[task.status]?.variant || "outline"}
-              className={statusLabels[task.status]?.color || ""}
-            >
-              {statusLabels[task.status]?.label || task.status}
-            </Badge>
-            <Badge variant={task.task_type === "vip" ? "default" : "secondary"}>
-              {task.task_type === "vip" ? "VIP" : "Бонусне"}
+            <div className="flex flex-col gap-1">
+              <Badge 
+                variant={statusLabels[task.status]?.variant || "outline"}
+                className={statusLabels[task.status]?.color || ""}
+              >
+                {statusLabels[task.status]?.label || task.status}
+              </Badge>
+              {["approved", "active", "inactive"].includes(task.status) && (
+                <Badge 
+                  variant={task.status === "active" ? "default" : "secondary"}
+                  className={task.status === "active" ? "bg-green-500 text-white" : "bg-gray-400 text-white"}
+                >
+                  {task.status === "active" ? "✓ Доступне" : "⏸ Не доступне"}
+                </Badge>
+              )}
+            </div>
+            <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+              {task.balance_type === "main" ? "💰 Основний" : "🎁 Бонус"}
             </Badge>
           </div>
           <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
