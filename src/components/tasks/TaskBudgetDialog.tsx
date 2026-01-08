@@ -36,7 +36,11 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
   const addBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const { error } = await supabase.rpc("add_task_budget_from_bonus", {
+      const rpcFunction = task.balance_type === 'main' 
+        ? 'add_task_budget_from_main' 
+        : 'add_task_budget_from_bonus';
+      
+      const { error } = await supabase.rpc(rpcFunction, {
         task_id_param: task.id,
         amount: amount,
       });
@@ -44,7 +48,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Успішно", description: "Бюджет успішно поповнено з бонусного балансу!" });
+      const balanceType = task.balance_type === 'main' ? 'основного' : 'бонусного';
+      toast({ title: "Успішно", description: `Бюджет успішно поповнено з ${balanceType} балансу!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setAmount("");
@@ -61,7 +66,11 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
   const withdrawBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const { error } = await supabase.rpc("withdraw_task_budget", {
+      const rpcFunction = task.balance_type === 'main'
+        ? 'withdraw_task_budget_to_main'
+        : 'withdraw_task_budget';
+      
+      const { error } = await supabase.rpc(rpcFunction, {
         task_id_param: task.id,
         amount: amount,
       });
@@ -69,7 +78,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Успішно", description: "Кошти успішно виведено!" });
+      const balanceType = task.balance_type === 'main' ? 'основний' : 'бонусний';
+      toast({ title: "Успішно", description: `Кошти успішно повернуто на ${balanceType} баланс!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setAmount("");

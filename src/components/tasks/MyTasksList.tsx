@@ -556,10 +556,7 @@ export const MyTasksList = () => {
                 {activeTab === "all" && "Ви ще не створили жодного завдання"}
                 {activeTab === "pending" && "Немає завдань на модерації"}
                 {activeTab === "approved" && "Немає схвалених завдань"}
-                {activeTab === "active" && "Немає активних завдань"}
-                {activeTab === "inactive" && "Немає не активних завдань"}
                 {activeTab === "rejected" && "Немає відхилених завдань"}
-                {activeTab === "cancelled" && "Немає скасованих завдань"}
               </p>
               {activeTab === "all" && (
                 <Button 
