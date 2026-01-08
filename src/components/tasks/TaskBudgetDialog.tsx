@@ -1,4 +1,4 @@
-import { useState } from "react";
+п»їimport { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -37,7 +37,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
   const addBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
       const rpcFunction = task.balance_type === 'main' 
-        ? 'add_task_budget_from_main' 
+        в‚ґ 'add_task_budget_from_main' 
         : 'add_task_budget_from_bonus';
       
       const { error } = await supabase.rpc(rpcFunction, {
@@ -48,8 +48,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ? 'основного' : 'бонусного';
-      toast({ title: "Успішно", description: `Бюджет успішно поповнено з ${balanceType} балансу!` });
+      const balanceType = task.balance_type === 'main' в‚ґ 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ' : 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ';
+      toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅ", description: `пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ ${balanceType} пїЅпїЅпїЅпїЅпїЅпїЅпїЅ!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setAmount("");
@@ -57,8 +57,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
     },
     onError: (error: any) => {
       toast({
-        title: "Помилка",
-        description: error.message || "Помилка поповнення бюджету",
+        title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ",
+        description: error.message || "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ",
         variant: "destructive",
       });
     },
@@ -67,7 +67,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
   const withdrawBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
       const rpcFunction = task.balance_type === 'main'
-        ? 'withdraw_task_budget_to_main'
+        в‚ґ 'withdraw_task_budget_to_main'
         : 'withdraw_task_budget';
       
       const { error } = await supabase.rpc(rpcFunction, {
@@ -78,8 +78,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
       if (error) throw error;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ? 'основний' : 'бонусний';
-      toast({ title: "Успішно", description: `Кошти успішно повернуто на ${balanceType} баланс!` });
+      const balanceType = task.balance_type === 'main' в‚ґ 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ' : 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ';
+      toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅ", description: `пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ${balanceType} пїЅпїЅпїЅпїЅпїЅпїЅ!` });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setAmount("");
@@ -87,8 +87,8 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
     },
     onError: (error: any) => {
       toast({
-        title: "Помилка",
-        description: error.message || "Помилка виведення коштів",
+        title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ",
+        description: error.message || "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ",
         variant: "destructive",
       });
     },
@@ -96,29 +96,29 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
   const handleSubmit = () => {
     const numAmount = parseFloat(amount);
-    const minAmount = task.reward_amount; // Мінімум - ціна 1 виконання
+    const minAmount = task.reward_amount; // МіпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast({ title: "Помилка", description: "Введіть коректну суму", variant: "destructive" });
+      toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", description: "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ", variant: "destructive" });
       return;
     }
 
     if (activeTab === "add") {
       if (numAmount < minAmount) {
-        toast({ title: "Помилка", description: `Мінімальна сума поповнення: ${minAmount.toFixed(2)} ? (ціна 1 виконання)`, variant: "destructive" });
+        toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", description: `МіпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: ${minAmount.toFixed(2)} в‚ґ (пїЅпїЅпїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)`, variant: "destructive" });
         return;
       }
-      const availableBalance = task.balance_type === 'main' ? userBalance : userBonusBalance;
+      const availableBalance = task.balance_type === 'main' в‚ґ userBalance : userBonusBalance;
       if (numAmount > availableBalance) {
-        const balanceTypeName = task.balance_type === 'main' ? 'основному' : 'бонусному';
-        toast({ title: "Помилка", description: `Недостатньо коштів на ${balanceTypeName} балансі`, variant: "destructive" });
+        const balanceTypeName = task.balance_type === 'main' в‚ґ 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ' : 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ';
+        toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", description: `пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ${balanceTypeName} пїЅпїЅпїЅпїЅпїЅпїЅ`, variant: "destructive" });
         return;
       }
       addBudgetMutation.mutate(numAmount);
     } else {
       const maxWithdrawAmount = Math.max(0, task.budget - task.reward_amount);
       if (numAmount > maxWithdrawAmount) {
-        toast({ title: "Помилка", description: `Можна вивести максимум ${maxWithdrawAmount.toFixed(2)} ? (потрібно залишити на 1 виконання)`, variant: "destructive" });
+        toast({ title: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ", description: `пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ${maxWithdrawAmount.toFixed(2)} в‚ґ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)`, variant: "destructive" });
         return;
       }
       withdrawBudgetMutation.mutate(numAmount);
@@ -126,15 +126,15 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
   };
 
   const currentExecutions = calculateExecutions(parseFloat(amount) || 0);
-  const maxWithdraw = Math.max(0, (task.budget || 0) - task.reward_amount); // Залишити мінімум на 1 виконання
+  const maxWithdraw = Math.max(0, (task.budget || 0) - task.reward_amount); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Управління бюджетом завдання</DialogTitle>
+          <DialogTitle>пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ</DialogTitle>
           <DialogDescription>
-            Поповніть бюджет завдання або виведіть кошти назад на баланс
+            пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
           </DialogDescription>
         </DialogHeader>
 
@@ -142,11 +142,11 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="add">
               <TrendingUp className="h-4 w-4 mr-2" />
-              Поповнити
+              пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             </TabsTrigger>
             <TabsTrigger value="withdraw">
               <TrendingDown className="h-4 w-4 mr-2" />
-              Вивести
+              пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             </TabsTrigger>
           </TabsList>
 
@@ -154,30 +154,30 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border-2 border-primary">
                 <span className="text-muted-foreground font-medium">
-                  {task.balance_type === 'main' ? 'Основний баланс:' : 'Бонусний баlanс:'}
+                  {task.balance_type === 'main' в‚ґ 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:' : 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅlanпїЅ:'}
                 </span>
                 <span className="font-bold text-lg text-primary">
-                  {task.balance_type === 'main' ? userBalance.toFixed(2) : userBonusBalance.toFixed(2)} ?
+                  {task.balance_type === 'main' в‚ґ userBalance.toFixed(2) : userBonusBalance.toFixed(2)} в‚ґ
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Поточний бюджет:</span>
-                <span className="font-semibold">{task.budget?.toFixed(2) || "0.00"} ?</span>
+                <span className="text-muted-foreground">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:</span>
+                <span className="font-semibold">{task.budgetв‚ґ.toFixed(2) || "0.00"} в‚ґ</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Ціна за виконання:</span>
-                <span className="font-semibold">{task.reward_amount.toFixed(2)} ?</span>
+                <span className="text-muted-foreground">ЦіпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:</span>
+                <span className="font-semibold">{task.reward_amount.toFixed(2)} в‚ґ</span>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="add-amount">
-                Сума поповнення з {task.balance_type === 'main' ? 'основного' : 'бонусного'} балансу (?)
+                пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ {task.balance_type === 'main' в‚ґ 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ' : 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ'} пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (в‚ґ)
               </Label>
               <Input
                 id="add-amount"
                 type="text"
-                placeholder={`Мінімум ${task.reward_amount.toFixed(2)} ?`}
+                placeholder={`МіпїЅпїЅпїЅпїЅ ${task.reward_amount.toFixed(2)} в‚ґ`}
                 value={amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -187,7 +187,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                Мінімальна сума: <strong>{task.reward_amount.toFixed(2)} ?</strong> (ціна 1 виконання)
+                МіпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ: <strong>{task.reward_amount.toFixed(2)} в‚ґ</strong> (пїЅпїЅпїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
               </p>
               <div className="flex gap-2">
                 <Button
@@ -197,7 +197,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                   onClick={() => setAmount(task.reward_amount.toFixed(2))}
                   disabled={userBonusBalance < task.reward_amount}
                 >
-                  1 виконання
+                  1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 </Button>
                 <Button
                   type="button"
@@ -206,7 +206,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                   onClick={() => setAmount((task.reward_amount * 5).toFixed(2))}
                   disabled={userBonusBalance < task.reward_amount * 5}
                 >
-                  5 виконань
+                  5 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 </Button>
                 <Button
                   type="button"
@@ -215,12 +215,12 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                   onClick={() => setAmount((task.reward_amount * 10).toFixed(2))}
                   disabled={userBonusBalance < task.reward_amount * 10}
                 >
-                  10 виконань
+                  10 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 </Button>
               </div>
               {amount && currentExecutions > 0 && (
                 <p className="text-sm text-primary">
-                  На цю суму можна отримати <strong>{currentExecutions}</strong> виконань
+                  пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ <strong>{currentExecutions}</strong> пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 </p>
               )}
             </div>
@@ -229,12 +229,12 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
               <div className="flex items-start gap-2">
                 <Wallet className="h-5 w-5 text-primary mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium">Після поповнення:</p>
+                  <p className="font-medium">ПіпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:</p>
                   <p className="text-muted-foreground">
-                    Бюджет: {((task.budget || 0) + (parseFloat(amount) || 0)).toFixed(2)} ?
+                    пїЅпїЅпїЅпїЅпїЅпїЅ: {((task.budget || 0) + (parseFloat(amount) || 0)).toFixed(2)} в‚ґ
                   </p>
                   <p className="text-muted-foreground">
-                    Доступних виконань: {(task.available_executions || 0) + currentExecutions}
+                    пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {(task.available_executions || 0) + currentExecutions}
                   </p>
                 </div>
               </div>
@@ -244,25 +244,25 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
           <TabsContent value="withdraw" className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Поточний бюджет:</span>
-                <span className="font-semibold">{(task.budget || 0).toFixed(2)} ?</span>
+                <span className="text-muted-foreground">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:</span>
+                <span className="font-semibold">{(task.budget || 0).toFixed(2)} в‚ґ</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Доступних виконань:</span>
+                <span className="text-muted-foreground">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:</span>
                 <span className="font-semibold">{task.available_executions || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Максимум для виведення:</span>
-                <span className="font-semibold text-primary">{maxWithdraw.toFixed(2)} ?</span>
+                <span className="text-muted-foreground">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:</span>
+                <span className="font-semibold text-primary">{maxWithdraw.toFixed(2)} в‚ґ</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="withdraw-amount">Сума виведення (?)</Label>
+              <Label htmlFor="withdraw-amount">пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (в‚ґ)</Label>
               <Input
                 id="withdraw-amount"
                 type="text"
-                placeholder={maxWithdraw > 0 ? "Введіть суму" : "Недостатньо коштів"}
+                placeholder={maxWithdraw > 0 в‚ґ "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ" : "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ"}
                 value={amount}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -273,7 +273,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                 disabled={maxWithdraw <= 0}
               />
               <p className="text-xs text-muted-foreground">
-                Потрібно залишити мінімум <strong>{task.reward_amount.toFixed(2)} ?</strong> на 1 виконання
+                пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ <strong>{task.reward_amount.toFixed(2)} в‚ґ</strong> пїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
               </p>
               {maxWithdraw > 0 && (
                 <div className="flex gap-2">
@@ -291,7 +291,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
                     size="sm"
                     onClick={() => setAmount(maxWithdraw.toFixed(2))}
                   >
-                    Максимум
+                    пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                   </Button>
                 </div>
               )}
@@ -299,7 +299,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
             <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
               <p className="text-sm text-orange-800 dark:text-orange-200">
-                ?? Кошти буде повернуто на ваш основний баланс. Завдання залишиться доступним з мінімум 1 виконанням.
+                в‚ґв‚ґ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ 1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
               </p>
             </div>
           </TabsContent>
@@ -307,7 +307,7 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Скасувати
+            пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
           </Button>
           <Button
             onClick={handleSubmit}
@@ -319,10 +319,10 @@ export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBo
             }
           >
             {addBudgetMutation.isPending || withdrawBudgetMutation.isPending
-              ? "Обробка..."
+              в‚ґ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ..."
               : activeTab === "add"
-              ? "Поповнити"
-              : "Вивести"}
+              в‚ґ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
+              : "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ"}
           </Button>
         </DialogFooter>
       </DialogContent>
