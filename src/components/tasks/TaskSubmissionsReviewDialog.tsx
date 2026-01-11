@@ -30,7 +30,7 @@ export const TaskSubmissionsReviewDialog = ({ task, open, onOpenChange }: TaskSu
         .from("task_submissions")
         .select(`
           *,
-          profiles!task_submissions_user_id_fkey (
+          profiles (
             telegram_username,
             full_name,
             avatar_url
