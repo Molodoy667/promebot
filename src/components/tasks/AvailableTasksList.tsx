@@ -140,7 +140,7 @@ export const AvailableTasksList = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredTasks.map((task: any) => {
           const counters = getTaskCounters(task);
           const taskImage = task.images && task.images.length > 0 ? task.images[0] : null;
