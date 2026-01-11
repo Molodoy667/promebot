@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { SubmitTaskDialog } from "@/components/tasks/SubmitTaskDialog";
 import { MyTasksList } from "@/components/tasks/MyTasksList";
+import { AvailableTasksList } from "@/components/tasks/AvailableTasksList";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Loading } from "@/components/Loading";
 import { PageHeader } from "@/components/PageHeader";
@@ -34,8 +35,6 @@ const TaskMarketplace = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>("available");
   const [submissionFilter, setSubmissionFilter] = useState<SubmissionFilterType>("all");
-  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
-  const [submissionToSubmit, setSubmissionToSubmit] = useState<any>(null);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   // Handle tab parameter from URL
@@ -91,34 +90,6 @@ const TaskMarketplace = () => {
     };
   }, [queryClient]);
 
-  // Fetch available tasks
-  const { data: availableTasks, isLoading: loadingAvailable } = useQuery({
-    queryKey: ["available-tasks"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data: submissions } = await supabase
-        .from("task_submissions")
-        .select("task_id")
-        .eq("user_id", user.id);
-
-      const submittedTaskIds = submissions?.map(s => s.task_id) || [];
-
-      const { data, error } = await supabase
-        .from("tasks")
-        .select(`
-          *
-        `)
-        .eq("status", "active")
-        .not("user_id", "eq", user.id);
-
-      if (error) throw error;
-      
-      return data?.filter(task => !submittedTaskIds.includes(task.id)) || [];
-    },
-    enabled: activeTab === "available",
-  });
 
   // Fetch my tasks with submission counts
   const { data: myTasks, isLoading: loadingMyTasks } = useQuery({
@@ -212,48 +183,6 @@ const TaskMarketplace = () => {
     },
   });
 
-  const handleStartTask = async (task: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Помилка",
-          description: "Необхідно авторизуватись",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create submission with in_progress status
-      const { data: submission, error } = await supabase
-        .from("task_submissions")
-        .insert({
-          task_id: task.id,
-          user_id: user.id,
-          status: "in_progress",
-        })
-        .select(`
-          *,
-          tasks (*)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      setSubmissionToSubmit(submission);
-      setSubmitDialogOpen(true);
-      toast({
-        title: "Завдання розпочато!",
-        description: "Заповніть звіт після виконання.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Помилка",
-        description: error.message || "Не вдалось розпочати завдання",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -375,78 +304,7 @@ const TaskMarketplace = () => {
 
         {/* Content */}
         {activeTab === "available" && (
-          <>
-            {loadingAvailable ? (
-              <Loading />
-            ) : availableTasks && availableTasks.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {availableTasks.map((task, index) => (
-                  <Card
-                    key={task.id}
-                    className="group relative p-5 bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border-border/50 hover:border-primary/40 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-fade-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
-                    
-                    <div className="relative z-10 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-foreground text-lg leading-tight flex-1">
-                          {task.title}
-                        </h3>
-                        <div className="flex items-center gap-1 bg-gradient-to-br from-warning/20 to-warning/10 px-2.5 py-1 rounded-lg border border-warning/30 flex-shrink-0">
-                          <Coins className="w-4 h-4 text-warning" />
-                          <span className="text-sm font-bold">
-                            <BonusBalanceDisplay amount={task.reward_amount} iconSize={16} />
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {task.description}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{task.time_limit_hours}год</span>
-                        {task.max_completions && (
-                          <>
-                            <span>•</span>
-                            <span>Макс: {task.max_completions}</span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        {task.requires_screenshot && (
-                          <Badge variant="outline" className="text-xs">
-                            📷 Скріншот
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          {task.task_type === "telegram_subscription" ? "📢 Підписка" : "📝 Завдання"}
-                        </Badge>
-                      </div>
-
-                      <Button 
-                        className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartTask(task);
-                        }}
-                      >
-                        Почати виконання
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center bg-card/50 backdrop-blur-sm">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Наразі немає доступних завдань</p>
-              </Card>
-            )}
-          </>
+          <AvailableTasksList />
         )}
 
         {activeTab === "my-tasks" && (
