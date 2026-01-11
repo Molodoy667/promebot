@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { SubmitTaskDialog } from "@/components/tasks/SubmitTaskDialog";
 import { MyTasksList } from "@/components/tasks/MyTasksList";
 import { AvailableTasksList } from "@/components/tasks/AvailableTasksList";
+import { MySubmissionsList } from "@/components/tasks/MySubmissionsList";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Loading } from "@/components/Loading";
 import { PageHeader } from "@/components/PageHeader";
@@ -202,15 +203,16 @@ const TaskMarketplace = () => {
           </Button>
         </PageHeader>
 
-        <div className="mb-6">
-          {/* Stats */}
+        {activeTab === "my-submissions" && (
+          <div className="mb-6">
+            {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
                 <div className="flex items-center gap-2 text-primary mb-1">
                   <Briefcase className="w-4 h-4" />
-                  <span className="text-xs font-semibold">Мої завдання</span>
+                  <span className="text-xs font-semibold">Всього</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{myTasks?.length || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{submissionStats.all}</p>
               </div>
 
               <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 hover:border-warning/40 transition-all duration-300 hover:scale-105">
@@ -237,7 +239,8 @@ const TaskMarketplace = () => {
                 <p className="text-2xl font-bold text-foreground">{submissionStats.rejected}</p>
               </div>
             </div>
-        </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -264,43 +267,6 @@ const TaskMarketplace = () => {
           </Button>
         </div>
 
-        {/* Submission Filters */}
-        {activeTab === "my-submissions" && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <Button
-              size="sm"
-              variant={submissionFilter === "all" ? "default" : "outline"}
-              onClick={() => setSubmissionFilter("all")}
-              className={submissionFilter === "all" ? "bg-gradient-primary" : ""}
-            >
-              Всі <Badge variant="secondary" className="ml-2">{submissionStats.all}</Badge>
-            </Button>
-            <Button
-              size="sm"
-              variant={submissionFilter === "in_progress" ? "default" : "outline"}
-              onClick={() => setSubmissionFilter("in_progress")}
-              className={submissionFilter === "in_progress" ? "bg-gradient-primary" : ""}
-            >
-              В роботі <Badge variant="secondary" className="ml-2">{submissionStats.in_progress}</Badge>
-            </Button>
-            <Button
-              size="sm"
-              variant={submissionFilter === "completed" ? "default" : "outline"}
-              onClick={() => setSubmissionFilter("completed")}
-              className={submissionFilter === "completed" ? "bg-gradient-primary" : ""}
-            >
-              Виконані <Badge variant="secondary" className="ml-2">{submissionStats.completed}</Badge>
-            </Button>
-            <Button
-              size="sm"
-              variant={submissionFilter === "rejected" ? "default" : "outline"}
-              onClick={() => setSubmissionFilter("rejected")}
-              className={submissionFilter === "rejected" ? "bg-gradient-primary" : ""}
-            >
-              Відхилені <Badge variant="secondary" className="ml-2">{submissionStats.rejected}</Badge>
-            </Button>
-          </div>
-        )}
 
         {/* Content */}
         {activeTab === "available" && (
@@ -313,79 +279,7 @@ const TaskMarketplace = () => {
 
 
         {activeTab === "my-submissions" && (
-          <>
-            {loadingSubmissions ? (
-              <Loading />
-            ) : mySubmissions && mySubmissions.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {mySubmissions.map((submission, index) => (
-                  <Card
-                    key={submission.id}
-                    className="group relative p-5 bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border-border/50 hover:border-primary/40 hover:shadow-xl transition-all duration-300 animate-fade-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="relative z-10 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-foreground leading-tight flex-1">
-                          {submission.tasks?.title}
-                        </h3>
-                        <Badge
-                          variant={
-                            submission.status === "completed" ? "default" :
-                            submission.status === "in_progress" ? "secondary" :
-                            submission.status === "submitted" ? "outline" :
-                            "destructive"
-                          }
-                          className={
-                            submission.status === "completed" ? "bg-success text-success-foreground" :
-                            submission.status === "in_progress" ? "bg-warning/20 text-warning" :
-                            ""
-                          }
-                        >
-                          {submission.status === "completed" ? "✓ Виконано" :
-                           submission.status === "in_progress" ? "⏳ В роботі" :
-                           submission.status === "submitted" ? "👁️ На перевірці" :
-                           "✗ Відхилено"}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="flex items-center gap-1 bg-gradient-to-br from-warning/20 to-warning/10 px-2.5 py-1 rounded-lg border border-warning/30">
-                          <Coins className="w-3.5 h-3.5 text-warning" />
-                          <span className="font-bold">
-                            <BonusBalanceDisplay amount={submission.tasks?.reward_amount || 0} iconSize={16} />
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(submission.created_at).toLocaleDateString("uk-UA")}
-                        </span>
-                      </div>
-
-                      {submission.review_comment && (
-                        <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
-                          <p className="text-xs font-semibold text-foreground mb-1">Коментар:</p>
-                          <p className="text-xs text-muted-foreground">{submission.review_comment}</p>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center bg-card/50 backdrop-blur-sm">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  {submissionFilter === "all" 
-                    ? "У вас ще немає виконаних завдань" 
-                    : `Немає завдань зі статусом "${
-                        submissionFilter === "in_progress" ? "В роботі" :
-                        submissionFilter === "completed" ? "Виконані" :
-                        "Відхилені"
-                      }"`}
-                </p>
-              </Card>
-            )}
-          </>
+          <MySubmissionsList />
         )}
       </div>
 
