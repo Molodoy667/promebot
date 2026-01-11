@@ -105,7 +105,7 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
-          {task.telegram_channel_link && (
+          {task.telegram_channel_link && task.channel_info ? (
             <a 
               href={task.telegram_channel_link}
               target="_blank"
@@ -143,7 +143,19 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
                 </svg>
               </div>
             </a>
-          )}
+          ) : task.telegram_channel_link ? (
+            <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+              <h4 className="font-semibold mb-2 text-sm">🔗 Посилання:</h4>
+              <a 
+                href={task.telegram_channel_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline break-all text-sm"
+              >
+                {task.telegram_channel_link}
+              </a>
+            </div>
+          ) : null}
 
           <div className="space-y-3">
             <h4 className="font-semibold text-base flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Умови виконання:</h4>

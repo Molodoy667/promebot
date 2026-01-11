@@ -168,12 +168,6 @@ export const AvailableTasksList = () => {
                 </div>
               )}
               
-              {/* Balance Type Badge */}
-              <div className="absolute top-2 right-2">
-                <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
-                  {task.balance_type === "main" ? "Баланс" : "Бонусне"}
-                </Badge>
-              </div>
             </div>
 
             <CardHeader className="space-y-3">
@@ -190,38 +184,47 @@ export const AvailableTasksList = () => {
                 </span>
               </div>
 
-              {/* Category */}
-              {task.category && (
-                <Badge variant="outline" className="w-fit text-xs">
-                  {categoryLabels[task.category] || task.category}
-                </Badge>
-              )}
-
               {/* Title */}
               <CardTitle className="line-clamp-2 text-base leading-tight">
                 {task.title}
               </CardTitle>
               
+              {/* Category */}
+              {task.task_type && (
+                <Badge variant="outline" className="w-fit text-xs">
+                  {categoryLabels[task.task_type] || task.task_type}
+                </Badge>
+              )}
+              
               {/* Description */}
-              <CardDescription className="line-clamp-3 text-xs leading-relaxed">
+              <CardDescription className="line-clamp-2 text-xs leading-relaxed">
                 {task.description}
               </CardDescription>
 
               {/* Stats Row */}
               <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="w-4 h-4 text-primary" />
-                  <span className="font-bold text-primary">{task.reward_amount.toFixed(2)} ₴</span>
-                </div>
+                {/* Reward Badge */}
+                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-sm font-bold">
+                  {task.reward_amount.toFixed(2)} ₴
+                </Badge>
                 
+                {/* Counters */}
                 <div className="flex gap-1">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-1.5 py-0">
-                    ✓ {counters.approved}
-                  </Badge>
-                  <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs px-1.5 py-0">
-                    ⏳ {counters.inProgress}
-                  </Badge>
+                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-green-500 bg-green-50 dark:bg-green-950">
+                    <span className="text-xs font-bold text-green-700 dark:text-green-400">{counters.approved}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-gray-400 bg-gray-50 dark:bg-gray-900">
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{counters.inProgress}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-red-500 bg-red-50 dark:bg-red-950">
+                    <span className="text-xs font-bold text-red-700 dark:text-red-400">{counters.rejected}</span>
+                  </div>
                 </div>
+              </div>
+              
+              {/* Budget Row */}
+              <div className="text-xs text-muted-foreground pt-1">
+                Бюджет: <span className="font-semibold">{(task.budget || 0).toFixed(2)} ₴</span>
               </div>
             </CardHeader>
           </Card>

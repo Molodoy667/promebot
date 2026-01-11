@@ -320,14 +320,15 @@ export const MyTasksList = () => {
             </Badge>
           </div>
           
+          <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
+          
           {/* Category */}
-          {task.category && (
+          {task.task_type && (
             <Badge variant="outline" className="w-fit text-xs mb-2">
-              {categoryLabels[task.category] || task.category}
+              {categoryLabels[task.task_type] || task.task_type}
             </Badge>
           )}
-
-          <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
+          
           <CardDescription>
             Винагорода: {task.reward_amount.toFixed(2)} ₴
           </CardDescription>
