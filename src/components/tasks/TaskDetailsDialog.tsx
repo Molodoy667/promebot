@@ -106,17 +106,43 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
           </div>
 
           {task.telegram_channel_link && (
-            <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-              <h4 className="font-semibold mb-2 text-sm">📱 Telegram канал:</h4>
-              <a 
-                href={task.telegram_channel_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:underline break-all"
-              >
-                {task.telegram_channel_link}
-              </a>
-            </div>
+            <a 
+              href={task.telegram_channel_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-blue-500/10 hover:bg-blue-500/20 p-4 rounded-lg border border-blue-500/20 transition-colors"
+            >
+              <h4 className="font-semibold mb-3 text-sm">📱 Telegram канал:</h4>
+              <div className="flex items-center gap-3">
+                {task.channel_info?.photo ? (
+                  <img 
+                    src={task.channel_info.photo} 
+                    alt={task.channel_info.title || "Channel"}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-600 font-bold text-xl">
+                    {task.channel_info?.title?.[0]?.toUpperCase() || "T"}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-base truncate">
+                    {task.channel_info?.title || "Telegram Channel"}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {task.channel_info?.username ? `@${task.channel_info.username}` : task.telegram_channel_link}
+                  </p>
+                  {task.channel_info?.participants_count && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      👥 {task.channel_info.participants_count.toLocaleString()} підписників
+                    </p>
+                  )}
+                </div>
+                <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+            </a>
           )}
 
           <div className="space-y-3">
