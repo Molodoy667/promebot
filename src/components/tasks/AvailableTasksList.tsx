@@ -9,6 +9,16 @@ import { TaskDetailsDialog } from "./TaskDetailsDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const categoryLabels: Record<string, string> = {
+  telegram_subscription: "Telegram підписка",
+  like: "Лайк",
+  comment: "Коментар",
+  share: "Репост",
+  survey: "Опитування",
+  review: "Відгук",
+  other: "Інше",
+};
+
 export const AvailableTasksList = () => {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [balanceFilter, setBalanceFilter] = useState<"all" | "bonus" | "main">("all");
@@ -125,7 +135,7 @@ export const AvailableTasksList = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredTasks.map((task: any) => {
           const counters = getTaskCounters(task);
           const taskImage = task.images && task.images.length > 0 ? task.images[0] : null;
@@ -183,7 +193,7 @@ export const AvailableTasksList = () => {
               {/* Category */}
               {task.category && (
                 <Badge variant="outline" className="w-fit text-xs">
-                  {task.category}
+                  {categoryLabels[task.category] || task.category}
                 </Badge>
               )}
 

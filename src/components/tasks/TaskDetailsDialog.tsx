@@ -106,7 +106,7 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
           </div>
 
           {task.telegram_channel_link && (
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
               <h4 className="font-semibold mb-2 text-sm">📱 Telegram канал:</h4>
               <a 
                 href={task.telegram_channel_link}

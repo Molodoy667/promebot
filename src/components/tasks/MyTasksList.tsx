@@ -32,6 +32,16 @@ const statusLabels: Record<string, { label: string; variant: any; color?: string
   cancelled: { label: "Скасовано", variant: "outline" },
 };
 
+const categoryLabels: Record<string, string> = {
+  telegram_subscription: "Telegram підписка",
+  like: "Лайк",
+  comment: "Коментар",
+  share: "Репост",
+  survey: "Опитування",
+  review: "Відгук",
+  other: "Інше",
+};
+
 export const MyTasksList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -313,7 +323,7 @@ export const MyTasksList = () => {
           {/* Category */}
           {task.category && (
             <Badge variant="outline" className="w-fit text-xs mb-2">
-              {task.category}
+              {categoryLabels[task.category] || task.category}
             </Badge>
           )}
 
@@ -611,7 +621,7 @@ export const MyTasksList = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
             {filteredTasks.map((task: any) => renderTaskCard(task))}
           </div>
         )}
