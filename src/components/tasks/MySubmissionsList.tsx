@@ -65,6 +65,7 @@ export const MySubmissionsList = () => {
             images,
             telegram_channel_link,
             channel_info,
+            additional_links,
             user_id
           )
         `)
@@ -237,6 +238,17 @@ export const MySubmissionsList = () => {
               </div>
 
               <CardHeader className="space-y-3">
+                {/* Date Created */}
+                <div className="text-xs text-muted-foreground">
+                  {new Date(submission.created_at).toLocaleString("uk-UA", {
+                    day: "2-digit",
+                    month: "2-digit", 
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </div>
+
                 {/* Timer & Reward */}
                 <div className="flex items-center justify-between gap-2">
                   {timeInfo ? (
@@ -285,17 +297,6 @@ export const MySubmissionsList = () => {
                   {task.title}
                 </CardTitle>
 
-                {/* Creation Date */}
-                <div className="text-xs text-muted-foreground">
-                  Створено: {new Date(task.created_at).toLocaleString("uk-UA", { 
-                    day: "2-digit", 
-                    month: "2-digit", 
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
-                </div>
-                
                 {/* Description */}
                 <CardDescription className="line-clamp-2 text-sm leading-relaxed">
                   {task.description}

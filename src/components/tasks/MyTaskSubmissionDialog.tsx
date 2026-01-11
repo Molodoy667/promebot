@@ -69,10 +69,10 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Успішно", description: "Завдання повернуто в доступні" });
+      onOpenChange(false);
+      toast({ title: "Успішно", description: "Завдання відхилено і видалено з ваших виконань" });
       queryClient.invalidateQueries({ queryKey: ["my-submissions"] });
       queryClient.invalidateQueries({ queryKey: ["available-tasks"] });
-      onOpenChange(false);
     },
     onError: (error: any) => {
       toast({ title: "Помилка", description: error.message, variant: "destructive" });
@@ -115,30 +115,104 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Task description */}
           <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
             <h4 className="font-semibold mb-2 text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Опис завдання:</h4>
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
-          {/* Additional Links */}
-          {task.additional_links && task.additional_links.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-3 text-sm">🔗 Додаткові посилання:</h4>
-              <div className="space-y-2">
-                {task.additional_links.map((link: string, index: number) => (
-                  <a
-                    key={index}
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block bg-blue-500/10 hover:bg-blue-500/20 p-3 rounded-lg border border-blue-500/20 transition-colors text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
-                  >
-                    {link}
-                  </a>
-                ))}
+          {/* Task details */}
+          <div className="grid gap-3">
+            {/* Time limit */}
+            {task.time_limit_hours && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Час на виконання:</span>
+                <span className="text-sm font-medium">{task.time_limit_hours} год</span>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Screenshot */}
+            {typeof task.requires_screenshot !== 'undefined' && (
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${task.requires_screenshot ? 'bg-warning/10 border border-warning/30' : 'bg-background/50'}`}>
+                <Camera className={`w-4 h-4 ${task.requires_screenshot ? 'text-warning' : 'text-muted-foreground'}`} />
+                <span className={`text-sm ${task.requires_screenshot ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                  {task.requires_screenshot ? "Обов'язковий скріншот" : "Скріншот не потрібен"}
+                </span>
+              </div>
+            )}
+
+            {/* Telegram channel */}
+            {task.telegram_channel_link && task.channel_info ? (
+              <a 
+                href={task.telegram_channel_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-blue-500/10 hover:bg-blue-500/20 p-4 rounded-lg border border-blue-500/20 transition-colors"
+              >
+                <h4 className="font-semibold mb-3 text-sm">📱 Telegram канал:</h4>
+                <div className="flex items-center gap-3">
+                  {task.channel_info?.photo ? (
+                    <img 
+                      src={task.channel_info.photo} 
+                      alt={task.channel_info.title || "Channel"}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-600 font-bold text-xl">
+                      {task.channel_info?.title?.[0]?.toUpperCase() || "T"}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-base truncate">
+                      {task.channel_info?.title || "Telegram Channel"}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {task.channel_info?.username ? `@${task.channel_info.username}` : task.telegram_channel_link}
+                    </p>
+                    {task.channel_info?.participants_count && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        👥 {task.channel_info.participants_count.toLocaleString()} підписників
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </a>
+            ) : task.telegram_channel_link ? (
+              <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+                <h4 className="font-semibold mb-2 text-sm">🔗 Посилання:</h4>
+                <a 
+                  href={task.telegram_channel_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline break-all text-sm"
+                >
+                  {task.telegram_channel_link}
+                </a>
+              </div>
+            ) : null}
+
+            {/* Additional links */}
+            {task.additional_links && Array.isArray(task.additional_links) && task.additional_links.length > 0 && (
+              <div className="p-3 rounded-lg bg-background/50 space-y-2">
+                <span className="text-sm font-medium text-muted-foreground">Додаткові посилання:</span>
+                <div className="space-y-1">
+                  {task.additional_links.map((link: string, idx: number) => (
+                    <a 
+                      key={idx}
+                      href={link.startsWith('http') ? link : `https://t.me/${link.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-primary hover:underline text-sm font-mono break-all"
+                    >
+                      {idx + 1}. {link}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
 
           {/* Additional Images */}
           {task.images && task.images.length > 1 && (
@@ -164,94 +238,21 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
             </div>
           )}
 
-          {/* Telegram Channel */}
-          {task.telegram_channel_link && task.channel_info ? (
-            <a 
-              href={task.telegram_channel_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-blue-500/10 hover:bg-blue-500/20 p-4 rounded-lg border border-blue-500/20 transition-colors"
-            >
-              <h4 className="font-semibold mb-3 text-sm">📱 Telegram канал:</h4>
-              <div className="flex items-center gap-3">
-                {task.channel_info?.photo ? (
-                  <img 
-                    src={task.channel_info.photo} 
-                    alt={task.channel_info.title || "Channel"}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-600 font-bold text-xl">
-                    {task.channel_info?.title?.[0]?.toUpperCase() || "T"}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-base truncate">
-                    {task.channel_info?.title || "Telegram Channel"}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {task.channel_info?.username ? `@${task.channel_info.username}` : task.telegram_channel_link}
-                  </p>
-                  {task.channel_info?.participants_count && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      👥 {task.channel_info.participants_count.toLocaleString()} підписників
-                    </p>
-                  )}
-                </div>
-              </div>
-            </a>
-          ) : task.telegram_channel_link ? (
-            <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-              <h4 className="font-semibold mb-2 text-sm">🔗 Посилання:</h4>
-              <a 
-                href={task.telegram_channel_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:underline break-all text-sm"
-              >
-                {task.telegram_channel_link}
-              </a>
-            </div>
-          ) : null}
 
-          <div className="space-y-3">
-            <h4 className="font-semibold text-base flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Умови виконання:</h4>
-            <div className="grid gap-3 p-3 bg-muted/50 rounded-lg">
+          {/* Time remaining info */}
+          {timeRemaining && (
+            <div className="p-3 rounded-lg bg-muted/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-primary" />
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isExpired ? 'bg-red-100 dark:bg-red-950' : 'bg-blue-100 dark:bg-blue-950'}`}>
+                  <Clock className={`h-5 w-5 ${isExpired ? 'text-red-600' : 'text-blue-600'}`} />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Час на виконання</p>
-                  <p className="font-semibold">{task.time_limit_hours} годин</p>
+                  <p className="text-sm text-muted-foreground">Залишилось часу</p>
+                  <p className={`font-semibold ${isExpired ? 'text-destructive' : ''}`}>{timeRemaining}</p>
                 </div>
               </div>
-
-              {timeRemaining && (
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isExpired ? 'bg-red-100 dark:bg-red-950' : 'bg-blue-100 dark:bg-blue-950'}`}>
-                    <Clock className={`h-5 w-5 ${isExpired ? 'text-red-600' : 'text-blue-600'}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Залишилось часу</p>
-                    <p className={`font-semibold ${isExpired ? 'text-destructive' : ''}`}>{timeRemaining}</p>
-                  </div>
-                </div>
-              )}
-
-              {task.requires_screenshot && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-950 flex items-center justify-center">
-                    <Camera className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Скріншот</p>
-                    <p className="font-semibold text-orange-600">Обов'язковий</p>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
           {submission.review_comment && (
             <Alert className="border-orange-500/50 bg-orange-500/5">
@@ -272,7 +273,7 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
                 className="flex-1 bg-green-500 hover:bg-green-600"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Здати завдання
+                Здати
               </Button>
               <Button
                 onClick={() => cancelMutation.mutate()}
@@ -281,7 +282,7 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
                 className="flex-1"
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                {cancelMutation.isPending ? "Скасування..." : "Скасувати"}
+                {cancelMutation.isPending ? "Відхилення..." : "Відхилити"}
               </Button>
             </div>
           )}

@@ -9,24 +9,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Wallet } from "lucide-react";
+import { Wallet, Clock, Camera, Users, MessageCircle, Eye, ThumbsUp, Share2, FileText, TestTube, Briefcase, ClipboardList, Crown, Gift, Link as LinkIcon } from "lucide-react";
 import { SubmissionsReviewList } from "./SubmissionsReviewList";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { useState } from "react";
 
-const categoryLabels: Record<string, string> = {
-  telegram_subscription: "Підписка на Telegram канал",
-  telegram_post_view: "Перегляд поста в Telegram",
-  telegram_comment: "Коментар в Telegram",
-  social_subscription: "Підписка на соц. мережу",
-  social_like: "Лайк в соц. мережі",
-  social_share: "Поширення в соц. мережі",
-  website_visit: "Відвідування сайту",
-  app_install: "Встановлення додатку",
-  survey: "Опитування",
-  review: "Відгук",
-  other: "Інше",
-  vip: "VIP",
+const categoryConfig: Record<string, { label: string; icon: any }> = {
+  telegram_subscription: { label: 'Підписка на Telegram канал', icon: MessageCircle },
+  telegram_view: { label: 'Перегляд посту в Telegram', icon: Eye },
+  telegram_reaction: { label: 'Реакція на пост в Telegram', icon: ThumbsUp },
+  social_media: { label: 'Соціальні мережі', icon: Share2 },
+  content_creation: { label: 'Створення контенту', icon: FileText },
+  testing: { label: 'Тестування', icon: TestTube },
+  general: { label: 'Загальне', icon: Briefcase }
 };
 
 interface MyTaskDetailsDialogProps {
@@ -76,34 +71,62 @@ export const MyTaskDetailsDialog = ({ task, open, onOpenChange }: MyTaskDetailsD
 
   const approvedSubmissions = submissions?.filter(s => s.status === "approved").length || 0;
   const pendingReview = submissions?.filter(s => s.status === "submitted").length || 0;
+  
+  const categoryInfo = categoryConfig[task.category] || { label: task.category, icon: Briefcase };
+  const CategoryIcon = categoryInfo.icon;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
+            {/* Task Image */}
+            {task.images && task.images.length > 0 ? (
+              <div className="mb-4 rounded-lg overflow-hidden">
+                <img 
+                  src={task.images[0]} 
+                  alt={task.title}
+                  className="w-full h-48 object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mb-4 h-48 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center">
+                <ClipboardList className="w-20 h-20 text-primary/30" />
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Badge variant={task.task_type === "vip" ? "default" : "secondary"}>
-                  {task.task_type === "vip" ? "VIP" : "Бонусне"}
+                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="flex items-center gap-1">
+                  {task.balance_type === "main" ? (
+                    <>
+                      <Crown className="w-3 h-3" />
+                      Основний баланс
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="w-3 h-3" />
+                      Бонусний баланс
+                    </>
+                  )}
                 </Badge>
-                <span className="text-lg font-bold text-primary">
-                  {task.reward_amount.toFixed(2)} ₴
-                </span>
+                {task.status === "approved" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setBudgetDialogOpen(true)}
+                  >
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Бюджет
+                  </Button>
+                )}
               </div>
-              
-              {task.status === "approved" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setBudgetDialogOpen(true)}
-                >
-                  <Wallet className="h-4 w-4 mr-2" />
-                  Управління бюджетом
-                </Button>
-              )}
+              <span className="text-2xl font-bold text-primary">
+                {task.reward_amount.toFixed(2)} ₴
+              </span>
             </div>
-            <DialogTitle>{task.title}</DialogTitle>
+            
+            <DialogTitle className="text-xl">{task.title}</DialogTitle>
             
             {/* Budget Info - Show only for approved tasks */}
             {task.status === "approved" && (
@@ -169,17 +192,44 @@ export const MyTaskDetailsDialog = ({ task, open, onOpenChange }: MyTaskDetailsD
             <div className="grid gap-3 text-sm">
               {/* Category */}
               {task.category && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
                   <span className="text-muted-foreground min-w-[140px]">Категорія:</span>
-                  <Badge variant="outline">{categoryLabels[task.category] || task.category}</Badge>
+                  <Badge variant="outline" className="flex items-center gap-1.5">
+                    <CategoryIcon className="w-3.5 h-3.5" />
+                    {categoryInfo.label}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Time limit */}
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground min-w-[140px]">Час на виконання:</span>
+                <span className="font-medium">{task.time_limit_hours} год</span>
+              </div>
+
+              {/* Screenshot requirement */}
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${task.requires_screenshot ? 'bg-warning/10 border border-warning/30' : 'bg-background/50'}`}>
+                <Camera className={`w-4 h-4 ${task.requires_screenshot ? 'text-warning' : 'text-muted-foreground'}`} />
+                <span className={task.requires_screenshot ? 'text-warning font-medium' : 'text-muted-foreground'}>
+                  {task.requires_screenshot ? "Обов'язковий скріншот підтвердження" : "Скріншот не потрібен"}
+                </span>
+              </div>
+
+              {/* Max completions */}
+              {task.max_completions && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-muted-foreground min-w-[140px]">Обмеження:</span>
+                  <span className="font-medium">1 виконання на користувача</span>
                 </div>
               )}
 
               {/* Telegram channel */}
               {task.telegram_channel_link && (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground min-w-[140px]">Telegram канал:</span>
-                  <div className="flex items-center gap-2">
+                <div className="p-3 rounded-lg bg-background/50">
+                  <span className="text-xs text-muted-foreground">Telegram канал:</span>
+                  <div className="flex items-center gap-2 mt-1">
                     {task.channel_info?.photo && (
                       <img 
                         src={task.channel_info.photo} 
@@ -191,7 +241,7 @@ export const MyTaskDetailsDialog = ({ task, open, onOpenChange }: MyTaskDetailsD
                       href={task.telegram_channel_link.startsWith('http') ? task.telegram_channel_link : `https://t.me/${task.telegram_channel_link.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="text-primary hover:underline text-sm font-mono"
                     >
                       {task.channel_info?.title || task.telegram_channel_link}
                     </a>
@@ -204,35 +254,28 @@ export const MyTaskDetailsDialog = ({ task, open, onOpenChange }: MyTaskDetailsD
                 </div>
               )}
 
-              {/* Balance type */}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-[140px]">Тип балансу:</span>
-                <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'}>
-                  {task.balance_type === 'main' ? 'Основний баланс' : 'Бонусний баланс'}
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-[140px]">Час на виконання:</span>
-                <strong>{task.time_limit_hours} год</strong>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-[140px]">Обмеження:</span>
-                <strong>
-                  {task.max_completions ? "1 користувач → 1 виконання" : "Безлімітно"}
-                </strong>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-[140px]">Скріншот:</span>
-                <strong>{task.requires_screenshot ? "Обов'язковий" : "Не потрібен"}</strong>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-[140px]">Створено:</span>
-                <span>{new Date(task.created_at).toLocaleString('uk-UA')}</span>
-              </div>
+              {/* Additional links */}
+              {task.additional_links && Array.isArray(task.additional_links) && task.additional_links.length > 0 && (
+                <div className="p-3 rounded-lg bg-background/50 space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4" />
+                    Додаткові посилання:
+                  </span>
+                  <div className="space-y-1">
+                    {task.additional_links.map((link: string, idx: number) => (
+                      <a 
+                        key={idx}
+                        href={link.startsWith('http') ? link : link.startsWith('@') || link.includes('t.me/') ? `https://t.me/${link.replace('@', '')}` : link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-primary hover:underline text-sm font-mono break-all"
+                      >
+                        {idx + 1}. {link}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {task.moderation_comment && (

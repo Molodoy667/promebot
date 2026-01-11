@@ -73,7 +73,10 @@ export function UserSidebar({ profile, userRole, canSpin, onLogout, hasUnreadTic
           .limit(1)
           .maybeSingle();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error checking roulette status:", error);
+          return;
+        }
 
         if (!data) {
           setRouletteAvailable(true);

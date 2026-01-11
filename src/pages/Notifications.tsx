@@ -161,14 +161,29 @@ export default function Notifications() {
       markAsRead(notification.id);
     }
     
-    // Redirect to settings security tab for login notifications
-    if (notification.type === "account_login") {
-      navigate("/settings?tab=security");
-      return;
-    }
-    
-    if (notification.link) {
-      navigate(notification.link);
+    // Redirect based on notification type
+    switch (notification.type) {
+      case "account_login":
+        navigate("/settings?tab=security");
+        return;
+      
+      case "task_approved":
+      case "task_rejected":
+        // Завдання схвалено/відхилено - перехід до моїх завдань
+        navigate("/task-marketplace?tab=my-tasks");
+        return;
+      
+      case "task_submission_approved":
+      case "task_submission_rejected":
+        // Виконання схвалено/відхилено - перехід до моїх виконань
+        navigate("/task-marketplace?tab=my-submissions");
+        return;
+      
+      default:
+        // Для інших типів використовуємо link якщо є
+        if (notification.link) {
+          navigate(notification.link);
+        }
     }
   };
 
@@ -181,6 +196,10 @@ export default function Notifications() {
       case "task_approved":
         return <CheckCircle className="w-6 h-6 text-green-500" />;
       case "task_rejected":
+        return <XCircle className="w-6 h-6 text-red-500" />;
+      case "task_submission_approved":
+        return <CheckCircle className="w-6 h-6 text-green-500" />;
+      case "task_submission_rejected":
         return <XCircle className="w-6 h-6 text-red-500" />;
       case "tariff_expired":
         return <XCircle className="w-6 h-6 text-orange-500" />;

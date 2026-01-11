@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, X, Clock, DollarSign, Users, Camera, AlertCircle, ArrowLeft, User } from "lucide-react";
+import { Check, X, Clock, DollarSign, Users, Camera, AlertCircle, ArrowLeft, User, MessageCircle, Eye, ThumbsUp, Share2, FileText, TestTube, Briefcase, Crown, Gift } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { uk } from "date-fns/locale";
@@ -72,6 +72,10 @@ const TaskModerationDetail = () => {
           return { ...data, profiles: profileData };
         }
       }
+      
+      // Debug logging
+      console.log('Task data:', data);
+      console.log('Additional links:', data?.additional_links);
       
       return data;
     },
@@ -267,12 +271,29 @@ const TaskModerationDetail = () => {
 
             <div className="grid gap-3 text-sm">
               {/* Category */}
-              {task.category && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
-                  <span className="text-muted-foreground">Категорія:</span>
-                  <Badge variant="outline">{task.category}</Badge>
-                </div>
-              )}
+              {task.category && (() => {
+                const categoryConfig: Record<string, { label: string; icon: any }> = {
+                  telegram_subscription: { label: 'Підписка на Telegram канал', icon: MessageCircle },
+                  telegram_view: { label: 'Перегляд посту в Telegram', icon: Eye },
+                  telegram_reaction: { label: 'Реакція на пост в Telegram', icon: ThumbsUp },
+                  social_media: { label: 'Соціальні мережі', icon: Share2 },
+                  content_creation: { label: 'Створення контенту', icon: FileText },
+                  testing: { label: 'Тестування', icon: TestTube },
+                  general: { label: 'Загальне', icon: Briefcase }
+                };
+                const categoryInfo = categoryConfig[task.category] || { label: task.category, icon: Briefcase };
+                const CategoryIcon = categoryInfo.icon;
+                
+                return (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
+                    <span className="text-muted-foreground">Категорія:</span>
+                    <Badge variant="outline" className="flex items-center gap-1.5">
+                      <CategoryIcon className="w-3.5 h-3.5" />
+                      {categoryInfo.label}
+                    </Badge>
+                  </div>
+                );
+              })()}
 
               {/* Telegram channel */}
               {task.telegram_channel_link && (
@@ -307,8 +328,18 @@ const TaskModerationDetail = () => {
               {task.balance_type && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
                   <span className="text-muted-foreground">Тип балансу:</span>
-                  <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'}>
-                    {task.balance_type === 'main' ? '💰 Основний баланс' : '🎁 Бонусний баланс'}
+                  <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'} className="flex items-center gap-1.5">
+                    {task.balance_type === 'main' ? (
+                      <>
+                        <Crown className="w-3.5 h-3.5" />
+                        Основний баланс
+                      </>
+                    ) : (
+                      <>
+                        <Gift className="w-3.5 h-3.5" />
+                        Бонусний баланс
+                      </>
+                    )}
                   </Badge>
                 </div>
               )}
@@ -325,19 +356,31 @@ const TaskModerationDetail = () => {
                 </div>
               )}
 
-              {task.requires_screenshot && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
-                  <Camera className="h-5 w-5 text-warning" />
-                  <span className="text-warning font-medium">
-                    Обов'язковий скріншот підтвердження
-                  </span>
-                </div>
-              )}
+              {/* Screenshot requirement */}
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${task.requires_screenshot ? 'bg-warning/10 border border-warning/30' : 'bg-background/50'}`}>
+                <Camera className={`h-5 w-5 ${task.requires_screenshot ? 'text-warning' : 'text-muted-foreground'}`} />
+                <span className={task.requires_screenshot ? 'text-warning font-medium' : 'text-muted-foreground'}>
+                  {task.requires_screenshot ? 'Обов\'язковий скріншот підтвердження' : 'Скріншот не потрібен'}
+                </span>
+              </div>
 
-              {task.telegram_channel_link && (
-                <div className="p-3 rounded-lg bg-background/50">
-                  <span className="text-xs text-muted-foreground">Telegram канал:</span>
-                  <p className="font-mono text-sm break-all mt-1">{task.telegram_channel_link}</p>
+              {/* Additional links */}
+              {task.additional_links && Array.isArray(task.additional_links) && task.additional_links.length > 0 && (
+                <div className="p-3 rounded-lg bg-background/50 space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">Додаткові посилання:</span>
+                  <div className="space-y-1">
+                    {task.additional_links.map((link: string, idx: number) => (
+                      <a 
+                        key={idx}
+                        href={link.startsWith('http') ? link : link.startsWith('@') || link.includes('t.me/') ? `https://t.me/${link.replace('@', '')}` : link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-primary hover:underline text-sm font-mono break-all"
+                      >
+                        {idx + 1}. {link}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

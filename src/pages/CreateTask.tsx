@@ -45,7 +45,8 @@ import {
   XCircle,
   Loader2,
   Link as LinkIcon,
-  Plus
+  Plus,
+  Crown
 } from "lucide-react";
 
 const taskCategories: CategoryOption[] = [
@@ -122,16 +123,7 @@ const taskSchema = z.object({
   requires_screenshot: z.boolean(),
   max_completions: z.coerce.number().min(0, "Не може бути від'ємним").optional(),
   telegram_channel_link: z.string(),
-  additional_links: z.array(z.string().url("Невірний формат посилання")).max(3, "Максимум 3 додаткових посилання").optional()
-    .refine((val) => {
-      if (!val) return true; // Optional field
-      // Accept t.me links, @username, or plain username
-      return val.includes('t.me/') || 
-             val.startsWith('@') || 
-             (!val.includes('/') && !val.includes('http'));
-    }, "Введіть посилання t.me/канал, @username або просто username")
-    .optional()
-    .or(z.literal("")),
+  additional_links: z.array(z.string()).max(3, "Максимум 3 додаткових посилання").optional(),
   task_type: z.string(),
   balance_type: z.enum(["bonus", "main"]),
 });
@@ -212,6 +204,10 @@ const CreateTask = () => {
       }
       if (existingTask.images && Array.isArray(existingTask.images)) {
         setExistingImages(existingTask.images);
+      }
+      if (existingTask.additional_links && Array.isArray(existingTask.additional_links)) {
+        setAdditionalLinks(existingTask.additional_links);
+        form.setValue('additional_links', existingTask.additional_links);
       }
     }
   }, [existingTask, isEditMode, form]);
@@ -475,15 +471,29 @@ const CreateTask = () => {
       // Default to 'bonus' unless explicitly VIP
       const taskType = data.category === 'vip' ? 'vip' : 'bonus';
 
+      const rewardAmount = parseFloat(data.reward_amount as any);
+      const timeLimit = parseInt(data.time_limit_hours as any);
+      
+      console.log('Task data before save:', {
+        reward_amount: data.reward_amount,
+        reward_amount_parsed: rewardAmount,
+        reward_amount_type: typeof rewardAmount,
+        time_limit_hours: data.time_limit_hours,
+        time_limit_parsed: timeLimit,
+        isNaN_reward: isNaN(rewardAmount),
+        isNaN_time: isNaN(timeLimit)
+      });
+      
       const taskData = {
         title: data.title,
         description: data.description,
         category: data.category,
-        reward_amount: data.reward_amount,
-        time_limit_hours: data.time_limit_hours,
+        reward_amount: rewardAmount,
+        time_limit_hours: timeLimit,
         requires_screenshot: data.requires_screenshot,
         max_completions: data.max_completions,
         telegram_channel_link: data.telegram_channel_link || null,
+        additional_links: data.additional_links && data.additional_links.length > 0 ? data.additional_links : null,
         task_type: taskType,
         balance_type: data.balance_type,
         status: "pending_moderation",
@@ -648,9 +658,12 @@ const CreateTask = () => {
                             }
                           }}
                           disabled={!userProfile?.is_vip}
-                          className="flex-1"
+                          className="flex-1 flex items-center gap-2"
                         >
-                          Основний баланс {!userProfile?.is_vip && '(тільки VIP)'}
+                          Основний баланс
+                          {!userProfile?.is_vip && (
+                            <Crown className="w-4 h-4 text-warning" />
+                          )}
                         </Button>
                       </div>
                     </FormControl>
@@ -677,43 +690,93 @@ const CreateTask = () => {
               <FormField
                 control={form.control}
                 name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base font-semibold">Назва завдання</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Підпишіться на наш Telegram канал"
-                        {...field}
-                        className="bg-background/80"
-                      />
-                    </FormControl>
-                    <FormDescription>Коротка та зрозуміла назва завдання</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const length = field.value?.length || 0;
+                  const isUnderMin = length > 0 && length < 5;
+                  const isOverMax = length > 100;
+                  const hasError = isUnderMin || isOverMax;
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-base font-semibold flex items-center justify-between">
+                        <span>Назва завдання</span>
+                        <span className={`text-xs font-normal ${hasError ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {length}/100
+                        </span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Підпишіться на наш Telegram канал"
+                          {...field}
+                          className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                        />
+                      </FormControl>
+                      {isUnderMin && (
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Мінімум 5 символів (введено {length})
+                        </p>
+                      )}
+                      {isOverMax && (
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Максимум 100 символів (введено {length})
+                        </p>
+                      )}
+                      {!hasError && <FormDescription>Коротка та зрозуміла назва завдання (5-100 символів)</FormDescription>}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base font-semibold">Детальний опис</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Опишіть детально що потрібно зробити користувачу..."
-                        rows={6}
-                        {...field}
-                        className="bg-background/80"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Вкажіть всі важливі деталі та інструкції для виконання
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const length = field.value?.length || 0;
+                  const isUnderMin = length > 0 && length < 20;
+                  const isOverMax = length > 1000;
+                  const hasError = isUnderMin || isOverMax;
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-base font-semibold flex items-center justify-between">
+                        <span>Детальний опис</span>
+                        <span className={`text-xs font-normal ${hasError ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {length}/1000
+                        </span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Опишіть детально що потрібно зробити користувачу..."
+                          rows={6}
+                          {...field}
+                          className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                        />
+                      </FormControl>
+                      {isUnderMin && (
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Мінімум 20 символів (введено {length})
+                        </p>
+                      )}
+                      {isOverMax && (
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Максимум 1000 символів (введено {length})
+                        </p>
+                      )}
+                      {!hasError && (
+                        <FormDescription>
+                          Вкажіть всі важливі деталі та інструкції для виконання (20-1000 символів)
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               {/* Telegram Channel Link (conditional) */}
@@ -841,67 +904,6 @@ const CreateTask = () => {
                 />
               )}
 
-              {/* Reward and Time */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="reward_amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-warning" />
-                        Винагорода (₴)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || !isNaN(parseFloat(value))) {
-                              field.onChange(value);
-                            }
-                          }}
-                          className="bg-background/80"
-                          placeholder="0.25"
-                        />
-                      </FormControl>
-                      <FormDescription>Винагорода від 1 до 100 грн</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="time_limit_hours"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-primary" />
-                        Час на виконання (годин)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || !isNaN(parseInt(value))) {
-                              field.onChange(value === '' ? '' : parseInt(value));
-                            }
-                          }}
-                          className="bg-background/80"
-                          placeholder="1"
-                        />
-                      </FormControl>
-                      <FormDescription>Від 1 до 6 годин</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               {/* Additional Links */}
               <div className="space-y-4 p-4 rounded-lg bg-muted/50 border border-border/50">
                 <h3 className="font-semibold flex items-center gap-2">
@@ -909,32 +911,54 @@ const CreateTask = () => {
                   Додаткові посилання (до 3)
                 </h3>
                 
-                {additionalLinks.map((link, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder="https://example.com"
-                      value={link}
-                      onChange={(e) => {
-                        const newLinks = [...additionalLinks];
-                        newLinks[index] = e.target.value;
-                        setAdditionalLinks(newLinks);
-                        form.setValue('additional_links', newLinks.filter(l => l.trim()));
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        const newLinks = additionalLinks.filter((_, i) => i !== index);
-                        setAdditionalLinks(newLinks);
-                        form.setValue('additional_links', newLinks.filter(l => l.trim()));
-                      }}
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+                {additionalLinks.map((link, index) => {
+                  const trimmedLink = link.trim();
+                  if (!trimmedLink) {
+                    // Пусте поле завжди валідне
+                    var isValid = true;
+                  } else {
+                    // Перевіряємо URL або Telegram формат
+                    const isValidUrl = /^https?:\/\/.+\..+/.test(trimmedLink);
+                    const isTelegramLink = trimmedLink.includes('t.me/') || trimmedLink.startsWith('@');
+                    var isValid = isValidUrl || isTelegramLink;
+                  }
+                  
+                  return (
+                    <div key={index} className="space-y-1">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://example.com або t.me/канал"
+                          value={link}
+                          onChange={(e) => {
+                            const newLinks = [...additionalLinks];
+                            newLinks[index] = e.target.value;
+                            setAdditionalLinks(newLinks);
+                            form.setValue('additional_links', newLinks.filter(l => l.trim()));
+                          }}
+                          className={!isValid && link ? 'border-destructive focus-visible:ring-destructive' : ''}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            const newLinks = additionalLinks.filter((_, i) => i !== index);
+                            setAdditionalLinks(newLinks);
+                            form.setValue('additional_links', newLinks.filter(l => l.trim()));
+                          }}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {!isValid && link && (
+                        <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Невірний формат посилання
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
                 
                 {additionalLinks.length < 3 && (
                   <Button
@@ -947,6 +971,114 @@ const CreateTask = () => {
                     Додати посилання
                   </Button>
                 )}
+              </div>
+
+              {/* Reward and Time */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="reward_amount"
+                  render={({ field }) => {
+                    const value = parseFloat(field.value as any);
+                    const balanceType = form.watch("balance_type");
+                    const currentBalance = balanceType === "bonus" ? userProfile?.bonus_balance : userProfile?.balance;
+                    const isOverLimit = !isNaN(value) && value > 100;
+                    const isUnderLimit = !isNaN(value) && value < 1 && value !== 0;
+                    const isOverBalance = !isNaN(value) && value > (currentBalance || 0);
+                    const hasError = isOverLimit || isOverBalance || isUnderLimit;
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-base font-semibold flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-warning" />
+                          Винагорода (₴)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            {...field}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || !isNaN(parseFloat(value))) {
+                                field.onChange(value);
+                              }
+                            }}
+                            className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            placeholder="1"
+                          />
+                        </FormControl>
+                        {isUnderLimit && (
+                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Мінімальна винагорода 1 грн
+                          </p>
+                        )}
+                        {!isUnderLimit && isOverLimit && (
+                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Максимальна винагорода 100 грн
+                          </p>
+                        )}
+                        {!isUnderLimit && !isOverLimit && isOverBalance && (
+                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Недостатньо коштів. Баланс: {currentBalance?.toFixed(2)} грн
+                          </p>
+                        )}
+                        {!hasError && <FormDescription>Винагорода від 1 до 100 грн</FormDescription>}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="time_limit_hours"
+                  render={({ field }) => {
+                    const value = parseInt(field.value as any);
+                    const isOverLimit = value > 6;
+                    const isUnderLimit = value < 1 && field.value !== '';
+                    const hasError = isOverLimit || isUnderLimit;
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-base font-semibold flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-primary" />
+                          Час на виконання (годин)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            {...field}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || !isNaN(parseInt(value))) {
+                                field.onChange(value === '' ? '' : parseInt(value));
+                              }
+                            }}
+                            className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            placeholder="1"
+                          />
+                        </FormControl>
+                        {isOverLimit && (
+                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Максимум 6 годин
+                          </p>
+                        )}
+                        {isUnderLimit && (
+                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Мінімум 1 година
+                          </p>
+                        )}
+                        {!hasError && <FormDescription>Від 1 до 6 годин</FormDescription>}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
               </div>
 
               {/* Settings */}
@@ -1102,7 +1234,30 @@ const CreateTask = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createTaskMutation.isPending || isUploadingImages}
+                  disabled={(() => {
+                    const reward = parseFloat(form.watch("reward_amount") as any);
+                    const hours = parseInt(form.watch("time_limit_hours") as any);
+                    const balance = form.watch("balance_type") === "bonus" ? userProfile?.bonus_balance : userProfile?.balance;
+                    const links = additionalLinks.filter(l => l.trim());
+                    
+                    // Перевірка додаткових посилань
+                    const hasInvalidLinks = links.some(link => {
+                      const isValidUrl = /^https?:\/\/.+\..+/.test(link);
+                      const isTelegramLink = link.includes('t.me/') || link.startsWith('@');
+                      return !isValidUrl && !isTelegramLink;
+                    });
+                    
+                    return createTaskMutation.isPending || 
+                           isUploadingImages ||
+                           isNaN(reward) ||
+                           reward < 1 ||
+                           reward > 100 ||
+                           reward > (balance || 0) ||
+                           isNaN(hours) ||
+                           hours < 1 ||
+                           hours > 6 ||
+                           hasInvalidLinks;
+                  })()}
                   className="flex-1 bg-gradient-primary hover:opacity-90 transition-all duration-300"
                 >
                   <Send className="h-4 w-4 mr-2" />

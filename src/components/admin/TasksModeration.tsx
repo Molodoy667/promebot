@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, DollarSign, AlertCircle, Trash2 } from "lucide-react";
+import { Clock, DollarSign, AlertCircle, Trash2, ClipboardList, Camera, Users, MessageCircle, Eye, ThumbsUp, Share2, FileText, TestTube, Briefcase } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { uk } from "date-fns/locale";
@@ -34,7 +35,14 @@ export const TasksModeration = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("*")
+        .select(`
+          *,
+          profiles!tasks_user_id_fkey (
+            telegram_username,
+            full_name,
+            avatar_url
+          )
+        `)
         .eq("status", statusFilter)
         .order("created_at", { ascending: false });
 
@@ -191,14 +199,6 @@ export const TasksModeration = () => {
           {stats && <Badge variant="secondary" className="ml-2">{stats.approved}</Badge>}
         </Button>
         <Button
-          variant={statusFilter === "needs_revision" ? "default" : "outline"}
-          onClick={() => setStatusFilter("needs_revision")}
-          className={statusFilter === "needs_revision" ? "bg-primary text-primary-foreground" : ""}
-        >
-          На переробці
-          {stats && <Badge variant="secondary" className="ml-2">{stats.needs_revision}</Badge>}
-        </Button>
-        <Button
           variant={statusFilter === "rejected" ? "default" : "outline"}
           onClick={() => setStatusFilter("rejected")}
           className={statusFilter === "rejected" ? "bg-destructive text-destructive-foreground" : ""}
@@ -218,110 +218,166 @@ export const TasksModeration = () => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {tasks.map((task: any, index: number) => (
+          {tasks.map((task: any, index: number) => {
+            // Debug: перевірка даних
+            if (index === 0) {
+              console.log('Task sample:', {
+                images: task.images,
+                status: task.status,
+                balance_type: task.balance_type,
+                reward_amount: task.reward_amount
+              });
+            }
+            
+            const taskImage = task.images && task.images.length > 0 ? task.images[0] : null;
+            
+            const categoryConfig: Record<string, { label: string; icon: any }> = {
+              telegram_subscription: { label: 'Підписка на Telegram канал', icon: MessageCircle },
+              telegram_view: { label: 'Перегляд посту в Telegram', icon: Eye },
+              telegram_reaction: { label: 'Реакція на пост в Telegram', icon: ThumbsUp },
+              social_media: { label: 'Соціальні мережі', icon: Share2 },
+              content_creation: { label: 'Створення контенту', icon: FileText },
+              testing: { label: 'Тестування', icon: TestTube },
+              general: { label: 'Загальне', icon: Briefcase }
+            };
+            
+            const categoryInfo = categoryConfig[task.category] || { label: task.category, icon: Briefcase };
+            const CategoryIcon = categoryInfo.icon;
+            
+            return (
             <Card 
               key={task.id}
-              className="group hover:shadow-lg transition-all duration-300 animate-fade-in hover:border-primary/40"
+              className="group hover:shadow-lg transition-all duration-300 animate-fade-in hover:border-primary/40 overflow-hidden"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex gap-2">
-                    <Badge variant={task.task_type === "telegram_subscription" ? "default" : "secondary"}>
-                      {task.task_type === "telegram_subscription" ? "📢 Підписка" : "📝 Завдання"}
-                    </Badge>
-                    <Badge className={getStatusColor(task.status)}>
-                      {getStatusLabel(task.status)}
-                    </Badge>
-                    {task.balance_type && (
-                      <Badge variant={task.balance_type === 'main' ? 'default' : 'secondary'}>
-                        {task.balance_type === 'main' ? '💰 Основний' : '🎁 Бонус'}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 bg-gradient-to-br from-warning/20 to-warning/10 px-2 py-1 rounded-lg border border-warning/30">
-                    <DollarSign className="w-3 h-3 text-warning" />
-                    <span className="text-sm font-bold text-warning">{task.reward_amount.toFixed(2)}₴</span>
-                  </div>
-                </div>
-            <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
-            <CardDescription className="line-clamp-2 text-xs">
-              {task.description}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            {/* Task images */}
-            {task.images && task.images.length > 0 && (
-              <div className="flex gap-2 mb-3 overflow-x-auto">
-                {task.images.slice(0, 3).map((img: string, idx: number) => (
+              {/* Task Image or Icon */}
+              <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                {taskImage ? (
                   <img 
-                    key={idx}
-                    src={img} 
-                    alt={`Task image ${idx + 1}`}
-                    className="w-16 h-16 object-cover rounded border"
+                    src={taskImage} 
+                    alt={task.title}
+                    className="w-full h-full object-cover"
                   />
-                ))}
-              </div>
-            )}
-
-            <div className="space-y-2 text-sm">
-              {/* Category */}
-              {task.category && (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">Категорія:</span>
-                  <Badge variant="outline" className="text-xs">{task.category}</Badge>
+                ) : (
+                  <ClipboardList className="w-16 h-16 text-primary/30" />
+                )}
+                
+                {/* Status Badge */}
+                <div className="absolute top-2 left-2">
+                  <Badge className={getStatusColor(task.status)}>
+                    {getStatusLabel(task.status)}
+                  </Badge>
                 </div>
-              )}
-
-              {/* Telegram channel */}
-              {task.telegram_channel_link && (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">Канал:</span>
-                  <span className="text-xs font-medium truncate max-w-[150px]">
-                    {task.channel_info?.title || task.telegram_channel_link}
-                  </span>
+                
+                {/* Balance Type Badge */}
+                <div className="absolute top-2 right-2">
+                  <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+                    {task.balance_type === "main" ? "Баланс" : "Бонусне"}
+                  </Badge>
                 </div>
-              )}
-
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{task.time_limit_hours} год</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>{format(new Date(task.created_at), "d MMM yyyy", { locale: uk })}</span>
               </div>
 
-              <div className="flex gap-2 mt-3 pt-3 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/admin/tasks/${task.id}`);
-                  }}
-                >
-                  Переглянути
-                </Button>
-                {statusFilter === "rejected" && (
+              <CardHeader className="space-y-3">
+                {/* Author Info & Reward */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage src={task.profiles?.avatar_url} />
+                      <AvatarFallback className="text-xs">
+                        {(task.profiles?.telegram_username?.[0] || task.profiles?.full_name?.[0] || "?").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                      {task.profiles?.telegram_username || task.profiles?.full_name || "Невідомий"}
+                    </span>
+                  </div>
+                  
+                  {/* Reward Badge */}
+                  <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-xs font-bold">
+                    {task.reward_amount.toFixed(2)} ₴
+                  </Badge>
+                </div>
+
+                {/* Creation Date */}
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(task.created_at), "d MMMM yyyy, HH:mm", { locale: uk })}
+                </div>
+
+                {/* Category */}
+                {task.category && (
+                  <Badge variant="outline" className="w-fit text-xs flex items-center gap-1">
+                    <CategoryIcon className="w-3 h-3" />
+                    {categoryInfo.label}
+                  </Badge>
+                )}
+
+                {/* Title */}
+                <CardTitle className="line-clamp-2 text-base leading-tight">
+                  {task.title}
+                </CardTitle>
+                
+                {/* Description */}
+                <CardDescription className="line-clamp-3 text-sm leading-relaxed">
+                  {task.description}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-3">
+                {/* Additional info */}
+                <div className="space-y-2 text-xs">
+                  {/* Time limit */}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>{task.time_limit_hours} год</span>
+                  </div>
+
+                  {/* Screenshot */}
+                  {task.requires_screenshot && (
+                    <div className="flex items-center gap-2 text-warning">
+                      <Camera className="h-4 w-4" />
+                      <span>Потрібен скріншот</span>
+                    </div>
+                  )}
+
+                  {/* Max completions */}
+                  {task.max_completions && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>1 раз на користувача</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2 border-t">
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDeletingTask(task);
+                      navigate(`/admin/tasks/${task.id}`);
                     }}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    Переглянути
                   </Button>
-                )}
-              </div>
-            </div>
+                  {statusFilter === "rejected" && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingTask(task);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

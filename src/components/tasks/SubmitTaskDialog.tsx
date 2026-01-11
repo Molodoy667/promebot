@@ -108,6 +108,7 @@ export const SubmitTaskDialog = ({ submission, open, onOpenChange }: SubmitTaskD
         description: "Очікуйте перевірки.",
       });
       queryClient.invalidateQueries({ queryKey: ["my-submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["task-submissions", task.id] });
       form.reset();
       setScreenshot(null);
       onOpenChange(false);
@@ -157,49 +158,55 @@ export const SubmitTaskDialog = ({ submission, open, onOpenChange }: SubmitTaskD
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="screenshot"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Скріншот {task.requires_screenshot && <span className="text-destructive">*</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setScreenshot(file);
-                            field.onChange(file);
-                          }
-                        }}
-                      />
-                      {screenshot && (
-                        <p className="text-sm text-muted-foreground">
-                          Обрано: {screenshot.name}
-                        </p>
-                      )}
-                      {submission.screenshot_url && !screenshot && (
-                        <p className="text-sm text-muted-foreground">
-                          Скріншот вже завантажено
-                        </p>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {task.requires_screenshot && (
+              <FormField
+                control={form.control}
+                name="screenshot"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Скріншот підтвердження <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setScreenshot(file);
+                              field.onChange(file);
+                            }
+                          }}
+                          required
+                        />
+                        {screenshot && (
+                          <p className="text-sm text-muted-foreground">
+                            Обрано: {screenshot.name}
+                          </p>
+                        )}
+                        {submission.screenshot_url && !screenshot && (
+                          <p className="text-sm text-muted-foreground">
+                            Скріншот вже завантажено
+                          </p>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Скасувати
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || (task.requires_screenshot && !screenshot && !submission.screenshot_url)}
+              >
                 <Upload className="h-4 w-4 mr-2" />
                 {isSubmitting ? "Подання..." : "Подати звіт"}
               </Button>

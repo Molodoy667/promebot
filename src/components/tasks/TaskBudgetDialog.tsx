@@ -66,6 +66,24 @@ export const TaskBudgetDialog = ({
         .eq("id", task.id);
 
       if (budgetError) throw budgetError;
+      
+      // Створюємо транзакцію
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user.id,
+          type: 'task_budget',
+          amount: -amount,
+          status: 'completed',
+          description: `Поповнення бюджету завдання "${task.title}"`,
+          metadata: {
+            task_id: task.id,
+            task_title: task.title,
+            balance_type: task.balance_type
+          }
+        });
+      
+      if (transactionError) console.error('Transaction error:', transactionError);
     },
     onSuccess: () => {
       toast({ title: "Успішно", description: "Бюджет поповнено" });
@@ -115,17 +133,55 @@ export const TaskBudgetDialog = ({
 
       if (returnError) throw returnError;
 
+      const newBudget = (task.budget || 0) - amount;
+      
+      // Якщо бюджет стає 0 - деактивуємо завдання
+      const updateData: any = {
+        budget: newBudget
+      };
+      
+      if (newBudget === 0) {
+        updateData.status = 'inactive';
+      }
+      
       const { error: budgetError } = await supabase
         .from("tasks")
-        .update({
-          budget: (task.budget || 0) - amount
-        })
+        .update(updateData)
         .eq("id", task.id);
 
       if (budgetError) throw budgetError;
+      
+      // Створюємо транзакцію
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user.id,
+          type: 'task_budget_withdrawal',
+          amount: amount,
+          status: 'completed',
+          description: `Виведення з бюджету завдання "${task.title}"`,
+          metadata: {
+            task_id: task.id,
+            task_title: task.title,
+            balance_type: task.balance_type,
+            budget_became_zero: newBudget === 0
+          }
+        });
+      
+      if (transactionError) console.error('Transaction error:', transactionError);
+      
+      return { budgetBecameZero: newBudget === 0 };
     },
-    onSuccess: () => {
-      toast({ title: "Успішно", description: "Кошти повернуто на баланс" });
+    onSuccess: (data: any) => {
+      if (data?.budgetBecameZero) {
+        toast({ 
+          title: "Успішно", 
+          description: "Кошти повернуто на баланс. Завдання деактивовано через нульовий бюджет.",
+          duration: 5000
+        });
+      } else {
+        toast({ title: "Успішно", description: "Кошти повернуто на баланс" });
+      }
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setWithdrawAmount("");
@@ -151,6 +207,14 @@ export const TaskBudgetDialog = ({
       toast({ title: "Помилка", description: "Введіть коректну суму", variant: "destructive" });
       return;
     }
+    if (amount < task.reward_amount) {
+      toast({ 
+        title: "Помилка", 
+        description: `Мінімальна сума ${task.reward_amount}₴ (1 виконання)`,
+        variant: "destructive" 
+      });
+      return;
+    }
     addBudgetMutation.mutate(amount);
   };
 
@@ -168,7 +232,12 @@ export const TaskBudgetDialog = ({
     withdrawBudgetMutation.mutate(amount);
   };
 
-  const quickDepositAmounts = [1, 5, 10];
+  const quickDepositAmounts = [
+    { label: '5 виконань', amount: task.reward_amount * 5 },
+    { label: '10 виконань', amount: task.reward_amount * 10 },
+    { label: '50 виконань', amount: task.reward_amount * 50 },
+    { label: '100 виконань', amount: task.reward_amount * 100 }
+  ];
   const quickWithdrawAmounts = [1, 5, 10];
   const availableExecutions = task.reward_amount > 0 ? Math.floor((task.budget || 0) / task.reward_amount) : 0;
   const currentUserBalance = task.balance_type === "main" ? userBalance : userBonusBalance;
@@ -208,11 +277,11 @@ export const TaskBudgetDialog = ({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="deposit">
               <TrendingUp className="w-4 h-4 mr-2" />
-              Додати
+              Поповнити
             </TabsTrigger>
             <TabsTrigger value="withdraw">
               <TrendingDown className="w-4 h-4 mr-2" />
-              Зняти
+              Вивести
             </TabsTrigger>
           </TabsList>
 
@@ -226,27 +295,34 @@ export const TaskBudgetDialog = ({
                   id="deposit-amount"
                   type="number"
                   step="0.01"
-                  min="0.01"
+                  min={task.reward_amount}
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.25"
+                  placeholder={task.reward_amount.toFixed(2)}
+                  className={parseFloat(depositAmount) > 0 && parseFloat(depositAmount) < task.reward_amount ? 'border-destructive' : ''}
                 />
+                {parseFloat(depositAmount) > 0 && parseFloat(depositAmount) < task.reward_amount && (
+                  <p className="text-xs text-destructive mt-1">
+                    Мінімум {task.reward_amount}₴ (1 виконання)
+                  </p>
+                )}
               </div>
 
               <div>
                 <Label>
                   Швидке поповнення: {depositAmount ? `${depositAmount} ₴ (буде ${parseFloat(depositAmount) > 0 ? Math.floor(parseFloat(depositAmount) / task.reward_amount) : 0} виконань)` : ""}
                 </Label>
-                <div className="flex gap-2 mt-2">
-                  {quickDepositAmounts.map((amount) => (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {quickDepositAmounts.map(({ label, amount }) => (
                     <Button
-                      key={amount}
+                      key={label}
                       type="button"
                       variant="outline"
                       onClick={() => setDepositAmount(amount.toString())}
-                      className="flex-1"
+                      className="flex flex-col h-auto py-2"
                     >
-                      {amount} ₴
+                      <span className="text-xs text-muted-foreground">{label}</span>
+                      <span className="font-bold">{amount.toFixed(2)} ₴</span>
                     </Button>
                   ))}
                 </div>
@@ -265,9 +341,23 @@ export const TaskBudgetDialog = ({
                 </Alert>
               )}
 
-              <Button type="submit" className="w-full" disabled={addBudgetMutation.isPending}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={
+                  addBudgetMutation.isPending || 
+                  parseFloat(depositAmount) > currentUserBalance ||
+                  parseFloat(depositAmount) < task.reward_amount ||
+                  !depositAmount
+                }
+              >
                 {addBudgetMutation.isPending ? "Поповнення..." : "Поповнити"}
               </Button>
+              {parseFloat(depositAmount) > currentUserBalance && (
+                <p className="text-xs text-destructive text-center">
+                  Недостатньо коштів на балансі
+                </p>
+              )}
             </form>
           </TabsContent>
 
@@ -275,7 +365,7 @@ export const TaskBudgetDialog = ({
             <form onSubmit={handleWithdraw} className="space-y-4">
               <div>
                 <Label htmlFor="withdraw-amount">
-                  Сума зняття на {task.balance_type === "main" ? "основний" : "бонусний"} баланс (₴)
+                  Сума виведення на {task.balance_type === "main" ? "основний" : "бонусний"} баланс (₴)
                 </Label>
                 <Input
                   id="withdraw-amount"
@@ -290,20 +380,26 @@ export const TaskBudgetDialog = ({
               </div>
 
               <div>
-                <Label>Швидке зняття:</Label>
+                <Label>Швидке виведення:</Label>
                 <div className="flex gap-2 mt-2">
-                  {quickWithdrawAmounts.map((amount) => (
-                    <Button
-                      key={amount}
-                      type="button"
-                      variant="outline"
-                      onClick={() => setWithdrawAmount(Math.min(amount, task.budget || 0).toString())}
-                      disabled={(task.budget || 0) < amount}
-                      className="flex-1"
-                    >
-                      {amount} ₴
-                    </Button>
-                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setWithdrawAmount((task.budget || 0).toString())}
+                    disabled={(task.budget || 0) === 0}
+                    className="flex-1"
+                  >
+                    Все ({(task.budget || 0).toFixed(2)} ₴)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setWithdrawAmount(((task.budget || 0) / 2).toString())}
+                    disabled={(task.budget || 0) < 0.02}
+                    className="flex-1"
+                  >
+                    Половина
+                  </Button>
                 </div>
               </div>
 
@@ -324,10 +420,20 @@ export const TaskBudgetDialog = ({
                 type="submit"
                 className="w-full"
                 variant="destructive"
-                disabled={withdrawBudgetMutation.isPending || (task.budget || 0) === 0}
+                disabled={
+                  withdrawBudgetMutation.isPending || 
+                  (task.budget || 0) === 0 ||
+                  parseFloat(withdrawAmount) > (task.budget || 0) ||
+                  !withdrawAmount
+                }
               >
-                {withdrawBudgetMutation.isPending ? "Зняття..." : "Зняти кошти"}
+                {withdrawBudgetMutation.isPending ? "Виведення..." : "Вивести кошти"}
               </Button>
+              {parseFloat(withdrawAmount) > (task.budget || 0) && (
+                <p className="text-xs text-destructive text-center">
+                  Недостатньо коштів у бюджеті завдання
+                </p>
+              )}
             </form>
           </TabsContent>
         </Tabs>

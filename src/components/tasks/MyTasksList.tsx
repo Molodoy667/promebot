@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square, Clock, DollarSign, Users, Camera, ClipboardList, FileText } from "lucide-react";
+import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square, Clock, DollarSign, Users, Camera, ClipboardList, FileText, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { TaskSubmissionsReviewDialog } from "./TaskSubmissionsReviewDialog";
+import { EditRewardDialog } from "./EditRewardDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +58,7 @@ export const MyTasksList = () => {
   const [deletingTask, setDeletingTask] = useState<any>(null);
   const [budgetTask, setBudgetTask] = useState<any>(null);
   const [reviewingTask, setReviewingTask] = useState<any>(null);
+  const [editRewardTask, setEditRewardTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [sortBy, setSortBy] = useState<"date" | "budget" | "executions">("date");
 
@@ -324,13 +326,14 @@ export const MyTasksList = () => {
             </div>
             {submittedCount > 0 && (
               <div className="absolute bottom-2 right-2">
-                <Badge className="bg-orange-500/90 text-white border-0">
-                  🔔 {submittedCount} нових
+                <Badge className="bg-orange-500/90 text-white border-0 flex items-center gap-1">
+                  <span>🔔</span>
+                  <span>{submittedCount} нових</span>
                 </Badge>
               </div>
             )}
           </div>
-        ) : taskImage === null && task.images && (
+        ) : (
           <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
             <ClipboardList className="w-16 h-16 text-primary/30" />
             {/* Status and Balance badges */}
@@ -347,8 +350,9 @@ export const MyTasksList = () => {
             </div>
             {submittedCount > 0 && (
               <div className="absolute bottom-2 right-2">
-                <Badge className="bg-orange-500/90 text-white border-0">
-                  🔔 {submittedCount} нових
+                <Badge className="bg-orange-500/90 text-white border-0 flex items-center gap-1">
+                  <span>🔔</span>
+                  <span>{submittedCount} нових</span>
                 </Badge>
               </div>
             )}
@@ -365,7 +369,7 @@ export const MyTasksList = () => {
             </Badge>
           )}
           
-          <CardDescription className="space-y-1">
+          <div className="space-y-1 text-sm text-muted-foreground">
             <div>Винагорода: {task.reward_amount.toFixed(2)} ₴</div>
             <div className="text-xs">
               Створено: {new Date(task.created_at).toLocaleString("uk-UA", { 
@@ -376,7 +380,7 @@ export const MyTasksList = () => {
                 minute: "2-digit"
               })}
             </div>
-          </CardDescription>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -494,6 +498,15 @@ export const MyTasksList = () => {
                 className={(task.available_executions || 0) === 0 ? "border-orange-500 text-orange-500 hover:bg-orange-50" : ""}
               >
                 <Wallet className="h-4 w-4" />
+              </Button>
+              
+              <Button 
+                variant="outline"
+                size="icon"
+                onClick={() => setEditRewardTask(task)}
+                title="Змінити винагороду"
+              >
+                <Pencil className="h-4 w-4" />
               </Button>
             </>
           )}
@@ -763,6 +776,14 @@ export const MyTasksList = () => {
           task={reviewingTask}
           open={!!reviewingTask}
           onOpenChange={(open) => !open && setReviewingTask(null)}
+        />
+      )}
+
+      {editRewardTask && (
+        <EditRewardDialog
+          task={editRewardTask}
+          open={!!editRewardTask}
+          onOpenChange={(open) => !open && setEditRewardTask(null)}
         />
       )}
     </>
