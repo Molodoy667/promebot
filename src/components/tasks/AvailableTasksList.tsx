@@ -201,6 +201,17 @@ export const AvailableTasksList = () => {
                 </Badge>
               </div>
 
+              {/* Creation Date */}
+              <div className="text-xs text-muted-foreground">
+                {new Date(task.created_at).toLocaleString("uk-UA", { 
+                  day: "2-digit", 
+                  month: "2-digit", 
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                })}
+              </div>
+
               {/* Category */}
               {task.category && (
                 <Badge variant="outline" className="w-fit text-xs">
