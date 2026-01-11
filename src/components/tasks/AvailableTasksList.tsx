@@ -215,7 +215,7 @@ export const AvailableTasksList = () => {
               </CardTitle>
               
               {/* Description */}
-              <CardDescription className="line-clamp-2 text-xs leading-relaxed">
+              <CardDescription className="line-clamp-3 text-sm leading-relaxed">
                 {task.description}
               </CardDescription>
 
