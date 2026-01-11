@@ -336,8 +336,17 @@ export const MyTasksList = () => {
             </Badge>
           )}
           
-          <CardDescription>
-            Винагорода: {task.reward_amount.toFixed(2)} ₴
+          <CardDescription className="space-y-1">
+            <div>Винагорода: {task.reward_amount.toFixed(2)} ₴</div>
+            <div className="text-xs">
+              Створено: {new Date(task.created_at).toLocaleString("uk-UA", { 
+                day: "2-digit", 
+                month: "2-digit", 
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              })}
+            </div>
           </CardDescription>
         </CardHeader>
 

@@ -284,6 +284,17 @@ export const MySubmissionsList = () => {
                 >
                   {task.title}
                 </CardTitle>
+
+                {/* Creation Date */}
+                <div className="text-xs text-muted-foreground">
+                  Створено: {new Date(task.created_at).toLocaleString("uk-UA", { 
+                    day: "2-digit", 
+                    month: "2-digit", 
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </div>
                 
                 {/* Description */}
                 <CardDescription className="line-clamp-2 text-sm leading-relaxed">
