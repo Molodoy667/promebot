@@ -59,7 +59,13 @@ export const MySubmissionsList = () => {
             reward_amount,
             task_type,
             time_limit_hours,
-            requires_screenshot
+            requires_screenshot,
+            balance_type,
+            category,
+            images,
+            telegram_channel_link,
+            channel_info,
+            user_id
           )
         `)
         .eq("user_id", user.id)
@@ -221,6 +227,13 @@ export const MySubmissionsList = () => {
                     {statusLabels[submission.status]?.label}
                   </Badge>
                 </div>
+
+                {/* Balance Type Badge */}
+                <div className="absolute top-2 right-2">
+                  <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+                    {task.balance_type === "main" ? "Баланс" : "Бонусне"}
+                  </Badge>
+                </div>
               </div>
 
               <CardHeader className="space-y-3">
@@ -245,6 +258,17 @@ export const MySubmissionsList = () => {
                     {task.reward_amount.toFixed(2)} ₴
                   </Badge>
                 </div>
+
+                {/* Task Image - moved from top */}
+                {!taskImage && task.images && task.images.length > 0 && (
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-primary/20">
+                    <img 
+                      src={task.images[0]} 
+                      alt={task.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
 
                 {/* Category */}
                 {task.category && (
