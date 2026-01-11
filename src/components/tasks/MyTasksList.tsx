@@ -3,12 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square } from "lucide-react";
+import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square, Clock, DollarSign, Users, Camera, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
 import { TaskBudgetDialog } from "./TaskBudgetDialog";
 import { useToast } from "@/components/ui/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -258,9 +260,39 @@ export const MyTasksList = () => {
     const submittedCount = task.task_submissions?.filter(
       (s: any) => s.status === "submitted"
     ).length || 0;
+    const taskImage = task.images && task.images.length > 0 ? task.images[0] : null;
 
     return (
-      <Card key={task.id}>
+      <Card key={task.id} className="overflow-hidden">
+        {/* Task Image or Icon */}
+        {taskImage ? (
+          <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5">
+            <img 
+              src={taskImage} 
+              alt={task.title}
+              className="w-full h-full object-cover"
+            />
+            {submittedCount > 0 && (
+              <div className="absolute bottom-2 right-2">
+                <Badge className="bg-orange-500/90 text-white border-0">
+                  🔔 {submittedCount} нових
+                </Badge>
+              </div>
+            )}
+          </div>
+        ) : taskImage === null && task.images && (
+          <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+            <ClipboardList className="w-16 h-16 text-primary/30" />
+            {submittedCount > 0 && (
+              <div className="absolute bottom-2 right-2">
+                <Badge className="bg-orange-500/90 text-white border-0">
+                  🔔 {submittedCount} нових
+                </Badge>
+              </div>
+            )}
+          </div>
+        )}
+
         <CardHeader>
           <div className="flex justify-between items-start mb-2">
             <Badge 
