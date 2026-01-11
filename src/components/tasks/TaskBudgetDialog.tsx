@@ -1,337 +1,337 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info, TrendingUp, TrendingDown } from "lucide-react";
 
 interface TaskBudgetDialogProps {
   task: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userBalance: number;
-  userBonusBalance: number;
+  userBalance?: number;
+  userBonusBalance?: number;
 }
 
-export const TaskBudgetDialog = ({ task, open, onOpenChange, userBalance, userBonusBalance }: TaskBudgetDialogProps) => {
+export const TaskBudgetDialog = ({
+  task,
+  open,
+  onOpenChange,
+  userBalance = 0,
+  userBonusBalance = 0,
+}: TaskBudgetDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [amount, setAmount] = useState("");
-  const [activeTab, setActiveTab] = useState<"add" | "withdraw">("add");
-
-  const calculateExecutions = (amount: number) => {
-    return Math.floor(amount / task.reward_amount);
-  };
+  const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
 
   const addBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const rpcFunction = task.balance_type === 'main' 
-        ? 'add_task_budget_from_main' 
-        : 'add_task_budget_from_bonus';
-      
-      const { error } = await supabase.rpc(rpcFunction, {
-        task_id_param: task.id,
-        amount: amount,
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      if (error) throw error;
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select(task.balance_type === "main" ? "balance" : "bonus_balance")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const currentBalance = task.balance_type === "main" ? profile.balance : profile.bonus_balance;
+
+      if (currentBalance < amount) {
+        throw new Error("Insufficient balance");
+      }
+
+      const { error: deductError } = await supabase
+        .from("profiles")
+        .update({
+          [task.balance_type === "main" ? "balance" : "bonus_balance"]: currentBalance - amount
+        })
+        .eq("id", user.id);
+
+      if (deductError) throw deductError;
+
+      const { error: budgetError } = await supabase
+        .from("tasks")
+        .update({
+          budget: (task.budget || 0) + amount
+        })
+        .eq("id", task.id);
+
+      if (budgetError) throw budgetError;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ? 'основний' : 'бонусний';
-      toast({ title: "������", description: `������ ������ ��������� � ${balanceType} �������!` });
+      toast({ title: "Успішно", description: "Бюджет поповнено" });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      setAmount("");
+      setDepositAmount("");
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast({
-        title: "�������",
-        description: error.message || "������� ���������� �������",
-        variant: "destructive",
-      });
+      if (error.message === "Insufficient balance") {
+        toast({
+          title: "Недостатньо коштів",
+          description: "На вашому балансі недостатньо коштів",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Помилка", description: error.message, variant: "destructive" });
+      }
     },
   });
 
   const withdrawBudgetMutation = useMutation({
     mutationFn: async (amount: number) => {
-      const rpcFunction = task.balance_type === 'main'
-        ? 'withdraw_task_budget_to_main'
-        : 'withdraw_task_budget';
-      
-      const { error } = await supabase.rpc(rpcFunction, {
-        task_id_param: task.id,
-        amount: amount,
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      if (error) throw error;
+      if ((task.budget || 0) < amount) {
+        throw new Error("Insufficient task budget");
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select(task.balance_type === "main" ? "balance" : "bonus_balance")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const currentBalance = task.balance_type === "main" ? profile.balance : profile.bonus_balance;
+
+      const { error: returnError } = await supabase
+        .from("profiles")
+        .update({
+          [task.balance_type === "main" ? "balance" : "bonus_balance"]: currentBalance + amount
+        })
+        .eq("id", user.id);
+
+      if (returnError) throw returnError;
+
+      const { error: budgetError } = await supabase
+        .from("tasks")
+        .update({
+          budget: (task.budget || 0) - amount
+        })
+        .eq("id", task.id);
+
+      if (budgetError) throw budgetError;
     },
     onSuccess: () => {
-      const balanceType = task.balance_type === 'main' ? '��������' : '��������';
-      toast({ title: "������", description: `����� ������ ��������� �� ${balanceType} ������!` });
+      toast({ title: "Успішно", description: "Кошти повернуто на баланс" });
       queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      setAmount("");
+      setWithdrawAmount("");
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast({
-        title: "�������",
-        description: error.message || "������� ��������� �����",
-        variant: "destructive",
-      });
+      if (error.message === "Insufficient task budget") {
+        toast({
+          title: "Недостатньо коштів",
+          description: "У бюджеті завдання недостатньо коштів",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Помилка", description: error.message, variant: "destructive" });
+      }
     },
   });
 
-  const handleSubmit = () => {
-    const numAmount = parseFloat(amount);
-    const minAmount = task.reward_amount; // ̳���� - ���� 1 ���������
-    
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast({ title: "�������", description: "������ �������� ����", variant: "destructive" });
+  const handleDeposit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(depositAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: "Помилка", description: "Введіть коректну суму", variant: "destructive" });
       return;
     }
-
-    if (activeTab === "add") {
-      if (numAmount < minAmount) {
-        toast({ title: "�������", description: `̳������� ���� ����������: ${minAmount.toFixed(2)} ₴ (���� 1 ���������)`, variant: "destructive" });
-        return;
-      }
-      const availableBalance = task.balance_type === 'main' ? userBalance : userBonusBalance;
-      if (numAmount > availableBalance) {
-        const balanceTypeName = task.balance_type === 'main' ? 'основному' : 'бонусному';
-        toast({ title: "�������", description: `����������� ����� �� ${balanceTypeName} ������`, variant: "destructive" });
-        return;
-      }
-      addBudgetMutation.mutate(numAmount);
-    } else {
-      const maxWithdrawAmount = Math.max(0, task.budget - task.reward_amount);
-      if (numAmount > maxWithdrawAmount) {
-        toast({ title: "�������", description: `����� ������� �������� ${maxWithdrawAmount.toFixed(2)} ₴ (������� �������� �� 1 ���������)`, variant: "destructive" });
-        return;
-      }
-      withdrawBudgetMutation.mutate(numAmount);
-    }
+    addBudgetMutation.mutate(amount);
   };
 
-  const currentExecutions = calculateExecutions(parseFloat(amount) || 0);
-  const maxWithdraw = Math.max(0, (task.budget || 0) - task.reward_amount); // �������� ����� �� 1 ���������
+  const handleWithdraw = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: "Помилка", description: "Введіть коректну суму", variant: "destructive" });
+      return;
+    }
+    if (amount > (task.budget || 0)) {
+      toast({ title: "Помилка", description: "Сума перевищує доступний бюджет", variant: "destructive" });
+      return;
+    }
+    withdrawBudgetMutation.mutate(amount);
+  };
+
+  const quickDepositAmounts = [1, 5, 10];
+  const quickWithdrawAmounts = [1, 5, 10];
+  const availableExecutions = task.reward_amount > 0 ? Math.floor((task.budget || 0) / task.reward_amount) : 0;
+  const currentUserBalance = task.balance_type === "main" ? userBalance : userBonusBalance;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>��������� �������� ��������</DialogTitle>
-          <DialogDescription>
-            �������� ������ �������� ��� ������� ����� ����� �� ������
-          </DialogDescription>
+          <DialogTitle>Управління бюджетом завдання</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "add" | "withdraw")}>
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Поточний бюджет:</span>
+                <strong>{(task.budget || 0).toFixed(2)} ₴</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Винагорода за виконання:</span>
+                <strong>{task.reward_amount.toFixed(2)} ₴</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Доступно виконань:</span>
+                <strong>{availableExecutions}</strong>
+              </div>
+              <div className="flex justify-between border-t pt-1 mt-1">
+                <span>Ваш баланс:</span>
+                <strong>{currentUserBalance.toFixed(2)} ₴</strong>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        <Tabs defaultValue="deposit" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="add">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              ���������
+            <TabsTrigger value="deposit">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Додати
             </TabsTrigger>
             <TabsTrigger value="withdraw">
-              <TrendingDown className="h-4 w-4 mr-2" />
-              �������
+              <TrendingDown className="w-4 h-4 mr-2" />
+              Зняти
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="add" className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border-2 border-primary">
-                <span className="text-muted-foreground font-medium">
-                  {task.balance_type === 'main' ? '�������� ������:' : '�������� ��lan�:'}
-                </span>
-                <span className="font-bold text-lg text-primary">
-                  {task.balance_type === 'main' ? userBalance.toFixed(2) : userBonusBalance.toFixed(2)} ₴
-                </span>
+          <TabsContent value="deposit" className="space-y-4">
+            <form onSubmit={handleDeposit} className="space-y-4">
+              <div>
+                <Label htmlFor="deposit-amount">
+                  Сума поповнення з {task.balance_type === "main" ? "основного" : "бонусного"} балансу (₴)
+                </Label>
+                <Input
+                  id="deposit-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="0.25"
+                />
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">�������� ������:</span>
-                <span className="font-semibold">{task.budget?.toFixed(2) || "0.00"} ₴</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">ֳ�� �� ���������:</span>
-                <span className="font-semibold">{task.reward_amount.toFixed(2)} ₴</span>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="add-amount">
-                Сума поповнення з {task.balance_type === 'main' ? 'основного' : 'бонусного'} балансу (₴)
-              </Label>
-              <Input
-                id="add-amount"
-                type="text"
-                placeholder={`̳���� ${task.reward_amount.toFixed(2)} ₴`}
-                value={amount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || !isNaN(parseFloat(value))) {
-                    setAmount(value);
-                  }
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                ̳������� ����: <strong>{task.reward_amount.toFixed(2)} ₴</strong> (���� 1 ���������)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAmount(task.reward_amount.toFixed(2))}
-                  disabled={userBonusBalance < task.reward_amount}
-                >
-                  1 ���������
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAmount((task.reward_amount * 5).toFixed(2))}
-                  disabled={userBonusBalance < task.reward_amount * 5}
-                >
-                  5 ��������
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAmount((task.reward_amount * 10).toFixed(2))}
-                  disabled={userBonusBalance < task.reward_amount * 10}
-                >
-                  10 ��������
-                </Button>
-              </div>
-              {amount && currentExecutions > 0 && (
-                <p className="text-sm text-primary">
-                  �� �� ���� ����� �������� <strong>{currentExecutions}</strong> ��������
-                </p>
-              )}
-            </div>
-
-            <div className="bg-primary/5 p-3 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Wallet className="h-5 w-5 text-primary mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium">ϳ��� ����������:</p>
-                  <p className="text-muted-foreground">
-                    ������: {((task.budget || 0) + (parseFloat(amount) || 0)).toFixed(2)} ₴
-                  </p>
-                  <p className="text-muted-foreground">
-                    ��������� ��������: {(task.available_executions || 0) + currentExecutions}
-                  </p>
+              <div>
+                <Label>
+                  Швидке поповнення: {depositAmount ? `${depositAmount} ₴ (буде ${parseFloat(depositAmount) > 0 ? Math.floor(parseFloat(depositAmount) / task.reward_amount) : 0} виконань)` : ""}
+                </Label>
+                <div className="flex gap-2 mt-2">
+                  {quickDepositAmounts.map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDepositAmount(amount.toString())}
+                      className="flex-1"
+                    >
+                      {amount} ₴
+                    </Button>
+                  ))}
                 </div>
               </div>
-            </div>
+
+              {depositAmount && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Після поповнення:
+                    <div className="mt-1 space-y-0.5">
+                      <div><strong>Бюджет: {((task.budget || 0) + parseFloat(depositAmount)).toFixed(2)} ₴</strong></div>
+                      <div><strong>Доступно виконань: {Math.floor(((task.budget || 0) + parseFloat(depositAmount)) / task.reward_amount)}</strong></div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" disabled={addBudgetMutation.isPending}>
+                {addBudgetMutation.isPending ? "Поповнення..." : "Поповнити"}
+              </Button>
+            </form>
           </TabsContent>
 
           <TabsContent value="withdraw" className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">�������� ������:</span>
-                <span className="font-semibold">{(task.budget || 0).toFixed(2)} ₴</span>
+            <form onSubmit={handleWithdraw} className="space-y-4">
+              <div>
+                <Label htmlFor="withdraw-amount">
+                  Сума зняття на {task.balance_type === "main" ? "основний" : "бонусний"} баланс (₴)
+                </Label>
+                <Input
+                  id="withdraw-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={task.budget || 0}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="0.25"
+                />
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">��������� ��������:</span>
-                <span className="font-semibold">{task.available_executions || 0}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">�������� ��� ���������:</span>
-                <span className="font-semibold text-primary">{maxWithdraw.toFixed(2)} ₴</span>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="withdraw-amount">���� ��������� (₴)</Label>
-              <Input
-                id="withdraw-amount"
-                type="text"
-                placeholder={maxWithdraw > 0 ? "Введіть суму" : "Недостатньо коштів"}
-                value={amount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || !isNaN(parseFloat(value))) {
-                    setAmount(value);
-                  }
-                }}
-                disabled={maxWithdraw <= 0}
-              />
-              <p className="text-xs text-muted-foreground">
-                ������� �������� ����� <strong>{task.reward_amount.toFixed(2)} ₴</strong> �� 1 ���������
-              </p>
-              {maxWithdraw > 0 && (
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAmount((maxWithdraw / 2).toFixed(2))}
-                  >
-                    50%
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAmount(maxWithdraw.toFixed(2))}
-                  >
-                    ��������
-                  </Button>
+              <div>
+                <Label>Швидке зняття:</Label>
+                <div className="flex gap-2 mt-2">
+                  {quickWithdrawAmounts.map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant="outline"
+                      onClick={() => setWithdrawAmount(Math.min(amount, task.budget || 0).toString())}
+                      disabled={(task.budget || 0) < amount}
+                      className="flex-1"
+                    >
+                      {amount} ₴
+                    </Button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
-              <p className="text-sm text-orange-800 dark:text-orange-200">
-                ₴₴ ����� ���� ��������� �� ��� �������� ������. �������� ���������� ��������� � ����� 1 ����������.
-              </p>
-            </div>
+              {withdrawAmount && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Після зняття:
+                    <div className="mt-1 space-y-0.5">
+                      <div><strong>Бюджет: {Math.max(0, (task.budget || 0) - parseFloat(withdrawAmount)).toFixed(2)} ₴</strong></div>
+                      <div><strong>Доступно виконань: {Math.floor(Math.max(0, (task.budget || 0) - parseFloat(withdrawAmount)) / task.reward_amount)}</strong></div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                variant="destructive"
+                disabled={withdrawBudgetMutation.isPending || (task.budget || 0) === 0}
+              >
+                {withdrawBudgetMutation.isPending ? "Зняття..." : "Зняти кошти"}
+              </Button>
+            </form>
           </TabsContent>
         </Tabs>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            ���������
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              !amount ||
-              parseFloat(amount) <= 0 ||
-              addBudgetMutation.isPending ||
-              withdrawBudgetMutation.isPending
-            }
-          >
-            {addBudgetMutation.isPending || withdrawBudgetMutation.isPending
-              ? "Обробка..."
-              : activeTab === "add"
-              ? "Поповнити"
-              : "Вивести"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-
-
-
-
-
