@@ -584,28 +584,6 @@ export const MyTasksList = () => {
           >
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
-
-          {task.status === "rejected" && (
-            <Button 
-              variant="destructive"
-              size="icon"
-              onClick={() => setDeletingTask(task)}
-              title="Видалити"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {canCancel(task.status) && (
-            <Button 
-              variant="outline"
-              size="icon"
-              onClick={() => setCancellingTask(task)}
-              title="Скасувати"
-            >
-              <XCircle className="h-4 w-4" />
-            </Button>
-          )}
         </CardFooter>
       </Card>
     );
@@ -740,24 +718,6 @@ export const MyTasksList = () => {
           userBonusBalance={userProfile.bonus_balance || 0}
         />
       )}
-
-      <AlertDialog open={!!cancellingTask} onOpenChange={(open) => !open && setCancellingTask(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Скасувати завдання?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ви впевнені, що хочете скасувати завдання "{cancellingTask?.title}"? 
-              Ця дія не може бути скасована. Завдання більше не буде доступне для виконання.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Ні, залишити</AlertDialogCancel>
-            <AlertDialogAction onClick={() => cancelTaskMutation.mutate(cancellingTask?.id)}>
-              Так, скасувати
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={!!deletingTask} onOpenChange={(open) => !open && setDeletingTask(null)}>
         <AlertDialogContent>
