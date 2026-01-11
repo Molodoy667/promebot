@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square, Clock, DollarSign, Users, Camera, ClipboardList } from "lucide-react";
+import { Eye, Edit, XCircle, Wallet, Trash2, Play, Square, Clock, DollarSign, Users, Camera, ClipboardList, FileText } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyTaskDetailsDialog } from "./MyTaskDetailsDialog";
@@ -352,15 +352,42 @@ export const MyTasksList = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t text-sm">
-              <span className="text-muted-foreground">Виконань:</span>
-              <span className="font-medium">{submissionsCount}</span>
+            {/* Stats Counters */}
+            <div className="grid grid-cols-3 gap-2 pt-2">
+              {/* Approved */}
+              <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-green-500/10 border border-green-500/30">
+                <svg className="w-3.5 h-3.5 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-bold text-green-600 dark:text-green-500">
+                  {task.task_submissions?.filter((s: any) => s.status === "approved").length || 0}
+                </span>
+              </div>
+              
+              {/* In Progress + Submitted */}
+              <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/30">
+                <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-500">
+                  {task.task_submissions?.filter((s: any) => s.status === "in_progress" || s.status === "submitted").length || 0}
+                </span>
+              </div>
+              
+              {/* Rejected */}
+              <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-red-500/10 border border-red-500/30">
+                <svg className="w-3.5 h-3.5 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-sm font-bold text-red-600 dark:text-red-500">
+                  {task.task_submissions?.filter((s: any) => s.status === "rejected").length || 0}
+                </span>
+              </div>
             </div>
 
             {submittedCount > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-orange-600 font-medium">Нових звітів:</span>
-                <span className="text-orange-600 font-medium">{submittedCount}</span>
+              <div className="flex items-center justify-center text-sm bg-orange-50 dark:bg-orange-950 py-1.5 rounded-md border border-orange-500/30">
+                <span className="text-orange-600 font-medium">🔔 {submittedCount} нових звітів</span>
               </div>
             )}
             
@@ -385,12 +412,24 @@ export const MyTasksList = () => {
         <CardFooter className="flex gap-2 flex-wrap">
           <Button 
             variant="outline" 
-            className="flex-1"
+            size="icon"
             onClick={() => setSelectedTask(task)}
+            title="Переглянути"
           >
-            <Eye className="h-4 w-4 mr-2" />
-            Переглянути
+            <Eye className="h-4 w-4" />
           </Button>
+
+          {submissionsCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => navigate(`/moderator?task=${task.id}`)}
+              title="Звіти"
+              className={submittedCount > 0 ? "border-orange-500 text-orange-500" : ""}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+          )}
           
           {task.status === "approved" && (
             <>

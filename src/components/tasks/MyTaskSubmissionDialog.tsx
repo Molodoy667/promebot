@@ -246,12 +246,13 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
           {submission.status === "in_progress" && !isExpired && (
             <div className="flex gap-3">
               <Button
-                onClick={() => submitMutation.mutate()}
-                disabled={submitMutation.isPending}
+                onClick={() => {
+                  setShowSubmitDialog(true);
+                }}
                 className="flex-1 bg-green-500 hover:bg-green-600"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {submitMutation.isPending ? "Відправка..." : "Здати завдання"}
+                Здати завдання
               </Button>
               <Button
                 onClick={() => cancelMutation.mutate()}
@@ -266,6 +267,19 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
           )}
         </div>
       </DialogContent>
+
+      {showSubmitDialog && (
+        <SubmitTaskDialog
+          submission={submission}
+          open={showSubmitDialog}
+          onOpenChange={(open) => {
+            setShowSubmitDialog(open);
+            if (!open) {
+              onOpenChange(false); // Close parent dialog when submission is done
+            }
+          }}
+        />
+      )}
     </Dialog>
   );
 };
