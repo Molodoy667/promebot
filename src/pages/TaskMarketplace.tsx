@@ -208,9 +208,9 @@ const TaskMarketplace = () => {
               <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
                 <div className="flex items-center gap-2 text-primary mb-1">
                   <Briefcase className="w-4 h-4" />
-                  <span className="text-xs font-semibold">Доступно</span>
+                  <span className="text-xs font-semibold">Мої завдання</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{availableTasks?.length || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{myTasks?.length || 0}</p>
               </div>
 
               <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 hover:border-warning/40 transition-all duration-300 hover:scale-105">
@@ -229,12 +229,12 @@ const TaskMarketplace = () => {
                 <p className="text-2xl font-bold text-foreground">{submissionStats.completed}</p>
               </div>
 
-              <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105">
-                <div className="flex items-center gap-2 text-accent mb-1">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-xs font-semibold">Мої завдання</span>
+              <div className="group/stat p-4 rounded-xl bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20 hover:border-destructive/40 transition-all duration-300 hover:scale-105">
+                <div className="flex items-center gap-2 text-destructive mb-1">
+                  <XCircle className="w-4 h-4" />
+                  <span className="text-xs font-semibold">Відхилено</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{myTasks?.length || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{submissionStats.rejected}</p>
               </div>
             </div>
         </div>
