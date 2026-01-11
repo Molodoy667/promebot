@@ -73,9 +73,24 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
+          {/* Task Image */}
+          {task.images && task.images.length > 0 ? (
+            <div className="mb-4 rounded-lg overflow-hidden">
+              <img 
+                src={task.images[0]} 
+                alt={task.title}
+                className="w-full h-48 object-cover"
+              />
+            </div>
+          ) : (
+            <div className="mb-4 h-48 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center">
+              <ClipboardList className="w-20 h-20 text-primary/30" />
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-2">
-            <Badge variant={task.task_type === "vip" ? "default" : "secondary"}>
-              {task.task_type === "vip" ? "VIP завдання" : "Бонусне завдання"}
+            <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+              {task.balance_type === "main" ? "Баланс" : "Бонусне"}
             </Badge>
             <span className="text-2xl font-bold text-primary">
               {task.reward_amount.toFixed(2)} ₴
@@ -150,11 +165,19 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Скасувати
+            Закрити
           </Button>
-          <Button onClick={handleStartTask} disabled={isStarting}>
-            {isStarting ? "Початок..." : "Розпочати завдання"}
-          </Button>
+          {task.canTake !== false && !task.isOwner && (
+            <Button onClick={handleStartTask} disabled={isStarting}>
+              {isStarting ? "Початок..." : "Розпочати завдання"}
+            </Button>
+          )}
+          {task.isOwner && (
+            <Badge className="bg-yellow-500 text-white">
+              <Crown className="w-3 h-3 mr-1" />
+              Це ваше завдання
+            </Badge>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

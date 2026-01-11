@@ -1100,6 +1100,25 @@ export default function ChannelStats() {
             </Card>
             )}
 
+            {/* Subscribers Total */}
+            {shouldShowCard('subscribers') && (
+              <Card className="glass-effect">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xl font-bold text-blue-500">
+                        {(channelInfo?.membersCount || 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">Загально підписників</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Subscribers Today */}
             {shouldShowCard('subscribers') && (
               <Card className="glass-effect">

@@ -3,13 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, DollarSign, Users, Camera } from "lucide-react";
+import { Clock, DollarSign, Users, Camera, ClipboardList, Crown } from "lucide-react";
 import { useState } from "react";
 import { TaskDetailsDialog } from "./TaskDetailsDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AvailableTasksList = () => {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [balanceFilter, setBalanceFilter] = useState<"all" | "bonus" | "main">("all");
+  const [sortBy, setSortBy] = useState<"date" | "price">("date");
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["available-tasks"],
@@ -25,15 +28,30 @@ export const AvailableTasksList = () => {
             id,
             user_id,
             status
+          ),
+          profiles!tasks_user_id_fkey (
+            username,
+            avatar_url
           )
         `)
-        .eq("status", "active")
-        .neq("user_id", user.id);
+        .eq("status", "active");
 
       if (error) throw error;
 
-      // Filter out tasks user already started/completed
-      return data?.filter((task: any) => {
+      // Mark tasks and filter
+      return data?.map((task: any) => {
+        const isOwner = task.user_id === user.id;
+        const userSubmission = task.task_submissions?.find(
+          (sub: any) => sub.user_id === user.id
+        );
+        
+        return {
+          ...task,
+          isOwner,
+          canTake: !isOwner && !userSubmission
+        };
+      }).filter((task: any) => {
+        // Show all tasks including owner's, but filter out already taken
         const userSubmission = task.task_submissions?.find(
           (sub: any) => sub.user_id === user.id
         );
@@ -54,10 +72,17 @@ export const AvailableTasksList = () => {
     );
   }
 
-  const filteredTasks = tasks.filter((task: any) => {
-    if (balanceFilter === "all") return true;
-    return task.balance_type === balanceFilter;
-  });
+  const filteredTasks = tasks
+    .filter((task: any) => {
+      if (balanceFilter === "all") return true;
+      return task.balance_type === balanceFilter;
+    })
+    .sort((a: any, b: any) => {
+      if (sortBy === "price") {
+        return b.reward_amount - a.reward_amount;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
   const getTaskCounters = (task: any) => {
     const submissions = task.task_submissions || [];
@@ -70,69 +95,112 @@ export const AvailableTasksList = () => {
 
   return (
     <>
-      {/* Filter buttons */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          size="sm"
-          variant={balanceFilter === "all" ? "default" : "outline"}
-          onClick={() => setBalanceFilter("all")}
-        >
-          Всі
-        </Button>
-        <Button
-          size="sm"
-          variant={balanceFilter === "bonus" ? "default" : "outline"}
-          onClick={() => setBalanceFilter("bonus")}
-        >
-          Бонусні
-        </Button>
-        <Button
-          size="sm"
-          variant={balanceFilter === "main" ? "default" : "outline"}
-          onClick={() => setBalanceFilter("main")}
-        >
-          Основні
-        </Button>
+      {/* Filters and Sorting */}
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Тип балансу</h3>
+            <Tabs value={balanceFilter} onValueChange={(v) => setBalanceFilter(v as any)}>
+              <TabsList>
+                <TabsTrigger value="all">Всі</TabsTrigger>
+                <TabsTrigger value="bonus">Бонусні</TabsTrigger>
+                <TabsTrigger value="main">Баланс</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium mb-2">Сортування</h3>
+            <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <TabsList>
+                <TabsTrigger value="date">По даті</TabsTrigger>
+                <TabsTrigger value="price">По ціні</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredTasks.map((task: any) => {
           const counters = getTaskCounters(task);
+          const taskImage = task.images && task.images.length > 0 ? task.images[0] : null;
+          
           return (
           <Card 
             key={task.id}
-            className="cursor-pointer hover:shadow-lg transition-shadow"
+            className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden"
             onClick={() => setSelectedTask(task)}
           >
-            <CardHeader>
-              <div className="flex justify-between items-start mb-2">
+            {/* Task Image or Icon */}
+            <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              {taskImage ? (
+                <img 
+                  src={taskImage} 
+                  alt={task.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <ClipboardList className="w-16 h-16 text-primary/30" />
+              )}
+              
+              {/* Owner Badge */}
+              {task.isOwner && (
+                <div className="absolute top-2 left-2">
+                  <Badge className="bg-yellow-500/90 text-white border-0">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Власне
+                  </Badge>
+                </div>
+              )}
+              
+              {/* Balance Type Badge */}
+              <div className="absolute top-2 right-2">
                 <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
-                  <svg className="w-3 h-3 mr-1 inline-block" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
-                  </svg>
-                  {task.balance_type === "main" ? "Основний" : "Бонус"}
+                  {task.balance_type === "main" ? "Баланс" : "Бонусне"}
                 </Badge>
-                <span className="text-lg font-bold text-primary">
-                  {task.reward_amount.toFixed(2)} ₴
+              </div>
+            </div>
+
+            <CardHeader className="space-y-3">
+              {/* Author Info */}
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6">
+                  <AvatarImage src={task.profiles?.avatar_url} />
+                  <AvatarFallback className="text-xs">
+                    {task.profiles?.username?.[0]?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-muted-foreground">
+                  {task.profiles?.username || "Невідомий"}
                 </span>
               </div>
-              <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
-              <CardDescription className="line-clamp-2 text-xs">
+
+              {/* Title */}
+              <CardTitle className="line-clamp-2 text-base leading-tight">
+                {task.title}
+              </CardTitle>
+              
+              {/* Description */}
+              <CardDescription className="line-clamp-3 text-xs leading-relaxed">
                 {task.description}
               </CardDescription>
-              
-              {/* Counters */}
-              <div className="flex gap-2 mt-3">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                  ✓ {counters.approved}
-                </Badge>
-                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs">
-                  ⏳ {counters.inProgress}
-                </Badge>
-                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
-                  ✗ {counters.rejected}
-                </Badge>
+
+              {/* Stats Row */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div className="flex items-center gap-1">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  <span className="font-bold text-primary">{task.reward_amount.toFixed(2)} ₴</span>
+                </div>
+                
+                <div className="flex gap-1">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-1.5 py-0">
+                    ✓ {counters.approved}
+                  </Badge>
+                  <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs px-1.5 py-0">
+                    ⏳ {counters.inProgress}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
           </Card>
