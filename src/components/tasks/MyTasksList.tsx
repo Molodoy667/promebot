@@ -310,6 +310,18 @@ export const MyTasksList = () => {
               alt={task.title}
               className="w-full h-full object-cover"
             />
+            {/* Status and Balance badges */}
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              <Badge 
+                variant={statusLabels[task.status]?.variant || "outline"}
+                className={`${statusLabels[task.status]?.color || ""} backdrop-blur-sm`}
+              >
+                {statusLabels[task.status]?.label || task.status}
+              </Badge>
+              <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="backdrop-blur-sm">
+                {task.balance_type === "main" ? "Баланс" : "Бонусне"}
+              </Badge>
+            </div>
             {submittedCount > 0 && (
               <div className="absolute bottom-2 right-2">
                 <Badge className="bg-orange-500/90 text-white border-0">
@@ -321,6 +333,18 @@ export const MyTasksList = () => {
         ) : taskImage === null && task.images && (
           <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
             <ClipboardList className="w-16 h-16 text-primary/30" />
+            {/* Status and Balance badges */}
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              <Badge 
+                variant={statusLabels[task.status]?.variant || "outline"}
+                className={statusLabels[task.status]?.color || ""}
+              >
+                {statusLabels[task.status]?.label || task.status}
+              </Badge>
+              <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+                {task.balance_type === "main" ? "Баланс" : "Бонусне"}
+              </Badge>
+            </div>
             {submittedCount > 0 && (
               <div className="absolute bottom-2 right-2">
                 <Badge className="bg-orange-500/90 text-white border-0">
