@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Users, Camera, AlertCircle, ClipboardList, BarChart3 } from "lucide-react";
+import { Clock, DollarSign, Users, Camera, AlertCircle, ClipboardList, BarChart3, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TaskDetailsDialogProps {
