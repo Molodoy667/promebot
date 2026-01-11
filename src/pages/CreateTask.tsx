@@ -863,7 +863,7 @@ const CreateTask = () => {
                           placeholder="0.25"
                         />
                       </FormControl>
-                      <FormDescription>Винагорода від 0.25 до 10 грн</FormDescription>
+                      <FormDescription>Винагорода від 1 до 100 грн</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
