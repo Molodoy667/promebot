@@ -389,17 +389,6 @@ const TaskMarketplace = () => {
         )}
       </div>
 
-      {submissionToSubmit && (
-        <SubmitTaskDialog
-          submission={submissionToSubmit}
-          open={submitDialogOpen}
-          onOpenChange={(open) => {
-            setSubmitDialogOpen(open);
-            if (!open) setSubmissionToSubmit(null);
-          }}
-        />
-      )}
-
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <AlertDialogContent>
