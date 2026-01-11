@@ -129,6 +129,26 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
             </div>
           )}
 
+          {/* Additional Links */}
+          {task.additional_links && task.additional_links.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-3 text-sm">🔗 Додаткові посилання:</h4>
+              <div className="space-y-2">
+                {task.additional_links.map((link: string, index: number) => (
+                  <a
+                    key={index}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-blue-500/10 hover:bg-blue-500/20 p-3 rounded-lg border border-blue-500/20 transition-colors text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                  >
+                    {link}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {task.telegram_channel_link && task.channel_info ? (
             <a 
               href={task.telegram_channel_link}
