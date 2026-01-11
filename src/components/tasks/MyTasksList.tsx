@@ -442,27 +442,7 @@ export const MyTasksList = () => {
         </CardContent>
 
         <CardFooter className="flex gap-2 flex-wrap">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setSelectedTask(task)}
-            title="Переглянути"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-
-          {submissionsCount > 0 && (
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setReviewingTask(task)}
-              title="Звіти"
-              className={submittedCount > 0 ? "border-orange-500 text-orange-500" : ""}
-            >
-              <FileText className="h-4 w-4" />
-            </Button>
-          )}
-          
+          {/* Start/Stop buttons FIRST */}
           {task.status === "approved" && (
             <>
               {(task.budget || 0) > 0 ? (
@@ -559,6 +539,29 @@ export const MyTasksList = () => {
                 <Wallet className="h-4 w-4" />
               </Button>
             </>
+          )}
+
+          {/* View button */}
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setSelectedTask(task)}
+            title="Переглянути"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+
+          {/* Reports button */}
+          {submissionsCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setReviewingTask(task)}
+              title="Звіти"
+              className={submittedCount > 0 ? "border-orange-500 text-orange-500" : ""}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
           )}
           
           {canEdit(task.status) && (
