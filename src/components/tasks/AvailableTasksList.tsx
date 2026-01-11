@@ -177,17 +177,24 @@ export const AvailableTasksList = () => {
             </div>
 
             <CardHeader className="space-y-3">
-              {/* Author Info */}
-              <div className="flex items-center gap-2">
-                <Avatar className="w-6 h-6">
-                  <AvatarImage src={task.profiles?.avatar_url} />
-                  <AvatarFallback className="text-xs">
-                    {(task.profiles?.telegram_username?.[0] || task.profiles?.full_name?.[0] || "?").toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-muted-foreground">
-                  {task.profiles?.telegram_username || task.profiles?.full_name || "Невідомий"}
-                </span>
+              {/* Author Info & Reward */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="w-6 h-6">
+                    <AvatarImage src={task.profiles?.avatar_url} />
+                    <AvatarFallback className="text-xs">
+                      {(task.profiles?.telegram_username?.[0] || task.profiles?.full_name?.[0] || "?").toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground">
+                    {task.profiles?.telegram_username || task.profiles?.full_name || "Невідомий"}
+                  </span>
+                </div>
+                
+                {/* Reward Badge */}
+                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-xs font-bold">
+                  {task.reward_amount.toFixed(2)} ₴
+                </Badge>
               </div>
 
               {/* Title */}
@@ -207,31 +214,35 @@ export const AvailableTasksList = () => {
                 {task.description}
               </CardDescription>
 
-              {/* Reward Badge */}
-              <div className="flex items-center justify-center">
-                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-sm font-bold px-4 py-1">
-                  Винагорода: {task.reward_amount.toFixed(2)} ₴
-                </Badge>
+              {/* Budget */}
+              <div className="text-sm font-semibold text-center py-2 bg-primary/5 rounded-lg">
+                Бюджет: {(task.budget || 0).toFixed(2)} ₴
               </div>
 
-              {/* Stats Row - Budget & Counters */}
-              <div className="flex items-center justify-between pt-2 border-t">
-                {/* Budget */}
-                <div className="text-xs text-muted-foreground">
-                  Бюджет: <span className="font-semibold">{(task.budget || 0).toFixed(2)} ₴</span>
+              {/* Stats Counters */}
+              <div className="flex gap-2 justify-center pt-2">
+                {/* Approved */}
+                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-green-500 bg-green-50 dark:bg-green-950 min-w-[60px]">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm font-bold text-green-700 dark:text-green-400">{counters.approved}</span>
                 </div>
                 
-                {/* Counters */}
-                <div className="flex gap-1">
-                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-green-500 bg-green-50 dark:bg-green-950">
-                    <span className="text-xs font-bold text-green-700 dark:text-green-400">{counters.approved}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-gray-400 bg-gray-50 dark:bg-gray-900">
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{counters.inProgress}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5 px-2 py-1 rounded border-2 border-red-500 bg-red-50 dark:bg-red-950">
-                    <span className="text-xs font-bold text-red-700 dark:text-red-400">{counters.rejected}</span>
-                  </div>
+                {/* In Progress */}
+                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950 min-w-[60px]">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{counters.inProgress}</span>
+                </div>
+                
+                {/* Rejected */}
+                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950 min-w-[60px]">
+                  <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="text-sm font-bold text-red-700 dark:text-red-400">{counters.rejected}</span>
                 </div>
               </div>
             </CardHeader>
