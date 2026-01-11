@@ -168,6 +168,12 @@ export const AvailableTasksList = () => {
                 </div>
               )}
               
+              {/* Balance Type Badge */}
+              <div className="absolute top-2 right-2">
+                <Badge variant={task.balance_type === "main" ? "default" : "secondary"}>
+                  {task.balance_type === "main" ? "Баланс" : "Бонусне"}
+                </Badge>
+              </div>
             </div>
 
             <CardHeader className="space-y-3">
@@ -201,12 +207,19 @@ export const AvailableTasksList = () => {
                 {task.description}
               </CardDescription>
 
-              {/* Stats Row */}
-              <div className="flex items-center justify-between pt-2 border-t">
-                {/* Reward Badge */}
-                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-sm font-bold">
-                  {task.reward_amount.toFixed(2)} ₴
+              {/* Reward Badge */}
+              <div className="flex items-center justify-center">
+                <Badge variant={task.balance_type === "main" ? "default" : "secondary"} className="text-sm font-bold px-4 py-1">
+                  Винагорода: {task.reward_amount.toFixed(2)} ₴
                 </Badge>
+              </div>
+
+              {/* Stats Row - Budget & Counters */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                {/* Budget */}
+                <div className="text-xs text-muted-foreground">
+                  Бюджет: <span className="font-semibold">{(task.budget || 0).toFixed(2)} ₴</span>
+                </div>
                 
                 {/* Counters */}
                 <div className="flex gap-1">
@@ -220,11 +233,6 @@ export const AvailableTasksList = () => {
                     <span className="text-xs font-bold text-red-700 dark:text-red-400">{counters.rejected}</span>
                   </div>
                 </div>
-              </div>
-              
-              {/* Budget Row */}
-              <div className="text-xs text-muted-foreground pt-1">
-                Бюджет: <span className="font-semibold">{(task.budget || 0).toFixed(2)} ₴</span>
               </div>
             </CardHeader>
           </Card>
