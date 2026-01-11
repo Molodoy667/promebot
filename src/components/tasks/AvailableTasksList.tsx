@@ -17,6 +17,11 @@ const categoryLabels: Record<string, string> = {
   survey: "Опитування",
   review: "Відгук",
   other: "Інше",
+  bonus: "Бонусне завдання",
+  vip: "VIP завдання",
+  subscription: "Підписка",
+  follow: "Підписатись",
+  repost: "Репост",
 };
 
 export const AvailableTasksList = () => {
