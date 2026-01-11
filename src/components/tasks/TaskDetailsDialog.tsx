@@ -105,6 +105,30 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
+          {/* Additional Images */}
+          {task.images && task.images.length > 1 && (
+            <div>
+              <h4 className="font-semibold mb-3 text-sm">📸 Додаткові зображення:</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {task.images.slice(1).map((image: string, index: number) => (
+                  <a 
+                    key={index}
+                    href={image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/50 transition-colors"
+                  >
+                    <img 
+                      src={image} 
+                      alt={`Image ${index + 2}`}
+                      className="w-full h-24 object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {task.telegram_channel_link && task.channel_info ? (
             <a 
               href={task.telegram_channel_link}
