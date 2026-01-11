@@ -109,8 +109,8 @@ const taskSchema = z.object({
       required_error: "Вкажіть винагороду",
       invalid_type_error: "Винагорода повинна бути числом",
     })
-    .min(0.25, "Мінімальна винагорода 0.25 грн")
-    .max(10, "Максимальна винагорода 10 грн"),
+    .min(1, "Мінімальна винагорода 1 грн")
+    .max(100, "Максимальна винагорода 100 грн"),
   time_limit_hours: z
     .coerce
     .number({
@@ -121,7 +121,6 @@ const taskSchema = z.object({
     .max(6, "Максимум 6 годин"),
   requires_screenshot: z.boolean(),
   max_completions: z.coerce.number().min(0, "Не може бути від'ємним").optional(),
-  budget: z.coerce.number().min(1, "Мінімальний бюджет 1 ₴").max(100, "Максимальний бюджет 100 ₴").optional(),
   telegram_channel_link: z.string()
     .refine((val) => {
       if (!val) return true; // Optional field
@@ -160,7 +159,7 @@ const CreateTask = () => {
       title: "",
       description: "",
       category: "",
-      reward_amount: 0.25,
+      reward_amount: 1,
       time_limit_hours: 1,
       requires_screenshot: false,
       max_completions: undefined,
