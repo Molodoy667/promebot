@@ -281,7 +281,7 @@ export const MyTasksList = () => {
       <Card key={task.id} className="overflow-hidden">
         {/* Task Image or Icon */}
         {taskImage ? (
-          <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5">
+          <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5">
             <img 
               src={taskImage} 
               alt={task.title}
@@ -296,7 +296,7 @@ export const MyTasksList = () => {
             )}
           </div>
         ) : taskImage === null && task.images && (
-          <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+          <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
             <ClipboardList className="w-16 h-16 text-primary/30" />
             {submittedCount > 0 && (
               <div className="absolute bottom-2 right-2">

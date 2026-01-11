@@ -210,7 +210,7 @@ export const MySubmissionsList = () => {
               className="overflow-hidden hover:shadow-lg transition-all"
             >
               {/* Task Image */}
-              <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                 {taskImage ? (
                   <img 
                     src={taskImage} 

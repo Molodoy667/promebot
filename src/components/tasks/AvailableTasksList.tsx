@@ -152,7 +152,7 @@ export const AvailableTasksList = () => {
             onClick={() => setSelectedTask(task)}
           >
             {/* Task Image or Icon */}
-            <div className="relative h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+            <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
               {taskImage ? (
                 <img 
                   src={taskImage} 
