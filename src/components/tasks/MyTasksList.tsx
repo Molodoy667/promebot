@@ -55,6 +55,7 @@ export const MyTasksList = () => {
   const [cancellingTask, setCancellingTask] = useState<any>(null);
   const [deletingTask, setDeletingTask] = useState<any>(null);
   const [budgetTask, setBudgetTask] = useState<any>(null);
+  const [reviewingTask, setReviewingTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [sortBy, setSortBy] = useState<"date" | "budget" | "executions">("date");
 
@@ -423,7 +424,7 @@ export const MyTasksList = () => {
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => navigate(`/moderator?task=${task.id}`)}
+              onClick={() => setReviewingTask(task)}
               title="Звіти"
               className={submittedCount > 0 ? "border-orange-500 text-orange-500" : ""}
             >
@@ -734,6 +735,14 @@ export const MyTasksList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {reviewingTask && (
+        <TaskSubmissionsReviewDialog
+          task={reviewingTask}
+          open={!!reviewingTask}
+          onOpenChange={(open) => !open && setReviewingTask(null)}
+        />
+      )}
     </>
   );
 };
