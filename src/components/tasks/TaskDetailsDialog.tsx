@@ -105,6 +105,20 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
+          {task.telegram_channel_link && (
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold mb-2 text-sm">📱 Telegram канал:</h4>
+              <a 
+                href={task.telegram_channel_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+              >
+                {task.telegram_channel_link}
+              </a>
+            </div>
+          )}
+
           <div className="space-y-3">
             <h4 className="font-semibold text-base flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Умови виконання:</h4>
             <div className="grid gap-3 p-3 bg-muted/50 rounded-lg">

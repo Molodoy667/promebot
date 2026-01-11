@@ -180,6 +180,13 @@ export const AvailableTasksList = () => {
                 </span>
               </div>
 
+              {/* Category */}
+              {task.category && (
+                <Badge variant="outline" className="w-fit text-xs">
+                  {task.category}
+                </Badge>
+              )}
+
               {/* Title */}
               <CardTitle className="line-clamp-2 text-base leading-tight">
                 {task.title}
