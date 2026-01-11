@@ -29,7 +29,7 @@ export const AvailableTasksList = () => {
             user_id,
             status
           ),
-          profiles:user_id (
+          profiles!tasks_user_id_fkey (
             username,
             avatar_url
           )
