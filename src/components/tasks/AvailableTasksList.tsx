@@ -148,8 +148,7 @@ export const AvailableTasksList = () => {
           return (
           <Card 
             key={task.id}
-            className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden"
-            onClick={() => setSelectedTask(task)}
+            className="hover:shadow-lg transition-all overflow-hidden"
           >
             {/* Task Image or Icon */}
             <div className="relative h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -251,6 +250,16 @@ export const AvailableTasksList = () => {
                 </div>
               </div>
             </CardHeader>
+
+            <CardFooter className="flex gap-2 pt-0">
+              <Button 
+                variant="outline"
+                onClick={() => setSelectedTask(task)}
+                className="flex-1"
+              >
+                Переглянути
+              </Button>
+            </CardFooter>
           </Card>
           );
         })}

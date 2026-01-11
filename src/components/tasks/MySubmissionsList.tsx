@@ -290,6 +290,16 @@ export const MySubmissionsList = () => {
                   {task.description}
                 </CardDescription>
               </CardHeader>
+
+              <CardFooter className="pt-0">
+                <Button 
+                  variant="outline"
+                  onClick={() => setSelectedSubmission({ ...submission, task })}
+                  className="w-full"
+                >
+                  Переглянути
+                </Button>
+              </CardFooter>
             </Card>
           );
         })}
