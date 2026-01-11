@@ -39,6 +39,7 @@ export const MySubmissionsList = () => {
   const queryClient = useQueryClient();
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [submitDialogTask, setSubmitDialogTask] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("all");
   const [, setTick] = useState(0);
 
   const { data: submissions, isLoading } = useQuery({
@@ -129,10 +130,68 @@ export const MySubmissionsList = () => {
     );
   }
 
+  // Filter submissions by tab
+  const filteredSubmissions = submissions.filter((submission: any) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "in_progress") return submission.status === "in_progress";
+    if (activeTab === "submitted") return submission.status === "submitted";
+    if (activeTab === "approved") return submission.status === "approved";
+    if (activeTab === "rejected") return submission.status === "rejected";
+    return true;
+  });
+
+  // Calculate counts by status
+  const statusCounts = {
+    all: submissions.length,
+    in_progress: submissions.filter((s: any) => s.status === "in_progress").length,
+    submitted: submissions.filter((s: any) => s.status === "submitted").length,
+    approved: submissions.filter((s: any) => s.status === "approved").length,
+    rejected: submissions.filter((s: any) => s.status === "rejected").length,
+  };
+
   return (
     <>
+      {/* Status Filters */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Button
+          size="sm"
+          variant={activeTab === "all" ? "default" : "outline"}
+          onClick={() => setActiveTab("all")}
+        >
+          Всі <Badge variant="secondary" className="ml-2">{statusCounts.all}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "in_progress" ? "default" : "outline"}
+          onClick={() => setActiveTab("in_progress")}
+        >
+          Виконується <Badge variant="secondary" className="ml-2">{statusCounts.in_progress}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "submitted" ? "default" : "outline"}
+          onClick={() => setActiveTab("submitted")}
+        >
+          На перевірці <Badge variant="secondary" className="ml-2">{statusCounts.submitted}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "approved" ? "default" : "outline"}
+          onClick={() => setActiveTab("approved")}
+        >
+          Виконано <Badge variant="secondary" className="ml-2">{statusCounts.approved}</Badge>
+        </Button>
+        <Button
+          size="sm"
+          variant={activeTab === "rejected" ? "default" : "outline"}
+          onClick={() => setActiveTab("rejected")}
+        >
+          Відхилено <Badge variant="secondary" className="ml-2">{statusCounts.rejected}</Badge>
+        </Button>
+      </div>
+
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {submissions.map((submission: any) => {
+        {filteredSubmissions.map((submission: any) => {
           const task = submission.tasks;
           const timeInfo = submission.status === "in_progress" 
             ? getTimeRemaining(submission.started_at, task.time_limit_hours)
