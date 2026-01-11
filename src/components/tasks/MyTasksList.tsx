@@ -309,6 +309,14 @@ export const MyTasksList = () => {
               {task.balance_type === "main" ? "Основний" : "Бонус"}
             </Badge>
           </div>
+          
+          {/* Category */}
+          {task.category && (
+            <Badge variant="outline" className="w-fit text-xs mb-2">
+              {task.category}
+            </Badge>
+          )}
+
           <CardTitle className="line-clamp-1 text-base">{task.title}</CardTitle>
           <CardDescription>
             Винагорода: {task.reward_amount.toFixed(2)} ₴
