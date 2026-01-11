@@ -30,7 +30,8 @@ export const AvailableTasksList = () => {
             status
           ),
           profiles!tasks_user_id_fkey (
-            username,
+            telegram_username,
+            full_name,
             avatar_url
           )
         `)
@@ -171,11 +172,11 @@ export const AvailableTasksList = () => {
                 <Avatar className="w-6 h-6">
                   <AvatarImage src={task.profiles?.avatar_url} />
                   <AvatarFallback className="text-xs">
-                    {task.profiles?.username?.[0]?.toUpperCase() || "?"}
+                    {(task.profiles?.telegram_username?.[0] || task.profiles?.full_name?.[0] || "?").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-xs text-muted-foreground">
-                  {task.profiles?.username || "Невідомий"}
+                  {task.profiles?.telegram_username || task.profiles?.full_name || "Невідомий"}
                 </span>
               </div>
 
