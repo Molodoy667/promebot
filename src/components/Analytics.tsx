@@ -11,6 +11,13 @@ export const Analytics = () => {
 
     const trackVisit = async () => {
       try {
+        // Check auth first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Skip analytics for non-authenticated users
+          return;
+        }
+
         // Get or create session ID
         let sessionId = sessionStorage.getItem('analytics_session_id');
         if (!sessionId) {
@@ -35,8 +42,8 @@ export const Analytics = () => {
           .maybeSingle();
 
         if (fetchError) {
-          // Ignore RLS errors for analytics - not critical
-          if (fetchError.code !== '42501') {
+          // Ignore RLS and auth errors for analytics - not critical
+          if (fetchError.code !== '42501' && !fetchError.message?.includes('JWT')) {
             console.error('Error fetching analytics:', fetchError);
           }
           return;
@@ -89,6 +96,10 @@ export const Analytics = () => {
       if (!hasTracked.current) return;
 
       try {
+        // Check auth first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
         const today = new Date().toISOString().split('T')[0];
 
         const { data: existing, error: fetchError } = await supabase

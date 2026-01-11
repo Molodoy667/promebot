@@ -18,3 +18,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     flowType: 'pkce',
   }
 });
+
+// Handle auth errors globally
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('Token refreshed');
+    }
+    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      // Clear invalid tokens
+      localStorage.removeItem('sb-auth-token');
+    }
+  });
+}
