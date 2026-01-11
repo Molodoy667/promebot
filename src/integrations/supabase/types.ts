@@ -24,9 +24,8 @@ export type Database = {
           last_error: string | null
           last_error_at: string | null
           last_generation_started_at: string | null
-          last_mtproto_sync: string | null
           last_published_at: string | null
-          last_scraping_sync: string | null
+          last_stats_sync: string | null
           mtproto_stats: Json | null
           scraping_stats: Json | null
           service_type: string
@@ -47,9 +46,8 @@ export type Database = {
           last_error?: string | null
           last_error_at?: string | null
           last_generation_started_at?: string | null
-          last_mtproto_sync?: string | null
           last_published_at?: string | null
-          last_scraping_sync?: string | null
+          last_stats_sync?: string | null
           mtproto_stats?: Json | null
           scraping_stats?: Json | null
           service_type: string
@@ -70,9 +68,8 @@ export type Database = {
           last_error?: string | null
           last_error_at?: string | null
           last_generation_started_at?: string | null
-          last_mtproto_sync?: string | null
           last_published_at?: string | null
-          last_scraping_sync?: string | null
+          last_stats_sync?: string | null
           mtproto_stats?: Json | null
           scraping_stats?: Json | null
           service_type?: string
@@ -511,8 +508,7 @@ export type Database = {
           keywords_filter: Json | null
           last_error: string | null
           last_error_at: string | null
-          last_mtproto_sync: string | null
-          last_scraping_sync: string | null
+          last_stats_sync: string | null
           mtproto_stats: Json | null
           post_as_bot: boolean | null
           post_interval_minutes: number | null
@@ -543,8 +539,7 @@ export type Database = {
           keywords_filter?: Json | null
           last_error?: string | null
           last_error_at?: string | null
-          last_mtproto_sync?: string | null
-          last_scraping_sync?: string | null
+          last_stats_sync?: string | null
           mtproto_stats?: Json | null
           post_as_bot?: boolean | null
           post_interval_minutes?: number | null
@@ -575,8 +570,7 @@ export type Database = {
           keywords_filter?: Json | null
           last_error?: string | null
           last_error_at?: string | null
-          last_mtproto_sync?: string | null
-          last_scraping_sync?: string | null
+          last_stats_sync?: string | null
           mtproto_stats?: Json | null
           post_as_bot?: boolean | null
           post_interval_minutes?: number | null
@@ -2010,6 +2004,7 @@ export type Database = {
       tasks: {
         Row: {
           available_executions: number | null
+          balance_type: string | null
           budget: number
           category: string | null
           channel_info: Json | null
@@ -2017,10 +2012,12 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          images: string[] | null
           max_completions: number | null
           moderated_at: string | null
           moderated_by: string | null
           moderation_comment: string | null
+          rejection_reason: string | null
           requires_screenshot: boolean
           reward_amount: number
           status: string
@@ -2033,6 +2030,7 @@ export type Database = {
         }
         Insert: {
           available_executions?: number | null
+          balance_type?: string | null
           budget?: number
           category?: string | null
           channel_info?: Json | null
@@ -2040,10 +2038,12 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          images?: string[] | null
           max_completions?: number | null
           moderated_at?: string | null
           moderated_by?: string | null
           moderation_comment?: string | null
+          rejection_reason?: string | null
           requires_screenshot?: boolean
           reward_amount: number
           status?: string
@@ -2056,6 +2056,7 @@ export type Database = {
         }
         Update: {
           available_executions?: number | null
+          balance_type?: string | null
           budget?: number
           category?: string | null
           channel_info?: Json | null
@@ -2063,10 +2064,12 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          images?: string[] | null
           max_completions?: number | null
           moderated_at?: string | null
           moderated_by?: string | null
           moderation_comment?: string | null
+          rejection_reason?: string | null
           requires_screenshot?: boolean
           reward_amount?: number
           status?: string
@@ -2077,7 +2080,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_lookup"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       telegram_bots: {
         Row: {
@@ -2633,6 +2651,10 @@ export type Database = {
         Args: { amount: number; task_id_param: string }
         Returns: undefined
       }
+      add_task_budget_from_main: {
+        Args: { amount: number; task_id_param: string }
+        Returns: undefined
+      }
       apply_referral_code: {
         Args: { p_referral_code: string; p_user_id: string }
         Returns: {
@@ -2735,6 +2757,10 @@ export type Database = {
           users: number
         }[]
       }
+      recalculate_posts_current_period: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
       reset_user_posts_stats: {
         Args: { user_id_param: string }
         Returns: undefined
@@ -2757,6 +2783,10 @@ export type Database = {
         }[]
       }
       withdraw_task_budget: {
+        Args: { amount: number; task_id_param: string }
+        Returns: undefined
+      }
+      withdraw_task_budget_to_main: {
         Args: { amount: number; task_id_param: string }
         Returns: undefined
       }
