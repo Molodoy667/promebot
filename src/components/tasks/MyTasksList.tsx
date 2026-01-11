@@ -181,6 +181,27 @@ export const MyTasksList = () => {
 
   const deleteTaskMutation = useMutation({
     mutationFn: async (task: any) => {
+      // Get all submissions for this task
+      const { data: submissions } = await supabase
+        .from("task_submissions")
+        .select("screenshot_url")
+        .eq("task_id", task.id);
+
+      // Delete submission screenshots from storage
+      if (submissions && submissions.length > 0) {
+        const screenshotPaths = submissions
+          .filter((s: any) => s.screenshot_url)
+          .map((s: any) => {
+            const match = s.screenshot_url.match(/task-screenshots\/(.+)$/);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean);
+
+        if (screenshotPaths.length > 0) {
+          await supabase.storage.from('task-screenshots').remove(screenshotPaths);
+        }
+      }
+
       // Delete task images from storage if any
       if (task.images && Array.isArray(task.images) && task.images.length > 0) {
         const filePaths = task.images
@@ -201,7 +222,7 @@ export const MyTasksList = () => {
         }
       }
 
-      // Delete task from database
+      // Delete task from database (CASCADE will delete submissions)
       const { error } = await supabase
         .from("tasks")
         .delete()
@@ -550,6 +571,16 @@ export const MyTasksList = () => {
               <Edit className="h-4 w-4" />
             </Button>
           )}
+
+          {/* Delete button - always visible */}
+          <Button 
+            variant="outline"
+            size="icon"
+            onClick={() => setDeletingTask(task)}
+            title="Видалити"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
 
           {task.status === "rejected" && (
             <Button 
