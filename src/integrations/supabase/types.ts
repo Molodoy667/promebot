@@ -2003,6 +2003,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          additional_links: string[] | null
           available_executions: number | null
           balance_type: string | null
           budget: number
@@ -2029,6 +2030,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          additional_links?: string[] | null
           available_executions?: number | null
           balance_type?: string | null
           budget?: number
@@ -2055,6 +2057,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          additional_links?: string[] | null
           available_executions?: number | null
           balance_type?: string | null
           budget?: number

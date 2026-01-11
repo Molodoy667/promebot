@@ -121,7 +121,8 @@ const taskSchema = z.object({
     .max(6, "Максимум 6 годин"),
   requires_screenshot: z.boolean(),
   max_completions: z.coerce.number().min(0, "Не може бути від'ємним").optional(),
-  telegram_channel_link: z.string()
+  telegram_channel_link: z.string(),
+  additional_links: z.array(z.string().url("Невірний формат посилання")).max(3, "Максимум 3 додаткових посилання").optional()
     .refine((val) => {
       if (!val) return true; // Optional field
       // Accept t.me links, @username, or plain username
@@ -152,6 +153,7 @@ const CreateTask = () => {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [additionalLinks, setAdditionalLinks] = useState<string[]>([]);
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -164,6 +166,7 @@ const CreateTask = () => {
       requires_screenshot: false,
       max_completions: undefined,
       telegram_channel_link: "",
+      additional_links: [],
       task_type: "general",
       balance_type: "bonus",
     },
@@ -897,6 +900,53 @@ const CreateTask = () => {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Additional Links */}
+              <div className="space-y-4 p-4 rounded-lg bg-muted/50 border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <LinkIcon className="w-4 h-4 text-primary" />
+                  Додаткові посилання (до 3)
+                </h3>
+                
+                {additionalLinks.map((link, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="https://example.com"
+                      value={link}
+                      onChange={(e) => {
+                        const newLinks = [...additionalLinks];
+                        newLinks[index] = e.target.value;
+                        setAdditionalLinks(newLinks);
+                        form.setValue('additional_links', newLinks.filter(l => l.trim()));
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const newLinks = additionalLinks.filter((_, i) => i !== index);
+                        setAdditionalLinks(newLinks);
+                        form.setValue('additional_links', newLinks.filter(l => l.trim()));
+                      }}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {additionalLinks.length < 3 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setAdditionalLinks([...additionalLinks, ''])}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Додати посилання
+                  </Button>
+                )}
               </div>
 
               {/* Settings */}
