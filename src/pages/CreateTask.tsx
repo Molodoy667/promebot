@@ -120,7 +120,8 @@ const taskSchema = z.object({
     .min(1, "Мінімум 1 година")
     .max(6, "Максимум 6 годин"),
   requires_screenshot: z.boolean(),
-  max_completions: z.coerce.number().optional(),
+  max_completions: z.coerce.number().min(0, "Не може бути від'ємним").optional(),
+  budget: z.coerce.number().min(1, "Мінімальний бюджет 1 ₴").max(100, "Максимальний бюджет 100 ₴").optional(),
   telegram_channel_link: z.string()
     .refine((val) => {
       if (!val) return true; // Optional field
@@ -161,8 +162,8 @@ const CreateTask = () => {
       category: "",
       reward_amount: 0.25,
       time_limit_hours: 1,
-      requires_screenshot: true,
-      max_completions: 1,
+      requires_screenshot: false,
+      max_completions: undefined,
       telegram_channel_link: "",
       task_type: "general",
       balance_type: "bonus",
