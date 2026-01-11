@@ -289,35 +289,6 @@ export const MySubmissionsList = () => {
                 <CardDescription className="line-clamp-2 text-sm leading-relaxed">
                   {task.description}
                 </CardDescription>
-
-                {/* Action Buttons */}
-                {submission.status === "in_progress" && (
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSubmitDialogTask({ ...task, submission });
-                      }}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      size="sm"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Здати
-                    </Button>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm("Ви впевнені що хочете скасувати виконання?")) {
-                          cancelSubmissionMutation.mutate(submission.id);
-                        }
-                      }}
-                      variant="destructive"
-                      size="sm"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
               </CardHeader>
             </Card>
           );
