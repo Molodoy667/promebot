@@ -29,14 +29,17 @@ export const AvailableTasksList = () => {
             user_id,
             status
           ),
-          profiles!tasks_user_id_fkey (
+          profiles:user_id (
             username,
             avatar_url
           )
         `)
         .eq("status", "active");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Tasks query error:", error);
+        throw error;
+      }
 
       // Mark tasks and filter
       return data?.map((task: any) => {
