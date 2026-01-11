@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Clock, CheckCircle, XCircle, ClipboardList, BarChart3, DollarSign, Users, Camera } from "lucide-react";
 import { differenceInMinutes, addHours } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SubmitTaskDialog } from "./SubmitTaskDialog";
+import { useState } from "react";
 
 interface MyTaskSubmissionDialogProps {
   submission: any;
@@ -17,7 +19,8 @@ interface MyTaskSubmissionDialogProps {
 export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTaskSubmissionDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const task = submission?.task;
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const task = submission.task;
 
   const getTimeRemaining = () => {
     if (!submission || submission.status !== "in_progress") return null;
