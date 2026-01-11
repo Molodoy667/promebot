@@ -120,6 +120,26 @@ export const MyTaskSubmissionDialog = ({ submission, open, onOpenChange }: MyTas
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
           </div>
 
+          {/* Additional Links */}
+          {task.additional_links && task.additional_links.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-3 text-sm">🔗 Додаткові посилання:</h4>
+              <div className="space-y-2">
+                {task.additional_links.map((link: string, index: number) => (
+                  <a
+                    key={index}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-blue-500/10 hover:bg-blue-500/20 p-3 rounded-lg border border-blue-500/20 transition-colors text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                  >
+                    {link}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Additional Images */}
           {task.images && task.images.length > 1 && (
             <div>
