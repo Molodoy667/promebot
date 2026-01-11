@@ -104,8 +104,14 @@ export default function QueueManagement() {
       )
       .subscribe();
 
+    // Fallback polling: Realtime can miss events due to RLS/network.
+    const pollId = window.setInterval(() => {
+      loadQueue();
+    }, 15_000);
+
     return () => {
       subscription.unsubscribe();
+      window.clearInterval(pollId);
     };
   }, [serviceId]);
 
@@ -498,58 +504,71 @@ export default function QueueManagement() {
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30">
                               <Clock className="w-3 h-3 mr-1" />
                               {(() => {
-                                const now = Date.now();
                                 const timezone = settings.timezone || 'Europe/Kiev';
-                                const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
-                                const currentHour = localTime.getHours();
-                                const currentMinute = localTime.getMinutes();
-                                const currentTimeInMinutes = currentHour * 60 + currentMinute;
-                                
-                                // Перший пост
-                                if (index === 0) {
-                                  if (timeFrom && timeTo) {
-                                    const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
-                                    const [toHour, toMinute] = timeTo.split(':').map(Number);
-                                    const fromTimeInMinutes = fromHour * 60 + fromMinute;
-                                    const toTimeInMinutes = toHour * 60 + toMinute;
-                                    
-                                    // Якщо ЗАРАЗ поза дозволеним діапазоном - чекаємо наступного вікна
-                                    if (currentTimeInMinutes < fromTimeInMinutes || currentTimeInMinutes >= toTimeInMinutes) {
-                                      return `Чекає ${timeFrom.substring(0, 5)}`;
-                                    }
+
+                                const toTzDate = (d: Date) => new Date(d.toLocaleString('en-US', { timeZone: timezone }));
+                                const nowLocal = toTzDate(new Date());
+
+                                const parseHm = (hm: string) => {
+                                  const [h, m] = hm.split(':').map(Number);
+                                  return { h, m, minutes: h * 60 + m };
+                                };
+
+                                const inWindow = (d: Date) => {
+                                  if (!timeFrom || !timeTo) return true;
+                                  const { minutes: fromMin } = parseHm(timeFrom);
+                                  const { minutes: toMin } = parseHm(timeTo);
+                                  const curMin = d.getHours() * 60 + d.getMinutes();
+                                  return curMin >= fromMin && curMin < toMin;
+                                };
+
+                                const nextWindowStart = (d: Date) => {
+                                  if (!timeFrom || !timeTo) return d;
+                                  const { h: fromH, m: fromM, minutes: fromMin } = parseHm(timeFrom);
+                                  const { minutes: toMin } = parseHm(timeTo);
+                                  const curMin = d.getHours() * 60 + d.getMinutes();
+
+                                  // before window -> today at timeFrom
+                                  if (curMin < fromMin) {
+                                    const res = new Date(d);
+                                    res.setHours(fromH, fromM, 0, 0);
+                                    return res;
                                   }
-                                  
-                                  return "Публікується...";
-                                }
-                                
-                                // Інші пости - рахуємо час з урахуванням інтервалу
+
+                                  // inside window -> keep
+                                  if (curMin >= fromMin && curMin < toMin) {
+                                    return d;
+                                  }
+
+                                  // after window -> tomorrow at timeFrom
+                                  const res = new Date(d);
+                                  res.setDate(res.getDate() + 1);
+                                  res.setHours(fromH, fromM, 0, 0);
+                                  return res;
+                                };
+
+                                // 1) base publish time for first post
+                                let base = nowLocal;
                                 if (lastPublishedAt) {
-                                  const lastPublishTime = new Date(lastPublishedAt).getTime();
-                                  const estimatedTime = new Date(lastPublishTime + (publishInterval * index * 60000));
-                                  
-                                  // Перевіряємо чи час в дозволеному діапазоні
-                                  if (timeFrom && timeTo) {
-                                    const estHour = estimatedTime.getHours();
-                                    const estMinute = estimatedTime.getMinutes();
-                                    const estTimeInMinutes = estHour * 60 + estMinute;
-                                    const [fromHour, fromMinute] = timeFrom.split(':').map(Number);
-                                    const [toHour, toMinute] = timeTo.split(':').map(Number);
-                                    const fromTimeInMinutes = fromHour * 60 + fromMinute;
-                                    const toTimeInMinutes = toHour * 60 + toMinute;
-                                    
-                                    // Якщо поза вікном - переносимо на наступний день
-                                    if (estTimeInMinutes < fromTimeInMinutes || estTimeInMinutes >= toTimeInMinutes) {
-                                      const tomorrow = new Date(estimatedTime);
-                                      tomorrow.setDate(tomorrow.getDate() + 1);
-                                      tomorrow.setHours(fromHour, fromMinute, 0, 0);
-                                      return `~${tomorrow.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })} (завтра)`;
-                                    }
-                                  }
-                                  
-                                  return `~${estimatedTime.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`;
+                                  base = toTzDate(new Date(new Date(lastPublishedAt).getTime() + publishInterval * 60_000));
                                 }
-                                
-                                return `Черга #${index + 1}`;
+                                base = nextWindowStart(base);
+
+                                // 2) each next post is base + interval * index
+                                let eta = new Date(base.getTime() + publishInterval * index * 60_000);
+                                eta = nextWindowStart(eta);
+
+                                // If we're outside the window right now, show explicit waiting for the first post
+                                if (index === 0 && timeFrom && timeTo && !inWindow(nowLocal)) {
+                                  return `Чекає ${timeFrom.substring(0, 5)}`;
+                                }
+
+                                // If interval is unknown (no lastPublishedAt and index>0), fall back to queue number
+                                if (!lastPublishedAt && index > 0) {
+                                  return `Черга #${index + 1}`;
+                                }
+
+                                return `~${eta.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`;
                               })()}
                             </Badge>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

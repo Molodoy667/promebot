@@ -59,9 +59,30 @@ export const SupabaseLimits = () => {
   });
   const [cleaningInProgress, setCleaningInProgress] = useState(false);
   const [expandedBuckets, setExpandedBuckets] = useState<Set<string>>(new Set());
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
   useEffect(() => {
-    loadStats();
+    let isMounted = true;
+    let intervalId: number | undefined;
+
+    const run = async () => {
+      if (!isMounted) return;
+      await loadStats();
+    };
+
+    // initial load
+    run();
+
+    // auto refresh every 30 minutes
+    intervalId = window.setInterval(() => {
+      // fire-and-forget; loadStats has its own error handling
+      void run();
+    }, 30 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) window.clearInterval(intervalId);
+    };
   }, []);
 
   const loadStats = async () => {
@@ -74,6 +95,8 @@ export const SupabaseLimits = () => {
         loadEdgeFunctionsStats(),
         loadRealtimeStats()
       ]);
+
+      setLastUpdatedAt(new Date());
     } catch (error) {
       console.error('Error loading stats:', error);
       toast({
@@ -183,7 +206,7 @@ export const SupabaseLimits = () => {
       // Count main tables
       const tables = [
         'profiles',
-        'bot_services', 
+        'bot_services',
         'telegram_bots',
         'tariffs',
         'subscriptions',
@@ -204,15 +227,13 @@ export const SupabaseLimits = () => {
         'audit_log'
       ];
 
-      let totalRows = 0;
-      
       // Count rows in parallel
       const counts = await Promise.all(
         tables.map(async (table) => {
           try {
             const { count } = await (supabase
               .from(table as any)
-              .select("*", { count: "exact", head: true }) as any);
+              .select('*', { count: 'exact', head: true }) as any);
             return count || 0;
           } catch {
             return 0;
@@ -220,17 +241,28 @@ export const SupabaseLimits = () => {
         })
       );
 
-      totalRows = counts.reduce((sum, count) => sum + count, 0);
+      const totalRows = counts.reduce((sum, count) => sum + count, 0);
 
-      // Estimate database size (rough calculation)
-      // Average row size ~2KB + indexes
+      // Try to get real DB size via RPC (admin-only)
+      let sizeBytes: number | null = null;
+      try {
+        const { data, error } = await supabase.rpc('get_database_size_bytes');
+        if (!error && typeof data === 'number') {
+          sizeBytes = data;
+        }
+      } catch {
+        // ignore; fallback below
+      }
+
+      // Fallback estimate if RPC isn't available/allowed
       const estimatedSizeBytes = totalRows * 2048;
+      const usedBytes = sizeBytes ?? estimatedSizeBytes;
 
       setDbStats({
         tables: tables.length,
-        totalRows: totalRows,
-        size: formatBytes(estimatedSizeBytes),
-        estimatedSizeBytes: estimatedSizeBytes
+        totalRows,
+        size: formatBytes(usedBytes),
+        estimatedSizeBytes: usedBytes
       });
     } catch (error) {
       console.error('Error loading database stats:', error);
@@ -559,6 +591,11 @@ export const SupabaseLimits = () => {
           <p className="text-sm text-muted-foreground">
             Відстеження використання ресурсів проєкту
           </p>
+          {lastUpdatedAt && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Останнє оновлення: {lastUpdatedAt.toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
         </div>
         <Button onClick={loadStats} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
