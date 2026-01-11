@@ -203,9 +203,9 @@ export const AvailableTasksList = () => {
               </div>
 
               {/* Category */}
-              {task.task_type && (
+              {task.category && (
                 <Badge variant="outline" className="w-fit text-xs">
-                  {categoryLabels[task.task_type] || task.task_type}
+                  {categoryLabels[task.category] || task.category}
                 </Badge>
               )}
 
