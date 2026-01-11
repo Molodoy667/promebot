@@ -197,17 +197,17 @@ export const AvailableTasksList = () => {
                 </Badge>
               </div>
 
-              {/* Title */}
-              <CardTitle className="line-clamp-2 text-base leading-tight">
-                {task.title}
-              </CardTitle>
-              
               {/* Category */}
               {task.task_type && (
                 <Badge variant="outline" className="w-fit text-xs">
                   {categoryLabels[task.task_type] || task.task_type}
                 </Badge>
               )}
+
+              {/* Title */}
+              <CardTitle className="line-clamp-2 text-base leading-tight">
+                {task.title}
+              </CardTitle>
               
               {/* Description */}
               <CardDescription className="line-clamp-2 text-xs leading-relaxed">
@@ -220,29 +220,29 @@ export const AvailableTasksList = () => {
               </div>
 
               {/* Stats Counters */}
-              <div className="flex gap-2 justify-center pt-2">
+              <div className="grid grid-cols-3 gap-2">
                 {/* Approved */}
-                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-green-500 bg-green-50 dark:bg-green-950 min-w-[60px]">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-green-500/10 border border-green-500/30">
+                  <svg className="w-3.5 h-3.5 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm font-bold text-green-700 dark:text-green-400">{counters.approved}</span>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-500">{counters.approved}</span>
                 </div>
                 
                 {/* In Progress */}
-                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950 min-w-[60px]">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/30">
+                  <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{counters.inProgress}</span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-500">{counters.inProgress}</span>
                 </div>
                 
                 {/* Rejected */}
-                <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950 min-w-[60px]">
-                  <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-red-500/10 border border-red-500/30">
+                  <svg className="w-3.5 h-3.5 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  <span className="text-sm font-bold text-red-700 dark:text-red-400">{counters.rejected}</span>
+                  <span className="text-sm font-bold text-red-600 dark:text-red-500">{counters.rejected}</span>
                 </div>
               </div>
             </CardHeader>
