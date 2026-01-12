@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Bot, Menu, X, Sparkles, CreditCard } from "lucide-react";
 import { useGeneralSettings } from "@/hooks/useGeneralSettings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -19,6 +19,7 @@ export const Header = ({ isAuthenticated, profile, userRole, isMobileSidebar, ha
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { settings } = useGeneralSettings();
   const navigate = useNavigate();
+  const sidebar = isMobileSidebar ? useSidebar() : null;
 
   const scrollToSection = (sectionId: string) => {
     setIsMenuOpen(false);
@@ -32,36 +33,54 @@ export const Header = ({ isAuthenticated, profile, userRole, isMobileSidebar, ha
     return (
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/30">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 group">
-            {settings.logo_url ? (
-              <img 
-                src={settings.logo_url} 
-                alt={settings.site_name} 
-                className="h-10 w-auto object-contain animate-pulse hover:scale-110 transition-transform duration-300"
-                style={{ animationDuration: '3s' }}
-              />
-            ) : (
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse group-hover:scale-110 transition-transform duration-300" style={{ animationDuration: '3s' }}>
-                <div className="absolute inset-0 rounded-xl bg-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
-                <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
-              </div>
-            )}
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
-              {settings.site_name || "TelePostBot"}
-            </span>
+          <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-3 group relative">
+            <div className="relative">
+              {settings.logo_url ? (
+                <>
+                  <div className="absolute inset-0 rounded-xl bg-primary/10 group-hover:bg-primary/20 blur-md transition-all duration-500" />
+                  <img 
+                    src={settings.logo_url} 
+                    alt={settings.site_name} 
+                    className="h-11 w-auto object-contain group-hover:scale-105 transition-transform duration-500 relative z-10"
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="absolute inset-0 rounded-xl bg-primary/5 group-hover:bg-primary/10 blur-md transition-all duration-500" />
+                  <div className="relative w-11 h-11 rounded-xl backdrop-blur-xl bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 flex items-center justify-center shadow-lg group-hover:scale-105 transition-all duration-500 border border-white/10 group-hover:border-white/20">
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10" />
+                    <Bot className="w-6 h-6 text-primary/80 relative z-10 group-hover:text-primary transition-colors duration-300" />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="relative px-3 py-1.5 rounded-lg backdrop-blur-md bg-slate-800/20 border border-white/5 group-hover:border-white/10 transition-all duration-500">
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <span className="relative text-xl font-bold text-foreground/90 group-hover:text-foreground transition-colors duration-300 tracking-tight">
+                {settings.site_name || "TelePostBot"}
+              </span>
+            </div>
           </Link>
 
-          <SidebarTrigger className="p-0 hover:bg-transparent focus:outline-none relative">
-            <Avatar className="w-10 h-10 border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
-              <AvatarImage src={profile?.avatar_url || profile?.telegram_photo_url} />
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold">
-                {profile?.full_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            {hasUnreadTickets && (
-              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-success rounded-full animate-pulse border-2 border-background" />
-            )}
-          </SidebarTrigger>
+          <button 
+            onClick={() => sidebar?.toggleSidebar()}
+            className="p-0 hover:bg-transparent focus:outline-none relative group"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-primary-glow to-primary opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300" />
+              <div className="w-10 h-10 border-2 border-primary/30 group-hover:border-primary group-hover:scale-110 transition-all duration-300 cursor-pointer shadow-lg relative z-10 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/10 flex items-center justify-center">
+                {sidebar?.openMobile ? (
+                  <X className="w-5 h-5 text-primary transition-transform group-hover:rotate-90 duration-300" />
+                ) : (
+                  <Menu className="w-5 h-5 text-primary transition-transform group-hover:scale-110 duration-300" />
+                )}
+              </div>
+              {hasUnreadTickets && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-success rounded-full animate-pulse border-2 border-background z-20" />
+              )}
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/20 to-primary-glow/20 opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-300" style={{ animationDuration: '2s' }} />
+            </div>
+          </button>
         </div>
       </header>
     );
@@ -70,23 +89,33 @@ export const Header = ({ isAuthenticated, profile, userRole, isMobileSidebar, ha
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 backdrop-blur-xl bg-background/30">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 group">
-          {settings.logo_url ? (
-            <img 
-              src={settings.logo_url} 
-              alt={settings.site_name} 
-              className="h-10 w-auto object-contain animate-pulse hover:scale-110 transition-transform duration-300"
-              style={{ animationDuration: '3s' }}
-            />
-          ) : (
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow animate-pulse group-hover:scale-110 transition-transform duration-300" style={{ animationDuration: '3s' }}>
-              <div className="absolute inset-0 rounded-xl bg-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
-              <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
-            </div>
-          )}
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
-            {settings.site_name || "TelePostBot"}
-          </span>
+        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-3 group relative">
+          <div className="relative">
+            {settings.logo_url ? (
+              <>
+                <div className="absolute inset-0 rounded-xl bg-primary/10 group-hover:bg-primary/20 blur-md transition-all duration-500" />
+                <img 
+                  src={settings.logo_url} 
+                  alt={settings.site_name} 
+                  className="h-11 w-auto object-contain group-hover:scale-105 transition-transform duration-500 relative z-10"
+                />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 rounded-xl bg-primary/5 group-hover:bg-primary/10 blur-md transition-all duration-500" />
+                <div className="relative w-11 h-11 rounded-xl backdrop-blur-xl bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 flex items-center justify-center shadow-lg group-hover:scale-105 transition-all duration-500 border border-white/10 group-hover:border-white/20">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10" />
+                  <Bot className="w-6 h-6 text-primary/80 relative z-10 group-hover:text-primary transition-colors duration-300" />
+                </div>
+              </>
+            )}
+          </div>
+          <div className="relative px-3 py-1.5 rounded-lg backdrop-blur-md bg-slate-800/20 border border-white/5 group-hover:border-white/10 transition-all duration-500">
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <span className="relative text-xl font-bold text-foreground/90 group-hover:text-foreground transition-colors duration-300 tracking-tight">
+              {settings.site_name || "TelePostBot"}
+            </span>
+          </div>
         </Link>
 
         {isAuthenticated ? (

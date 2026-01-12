@@ -694,6 +694,23 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         setVerificationProgress("Крок 2/4: Перевірка публічного каналу...");
         await new Promise(resolve => setTimeout(resolve, 1000));
         
+        // First check if it's a channel (not a group)
+        const getChatResponse = await fetch(
+          `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${channelIdentifier}`
+        );
+        const getChatData = await getChatResponse.json();
+        
+        if (getChatData.ok && getChatData.result.type !== 'channel') {
+          toast({
+            title: "Неправильний тип",
+            description: `Це не канал, а ${getChatData.result.type === 'group' ? 'група' : getChatData.result.type === 'supergroup' ? 'супергрупа' : 'чат'}. Будь ласка, вкажіть посилання на канал (не групу/спільноту).`,
+            variant: "destructive",
+            duration: 5000,
+          });
+          setIsCheckingBot(false);
+          return;
+        }
+        
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
           body: {
             botToken: botToken,

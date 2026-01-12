@@ -337,6 +337,18 @@ const CreateTask = () => {
       if (error) throw error;
 
       if (data?.success && data?.channelInfo) {
+        // Check if it's a channel (not a group or supergroup)
+        if (data.channelInfo.type && data.channelInfo.type !== 'channel') {
+          setChannelInfo(null);
+          toast({ 
+            title: "Помилка", 
+            description: `Це не канал, а ${data.channelInfo.type === 'group' ? 'група' : data.channelInfo.type === 'supergroup' ? 'супергрупа' : 'чат'}. Будь ласка, вкажіть посилання на канал (не групу/спільноту).`,
+            variant: "destructive",
+            duration: 5000
+          });
+          return;
+        }
+        
         setChannelInfo(data.channelInfo);
         toast({ 
           title: "Успішно", 

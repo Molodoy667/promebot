@@ -332,12 +332,13 @@ export const DesktopSidebar = ({ isAdmin, isModerator, isVip, userId }: DesktopS
         variant="ghost"
         size="icon"
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-4 w-6 h-6 rounded-full border border-border bg-card shadow-sm hover:bg-accent"
+        className="absolute -right-3 top-4 w-8 h-8 rounded-full border-2 border-primary/30 bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg hover:shadow-primary/50 hover:border-primary hover:scale-110 transition-all duration-300 group"
       >
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-primary-glow to-primary opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300" />
         {collapsed ? (
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4 relative z-10 group-hover:text-primary transition-colors" />
         ) : (
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 relative z-10 group-hover:text-primary transition-colors" />
         )}
       </Button>
     </aside>
