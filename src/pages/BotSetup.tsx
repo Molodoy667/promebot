@@ -2049,16 +2049,19 @@ const BotSetup = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <Input
-                  id="targetChannel"
-                  placeholder="@channel або https://t.me/channel"
-                  value={targetChannel}
-                  onChange={(e) => setTargetChannel(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Введіть @username або посилання на публічний канал
-                </p>
-              ) : (
+                <div className="space-y-2">
+                  <Input
+                    id="targetChannel"
+                    placeholder="@channel або https://t.me/channel"
+                    value={targetChannel}
+                    onChange={(e) => setTargetChannel(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Введіть @username або посилання на публічний канал
+                  </p>
+                </div>
+              </div>
+                ) : (
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="targetInviteLink">Invite-посилання</Label>
