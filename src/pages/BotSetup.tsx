@@ -2009,7 +2009,6 @@ const BotSetup = () => {
             </div>
           </Card>
         </div>
-      </div>
       </>
     );
   }
