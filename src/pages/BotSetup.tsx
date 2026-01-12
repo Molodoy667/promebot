@@ -2058,8 +2058,7 @@ const BotSetup = () => {
                 <p className="text-xs text-muted-foreground">
                   Введіть @username або посилання на публічний канал
                 </p>
-              </div>
-                ) : (
+              ) : (
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="targetInviteLink">Invite-посилання</Label>
