@@ -557,7 +557,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
   };
 
   const handleVerifyChannel = async () => {
-    if (!targetChannel && targetChannelType === "public") {
+    if (!targetChannel) {
       toast({
         title: "Помилка",
         description: "Вкажіть цільовий канал",
@@ -571,20 +571,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
     setVerificationProgress("🔍 Крок 1/4: Перевірка формату каналу...");
 
     try {
-      // Приватний канал через spy
-      if (targetChannelType === "private") {
-        if (!targetInviteLink.trim()) {
-          toast({
-            title: "Помилка",
-            description: "Для приватного каналу вкажіть invite-посилання",
-            variant: "destructive",
-            duration: 3000,
-          });
-          setIsCheckingBot(false);
-          return;
-        }
-
-        setVerificationProgress("🔐 Крок 2/4: Підключення через spy до приватного каналу...");
+      const channelInput = targetChannel.trim();
+      
+      // Автоматично визначаємо приватний канал за invite-посиланням
+      if (channelInput.includes('t.me/+') || channelInput.includes('t.me/joinchat/')) {
+        setVerificationProgress("🔐 Крок 2/4: Підключення через userbot до приватного каналу...");
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Отримуємо активного spy
@@ -598,7 +589,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         if (!activeSpy) {
           toast({
-            title: "Spy недоступний",
+            title: "Userbot недоступний",
             description: "Немає активного userbot для приватних каналів. Зверніться до адміністратора.",
             variant: "destructive",
             duration: 5000,
@@ -611,7 +602,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
           body: {
             spy_id: activeSpy.id,
-            channel_identifier: targetInviteLink.trim()
+            channel_identifier: channelInput
           }
         });
 
@@ -626,7 +617,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
 
-        setVerificationProgress("✅ Крок 3/4: Канал підключено через spy...");
+        setVerificationProgress("✅ Крок 3/4: Приватний канал підключено...");
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Зберігаємо chat_id з spy
@@ -1262,44 +1253,18 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           </Alert>
 
           <div className="space-y-4">
-            <div className="space-y-3">
-              <Label>Тип цільового каналу</Label>
-              <RadioGroup
-                value={targetChannelType}
-                onValueChange={(value: "public" | "private") => {
-                  setTargetChannelType(value);
-                  setChannelVerified(false);
-                }}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="public" id="ai-target-public" />
-                  <Label htmlFor="ai-target-public" className="cursor-pointer font-normal">
-                    Публічний канал
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="private" id="ai-target-private" />
-                  <Label htmlFor="ai-target-private" className="cursor-pointer font-normal">
-                    Приватний канал
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {targetChannelType === "public" ? (
-              <div className="space-y-2">
-                <Label htmlFor="target-channel">Username або посилання</Label>
-                <p className="text-xs text-muted-foreground">
-                  Підтримуються всі формати: @channel, channel, https://t.me/channel
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    id="target-channel"
-                    placeholder="@channel або t.me/channel"
-                    value={targetChannel}
-                    onChange={(e) => setTargetChannel(e.target.value)}
-                  />
+            <div className="space-y-2">
+              <Label htmlFor="target-channel">Цільовий канал</Label>
+              <p className="text-xs text-muted-foreground">
+                Підтримуються всі формати: @channel, https://t.me/channel, https://t.me/+invite
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  id="target-channel"
+                  placeholder="@channel, t.me/channel або t.me/+invite"
+                  value={targetChannel}
+                  onChange={(e) => setTargetChannel(e.target.value)}
+                />
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="icon">
@@ -1321,25 +1286,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
                   </PopoverContent>
                 </Popover>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                <strong>Публічний:</strong> @username або t.me/username<br />
+                <strong>Приватний:</strong> t.me/+invite (userbot приєднається автоматично)
+              </p>
             </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="ai-target-invite">Invite-посилання</Label>
-                    <Input
-                      id="ai-target-invite"
-                      placeholder="https://t.me/+AbCdEf123 або t.me/joinchat/xxx"
-                      value={targetInviteLink}
-                      onChange={(e) => setTargetInviteLink(e.target.value)}
-                      className="mt-2"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Введіть invite-посилання на приватний канал. Userbot приєднається автоматично.
-                    </p>
-                  </div>
-                </div>
-              )}
-
 
             <Button 
               onClick={handleVerifyChannel} 
