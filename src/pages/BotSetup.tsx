@@ -1919,8 +1919,8 @@ const BotSetup = () => {
                   <div className="text-sm space-y-2">
                     <p className="font-semibold text-blue-700 dark:text-blue-300">Як підключити канал:</p>
                     <div className="space-y-1 text-blue-600 dark:text-blue-400">
-                      <p className="break-words"><strong>Публічні канали:</strong> вкажіть @username або посилання https://t.me/username</p>
-                      <p className="break-words"><strong>Приватні канали:</strong> вкажіть посилання-запрошення (формат: t.me/+invite)</p>
+                      <p className="break-words"><strong>Публічний:</strong> @username або https://t.me/username</p>
+                      <p className="break-words"><strong>Приватний:</strong> https://t.me/+xxx (userbot приєднається автоматично)</p>
                     </div>
                   </div>
                 </AlertDescription>
