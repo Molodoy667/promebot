@@ -1246,8 +1246,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
             <AlertDescription>
               <strong>Підключення каналу:</strong>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li><strong>Публічний канал:</strong> введіть username (наприклад: <code>mychannel</code>)</li>
-                <li><strong>Приватний канал:</strong> використовуйте числовий chat_id (наприклад: <code>-1001234567890</code>)</li>
+                <li><strong>Публічний:</strong> @username або https://t.me/username</li>
+                <li><strong>Приватний:</strong> https://t.me/+xxx (наш агент для збору статистики приєднається автоматично. <strong className="text-destructive">Ні в якому разі не видаляйте його з каналу!</strong>)</li>
               </ul>
             </AlertDescription>
           </Alert>
