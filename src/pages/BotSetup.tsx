@@ -1927,7 +1927,7 @@ const BotSetup = () => {
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="targetChannel">Цільовий канал</Label>
+
                   </div>
                 <Input
                   id="targetChannel"
