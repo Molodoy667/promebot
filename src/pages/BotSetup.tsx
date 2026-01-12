@@ -1976,8 +1976,9 @@ const BotSetup = () => {
                 </div>
 
                 {targetChannelType === "public" ? (
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="targetChannel">Username або посилання</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="targetChannel">Username або посилання</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button type="button" className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-muted hover:bg-muted/80 transition-colors">
@@ -2047,9 +2048,8 @@ const BotSetup = () => {
                         </div>
                       </div>
                     </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
+                    </Popover>
+                  </div>
                   <Input
                     id="targetChannel"
                     placeholder="@channel або https://t.me/channel"
@@ -2060,7 +2060,6 @@ const BotSetup = () => {
                     Введіть @username або посилання на публічний канал
                   </p>
                 </div>
-              </div>
                 ) : (
                   <div className="space-y-3">
                     <div>
