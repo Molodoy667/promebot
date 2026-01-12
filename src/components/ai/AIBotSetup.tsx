@@ -1258,20 +1258,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
               <p className="text-xs text-muted-foreground">
                 Підтримуються всі формати: @channel, https://t.me/channel, https://t.me/+invite
               </p>
-              <div className="flex gap-2">
-                <Input
-                  id="target-channel"
-                  placeholder="@channel, t.me/channel або t.me/+invite"
-                  value={targetChannel}
-                  onChange={(e) => setTargetChannel(e.target.value)}
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <HelpCircle className="w-4 h-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
+              <Input
+                id="target-channel"
+                placeholder="@channel, t.me/channel або t.me/+invite"
+                value={targetChannel}
+                onChange={(e) => setTargetChannel(e.target.value)}
+              />
                     <div className="space-y-2">
                       <h4 className="font-medium">Як отримати chat_id?</h4>
                       <p className="text-sm text-muted-foreground">
