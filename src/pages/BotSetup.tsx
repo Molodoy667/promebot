@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -1919,86 +1919,15 @@ const BotSetup = () => {
                   <div className="text-sm space-y-2">
                     <p className="font-semibold text-blue-700 dark:text-blue-300">Як підключити канал:</p>
                     <div className="space-y-1 text-blue-600 dark:text-blue-400">
-                      <p className="break-words"><strong>Публічні канали:</strong> вкажіть @username або посилання https://t.me/username</p>
-                      <p className="break-words"><strong>Приватні канали:</strong> вкажіть посилання-запрошення (формат: t.me/+invite)</p>
+                      <p className="break-words"><strong>Публічний канал:</strong> введіть @username або https://t.me/username</p>
+                      <p className="break-words"><strong>Приватний канал:</strong> введіть invite-посилання https://t.me/+xxx (userbot приєднається автоматично та передасть дані боту)</p>
                     </div>
                   </div>
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="targetChannel">Цільовий канал</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-muted hover:bg-muted/80 transition-colors">
-                        <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 z-[100]" side="top" align="start">
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <p className="font-semibold text-sm">Приватний канал</p>
-                          <p className="text-xs text-muted-foreground">
-                            Для читання постів боту <strong>НЕ потрібні</strong> права адміністратора!
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2 text-xs">
-                          <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                            <p className="font-medium">Як підключити:</p>
-                            <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                              <li>Додайте бота в приватний канал як звичайного учасника</li>
-                              <li>Отримайте числовий chat_id каналу</li>
-                              <li>Вкажіть chat_id нижче (формат: -1001234567890)</li>
-                            </ol>
-                          </div>
-                          
-                          <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                            <p className="font-medium">Як отримати chat_id:</p>
-                            <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                              <li>Додайте @userinfobot або @JsonDumpBot у Telegram</li>
-                              <li>Перешліть повідомлення з приватного каналу в бота</li>
-                              <li>Бот покаже вам chat_id каналу</li>
-                            </ol>
-                            
-                            <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  window.open('https://t.me/userinfobot', '_blank');
-                                  toast({
-                                    title: "Відкрито @userinfobot",
-                                    description: "Натисніть /start в боті",
-                                    duration: 3000,
-                                  });
-                                }}
-                                className="text-xs h-7"
-                              >
-                                Відкрити @userinfobot
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  window.open('https://t.me/JsonDumpBot', '_blank');
-                                  toast({
-                                    title: "Відкрито @JsonDumpBot",
-                                    description: "Натисніть /start в боті",
-                                    duration: 3000,
-                                  });
-                                }}
-                                className="text-xs h-7"
-                              >
-                                Відкрити @JsonDumpBot
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                    </Popover>
+                <Label htmlFor="targetChannel">Цільовий канал</Label>
                   </div>
                 <Input
                   id="targetChannel"
@@ -2006,10 +1935,6 @@ const BotSetup = () => {
                   value={targetChannel}
                   onChange={(e) => setTargetChannel(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  <strong>Публічний:</strong> @username або t.me/username<br />
-                  <strong>Приватний:</strong> t.me/+invite (userbot приєднається автоматично)
-                </p>
               </div>
               
               {/* Verification Progress */}
