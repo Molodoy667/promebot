@@ -1264,24 +1264,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
                 value={targetChannel}
                 onChange={(e) => setTargetChannel(e.target.value)}
               />
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Як отримати chat_id?</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Для приватних каналів потрібен chat_id. Щоб його отримати:
-                      </p>
-                      <ol className="list-decimal list-inside text-sm space-y-1">
-                        <li>Перешліть будь-яке повідомлення з каналу боту <code>@userinfobot</code></li>
-                        <li>Або використайте <code>@JsonDumpBot</code> - він покаже структуру повідомлення</li>
-                        <li>Chat_id буде в полі "forward_from_chat" → "id"</li>
-                      </ol>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                <strong>Публічний:</strong> @username або t.me/username<br />
-                <strong>Приватний:</strong> t.me/+invite (userbot приєднається автоматично)
-              </p>
             </div>
 
             <Button 
