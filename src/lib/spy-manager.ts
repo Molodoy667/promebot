@@ -133,3 +133,46 @@ export async function attachSpyToSourceChannel(
   
   return spy.id;
 }
+
+/**
+ * Відключає юзербота від каналу (покидає канал)
+ * @param channelIdentifier - @username, посилання або chat_id каналу
+ * @param spyId - ID юзербота
+ * @returns Promise з результатом відключення
+ */
+export async function leaveSpyFromChannel(
+  channelIdentifier: string,
+  spyId: string
+): Promise<SpyJoinResult> {
+  try {
+    if (!spyId) {
+      return { success: false, error: 'spy_id is required' };
+    }
+
+    console.log('[Spy Manager] Leaving spy from channel:', channelIdentifier);
+
+    // Викликаємо Edge Function
+    const { data, error } = await supabase.functions.invoke('spy-leave-channel', {
+      body: {
+        spy_id: spyId,
+        channel_identifier: channelIdentifier
+      }
+    });
+
+    if (error) {
+      console.warn('[Spy Manager] Leave warning:', error.message);
+      return { success: false, spyId, error: error.message };
+    }
+
+    if (!data?.success) {
+      return { success: false, spyId, error: data?.error || 'Failed to leave channel' };
+    }
+
+    console.log('[Spy Manager] Successfully left channel');
+    return { success: true, spyId };
+
+  } catch (err: any) {
+    console.error('[Spy Manager] Error leaving channel:', err.message);
+    return { success: false, error: err.message };
+  }
+}

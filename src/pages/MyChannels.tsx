@@ -940,6 +940,26 @@ const MyChannels = () => {
     try {
       const serviceId = groupToDelete.service.id;
       const serviceType = groupToDelete.type;
+      const targetChannel = groupToDelete.service.target_channel;
+      const spyId = groupToDelete.service.spy_id;
+      
+      // Відключаємо юзербота від target_channel ПЕРЕД видаленням
+      if (spyId && targetChannel) {
+        console.log('[MyChannels] Leaving spy from target channel:', targetChannel);
+        const { leaveSpyFromChannel } = await import('@/lib/spy-manager');
+        await leaveSpyFromChannel(targetChannel, spyId);
+      }
+
+      // Відключаємо юзербота від source_channels (для плагіатор бота)
+      if (serviceType === 'plagiarist' && groupToDelete.sourceChannels) {
+        const { leaveSpyFromChannel } = await import('@/lib/spy-manager');
+        for (const source of groupToDelete.sourceChannels) {
+          if (source.spy_id && source.channel_username) {
+            console.log('[MyChannels] Leaving spy from source channel:', source.channel_username);
+            await leaveSpyFromChannel(source.channel_username, source.spy_id);
+          }
+        }
+      }
       
       // Delete posts history
       if (serviceType === 'plagiarist') {
@@ -988,7 +1008,7 @@ const MyChannels = () => {
 
       toast({
         title: "Канал видалено",
-        description: "Канал, пости та статистика успішно видалені",
+        description: "Канал видалено, юзербот відключено від усіх каналів",
         duration: 2000,
       });
       

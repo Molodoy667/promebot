@@ -1785,6 +1785,9 @@ const BotSetup = () => {
 
   const handleDeleteSourceChannel = async (channelId: string) => {
     try {
+      // Отримуємо дані каналу перед видаленням
+      const channelToDelete = sourceChannels.find(ch => ch.id === channelId);
+      
       const { error } = await supabase
         .from("source_channels")
         .delete()
@@ -1792,11 +1795,18 @@ const BotSetup = () => {
 
       if (error) throw error;
 
+      // Відключаємо юзербота від каналу
+      if (channelToDelete?.spy_id && channelToDelete?.channel_username) {
+        console.log('[Bot Setup] Leaving spy from source channel:', channelToDelete.channel_username);
+        const { leaveSpyFromChannel } = await import('@/lib/spy-manager');
+        await leaveSpyFromChannel(channelToDelete.channel_username, channelToDelete.spy_id);
+      }
+
       setSourceChannels(sourceChannels.filter(ch => ch.id !== channelId));
       
       toast({
         title: "Канал видалено",
-        description: "Канал-джерело успішно видалено",
+        description: "Канал-джерело видалено, юзербот відключено",
         duration: 1500,
       });
     } catch (error: any) {
@@ -2083,62 +2093,6 @@ const BotSetup = () => {
                   <p className="text-sm text-destructive">{targetChannelError}</p>
                 )}
               </div>
-              
-              {/* Verification Progress */}
-              {(isCheckingBot || verificationStatus.isMember !== null) && (
-                <Card className="p-4 bg-muted/30">
-                  <h3 className="font-semibold mb-3">Прогрес перевірки:</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      {isCheckingBot && verificationStatus.isMember === null ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                      ) : verificationStatus.isMember === true ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      ) : verificationStatus.isMember === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">✕</span>
-                      ) : null}
-                      <span className={verificationStatus.isMember === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Бот доданий в канал
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      {isCheckingBot && verificationStatus.hasPermissions === null ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                      ) : verificationStatus.hasPermissions === true ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      ) : verificationStatus.hasPermissions === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">✕</span>
-                      ) : null}
-                      <span className={verificationStatus.hasPermissions === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Бот має права адміністратора
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {!isCheckingBot && verificationStatus.isMember !== null && (
-                    verificationStatus.isMember && verificationStatus.hasPermissions ? (
-                      <Alert className="mt-3 bg-green-500/10 border-green-500/20">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <AlertDescription>
-                          <div className="text-green-600 dark:text-green-400">
-                            Всі перевірки пройдено успішно! Бот готовий до роботи.
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <Alert className="mt-3 bg-red-500/10 border-red-500/20">
-                        <Info className="w-4 h-4 text-red-500" />
-                        <AlertDescription>
-                          <div className="text-red-600 dark:text-red-400 font-semibold">
-                            Виявлено помилки. Будь ласка, виправте їх та спробуйте знову.
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )
-                  )}
-                </Card>
-              )}
               
               <Button onClick={handleVerifyBot} disabled={isCheckingBot || !targetChannel} className="w-full h-12 text-base">
                 {isCheckingBot ? (
