@@ -1350,13 +1350,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         <div className="space-y-6">
             <div className="space-y-6">
           
-          {/* Warning alert about settings changes */}
-          <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <AlertDescription className="text-sm">
-              При зміні категорій або промта всі згенеровані публікації будуть очищені та згенеровані заново з новими налаштуваннями.
-            </AlertDescription>
-          </Alert>
+          {/* Warning alert about settings changes - only show when editing existing service */}
+          {service && (
+            <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-sm">
+                При зміні категорій або промта всі згенеровані публікації будуть очищені та згенеровані заново з новими налаштуваннями.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
