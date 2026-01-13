@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowDownCircle, ArrowUpCircle, Loader2, Sparkles } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Transaction {
   id: string;
@@ -22,6 +23,7 @@ interface TransactionsHistoryProps {
 export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all"); // all, main, bonus
 
   useEffect(() => {
     loadTransactions();
@@ -55,7 +57,7 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(10);
 
       if (error) throw error;
       setTransactions(data || []);
@@ -176,23 +178,51 @@ export const TransactionsHistory = ({ userId }: TransactionsHistoryProps) => {
     );
   }
 
+  // Фільтрація транзакцій за типом балансу
+  const filteredTransactions = transactions.filter(transaction => {
+    if (filter === "all") return true;
+    
+    const bonusTransactionTypes = ['reward', 'referral_bonus', 'referral_commission', 'purchase_bonus', 'roulette_win', 'task_reward', 'bonus'];
+    const fromBonus = transaction.metadata && typeof transaction.metadata === 'object' && 'from_bonus' in transaction.metadata && transaction.metadata.from_bonus;
+    const isBonusTransaction = bonusTransactionTypes.includes(transaction.type) || fromBonus;
+    
+    if (filter === "bonus") return isBonusTransaction;
+    if (filter === "main") return !isBonusTransaction;
+    
+    return true;
+  });
+
   return (
     <Card className="glass-effect border-border/50">
       <CardHeader>
-        <CardTitle>Мої операції</CardTitle>
-        <CardDescription>
-          Історія поповнень та списань
-        </CardDescription>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle>Мої операції</CardTitle>
+            <CardDescription>
+              Історія поповнень та списань (останні 10)
+            </CardDescription>
+          </div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Тип балансу" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Всі операції</SelectItem>
+              <SelectItem value="main">Основний баланс</SelectItem>
+              <SelectItem value="bonus">Бонусний баланс</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
-        {transactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>Немає операцій</p>
           </div>
         ) : (
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-4">
-              {transactions.map((transaction) => (
+              {filteredTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-start gap-4 p-4 rounded-lg border border-border/50 hover:bg-accent/5 transition-colors"

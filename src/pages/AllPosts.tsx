@@ -54,6 +54,7 @@ export default function AllPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [actualPostsCount, setActualPostsCount] = useState(0); // Реальна кількість з bot_global_stats
   const [channelInfo, setChannelInfo] = useState<any>(null);
   const postsPerPage = 10;
   const maxPosts = 100;
@@ -147,7 +148,25 @@ export default function AllPosts() {
       const table = serviceType === 'plagiarist' ? 'posts_history' : 'ai_generated_posts';
       const idField = serviceType === 'plagiarist' ? 'bot_service_id' : 'ai_bot_service_id';
       
-      // Get total count
+      // Отримуємо реальний лічильник всіх публікацій (включно з видаленими)
+      const serviceTable = serviceType === 'plagiarist' ? 'bot_services' : 'ai_bot_services';
+      const { data: serviceData } = await supabase
+        .from(serviceTable)
+        .select('bot_id')
+        .eq('id', serviceId)
+        .single();
+      
+      if (serviceData?.bot_id) {
+        const { data: statsData } = await supabase
+          .from('bot_global_stats')
+          .select('total_posts')
+          .eq('bot_id', serviceData.bot_id)
+          .single();
+        
+        setActualPostsCount(statsData?.total_posts || 0);
+      }
+      
+      // Отримуємо кількість постів в БД (обмежена до maxPosts для відображення)
       const { count } = await (supabase as any)
         .from(table)
         .select('*', { count: 'exact', head: true })
@@ -167,6 +186,7 @@ export default function AllPosts() {
           .eq("bot_service_id", serviceId)
           .eq("status", "published")
           .order("created_at", { ascending: false })
+          .limit(maxPosts)
           .range(from, to);
 
         if (error) throw error;
@@ -194,7 +214,8 @@ export default function AllPosts() {
           .select("*")
           .eq("ai_bot_service_id", serviceId)
           .eq("status", "published")
-          .order("views", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(maxPosts)
           .range(from, to);
 
         if (error) throw error;
@@ -303,8 +324,21 @@ export default function AllPosts() {
                     )}
                   </div>
                   
-                  {/* Subtitle */}
-                  <h2 className="text-lg font-semibold">Топ публікацій</h2>
+                  {/* Subtitle & Stats */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-lg font-semibold">Топ публікацій</h2>
+                    {actualPostsCount > 0 && (
+                      <Badge variant="outline" className="bg-primary/10">
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                        {actualPostsCount.toLocaleString()} всього опубліковано
+                      </Badge>
+                    )}
+                    {totalPosts >= maxPosts && (
+                      <Badge variant="secondary" className="text-xs">
+                        Показано останні {maxPosts}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

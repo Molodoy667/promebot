@@ -20,7 +20,45 @@ serve(async (req) => {
       );
     }
 
-    // Check if bot is added to the channel
+    // Крок 1: Перевірка існування та типу каналу
+    const getChatUrl = `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${channelUsername}`;
+    const getChatResponse = await fetch(getChatUrl);
+    const getChatData = await getChatResponse.json();
+
+    if (!getChatData.ok) {
+      return new Response(
+        JSON.stringify({ 
+          isAdmin: false, 
+          isMember: false,
+          channelExists: false,
+          error: getChatData.description || 'Канал не знайдено'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Перевірка типу
+    if (getChatData.result.type !== 'channel') {
+      const typeMap: Record<string, string> = {
+        'group': 'група',
+        'supergroup': 'супергрупа',
+        'private': 'приватний чат'
+      };
+      const typeName = typeMap[getChatData.result.type] || getChatData.result.type;
+      
+      return new Response(
+        JSON.stringify({ 
+          isAdmin: false, 
+          isMember: false,
+          channelExists: true,
+          isChannel: false,
+          error: `Це ${typeName}, а не канал`
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Крок 2: Перевірка чи бот доданий
     const checkMemberUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${channelUsername}&user_id=${botToken.split(':')[0]}`;
     
     const response = await fetch(checkMemberUrl);
@@ -31,6 +69,8 @@ serve(async (req) => {
         JSON.stringify({ 
           isAdmin: false, 
           isMember: false,
+          channelExists: true,
+          isChannel: true,
           message: 'Бот не доданий до каналу. Будь ласка, додайте бота до вашого каналу.' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

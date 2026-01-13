@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,8 @@ import {
   FileText,
   HelpCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  XCircle
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
@@ -111,6 +112,7 @@ const BotSetup = () => {
   const [verificationProgress, setVerificationProgress] = useState("");
   const [verificationSteps, setVerificationSteps] = useState<string[]>([]);
   const [verificationCurrentStep, setVerificationCurrentStep] = useState(0);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   
   const [bots, setBots] = useState<TelegramBot[]>([]);
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
@@ -137,6 +139,7 @@ const BotSetup = () => {
   const [targetChannel, setTargetChannel] = useState("");
   const [targetChannelType, setTargetChannelType] = useState<"public" | "private">("public");
   const [targetInviteLink, setTargetInviteLink] = useState("");
+  const [targetChannelError, setTargetChannelError] = useState<string | null>(null);
   const [tariff, setTariff] = useState<Tariff | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [useKeywordFilter, setUseKeywordFilter] = useState(false);
@@ -660,15 +663,18 @@ const BotSetup = () => {
     setVerificationStatus({ isMember: null, hasPermissions: null });
     
     const steps = [
-      "Перевірка формату каналу...",
-      "Підключення до Telegram API...",
-      "Перевірка доступу бота...",
-      "Перевірка прав адміністратора...",
-      "Завершення налаштування..."
+      "Перевірка існування каналу",
+      "Визначення типу каналу",
+      "Підключення до Telegram API",
+      "Перевірка доступу бота",
+      "Перевірка прав адміністратора",
+      "Синхронізація налаштувань",
+      "Завершення підключення"
     ];
     setVerificationSteps(steps);
     setVerificationCurrentStep(0);
     setVerificationProgress(steps[0]);
+    setVerificationError(null);
 
     try {
       let channelIdentifier = targetChannel.trim();
@@ -863,32 +869,55 @@ const BotSetup = () => {
         setVerificationCurrentStep(0);
       } else {
         // Handle as public channel with username
-        setVerificationCurrentStep(2);
-        setVerificationProgress(steps[2]);
+        // Крок 1: Перевірка існування
+        setVerificationCurrentStep(1);
+        setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // First check if it's a channel (not a group)
         const getChatResponse = await fetch(
           `https://api.telegram.org/bot${selectedBot.bot_token}/getChat?chat_id=@${channelIdentifier}`
         );
         const getChatData = await getChatResponse.json();
         
-        if (getChatData.ok && getChatData.result.type !== 'channel') {
-          toast({
-            title: "Неправильний тип",
-            description: `Це не канал, а ${getChatData.result.type === 'group' ? 'група' : getChatData.result.type === 'supergroup' ? 'супергрупа' : 'чат'}. Будь ласка, вкажіть посилання на канал (не групу/спільноту).`,
-            variant: "destructive",
-            duration: 5000,
-          });
-          setIsCheckingBot(false);
-          setVerificationSteps([]);
-          setVerificationCurrentStep(0);
+        console.log('getChat response:', getChatData);
+        
+        if (!getChatData.ok) {
+          console.log('Channel not found or error:', getChatData.description);
+          setVerificationError(`Канал не знайдено: ${getChatData.description || "Перевірте правильність username"}`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
           return;
         }
         
+        // Крок 2: Визначення типу
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (getChatData.result.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'група',
+            'supergroup': 'супергрупа',
+            'private': 'приватний чат'
+          };
+          const typeName = typeMap[getChatData.result.type] || getChatData.result.type;
+          
+          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+        
+        // Крок 3: Підключення до API
         setVerificationCurrentStep(3);
-        setVerificationProgress(steps[3]);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
           body: {
@@ -916,31 +945,42 @@ const BotSetup = () => {
             duration: 2000,
           });
         } else {
-          const errors = [];
-          if (!data.isMember) errors.push("Бот не доданий до каналу");
-          if (!data.isAdmin) errors.push("Бот не має прав адміністратора");
+          // Крок 4: Перевірка доступу
+          if (!data.isMember) {
+            setVerificationError("Бот не доданий до каналу. Додайте бота як адміністратора");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
           
-          toast({
-            title: "Виправте помилки",
-            description: errors.join(". "),
-            variant: "destructive",
-            duration: 3000,
-          });
+          // Крок 5: Перевірка прав
+          if (!data.isAdmin) {
+            setVerificationCurrentStep(5);
+            setVerificationProgress(steps[4]);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            setVerificationError("Бот не має прав адміністратора. Надайте боту права");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
         }
       }
     } catch (error: any) {
       console.error("Error verifying bot:", error);
       setVerificationStatus({ isMember: false, hasPermissions: false });
-      toast({
-        title: "Помилка",
-        description: "Не вдалося перевірити права бота",
-        variant: "destructive",
-        duration: 1500,
-      });
-    } finally {
-      setIsCheckingBot(false);
-      setVerificationSteps([]);
-      setVerificationCurrentStep(0);
+      setVerificationError(error.message || "Не вдалося перевірити права бота. Перевірте підключення до інтернету");
+      setTimeout(() => {
+        setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
+      }, 5000);
     }
   };
 
@@ -1867,10 +1907,30 @@ const BotSetup = () => {
                   </div>
                   
                   <div className="text-center space-y-2">
-                    <h3 className="text-xl font-semibold">Перевірка бота...</h3>
-                    <p className="text-muted-foreground text-sm">
-                      {verificationProgress || "Перевіряємо підключення до каналу"}
-                    </p>
+                    {verificationError ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+                          <XCircle className="w-8 h-8 text-destructive" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-destructive">Помилка перевірки</h3>
+                        <p className="text-muted-foreground text-sm mt-2">
+                          {verificationError}
+                        </p>
+                        <p className="text-muted-foreground text-xs mt-2 opacity-70">
+                          Автозакриття через 5 сек...
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-semibold">Перевірка бота...</h3>
+                        <p className="text-muted-foreground text-sm">
+                          {verificationProgress || "Перевіряємо підключення до каналу"}
+                        </p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          {Math.round((verificationCurrentStep / verificationSteps.length) * 100)}% завершено
+                        </p>
+                      </>
+                    )}
                   </div>
                   
                   {verificationSteps.length > 0 && (
@@ -1998,8 +2058,30 @@ const BotSetup = () => {
                   id="targetChannel"
                   placeholder="@channel, https://t.me/channel або https://t.me/+invite"
                   value={targetChannel}
-                  onChange={(e) => setTargetChannel(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setTargetChannel(value);
+                    
+                    // Валідація формату
+                    if (value.trim() === "") {
+                      setTargetChannelError(null);
+                    } else if (
+                      value.match(/^@[a-zA-Z0-9_]{5,32}$/) || // @username
+                      value.match(/^-?\d{5,}$/) || // chat_id (мінімум 5 цифр)
+                      value.match(/^https?:\/\/(t\.me|telegram\.me)\/[a-zA-Z0-9_]{5,}$/) || // https://t.me/username
+                      value.match(/^https?:\/\/(t\.me|telegram\.me)\/\+[a-zA-Z0-9_-]{10,}$/) || // https://t.me/+invite
+                      value.match(/^https?:\/\/(t\.me|telegram\.me)\/joinchat\/[a-zA-Z0-9_-]{10,}$/) // https://t.me/joinchat/xxx
+                    ) {
+                      setTargetChannelError(null);
+                    } else {
+                      setTargetChannelError("Невірний формат. Використовуйте @username, chat_id або t.me посилання");
+                    }
+                  }}
+                  className={targetChannelError ? "border-destructive" : ""}
                 />
+                {targetChannelError && (
+                  <p className="text-sm text-destructive">{targetChannelError}</p>
+                )}
               </div>
               
               {/* Verification Progress */}
@@ -2764,3 +2846,4 @@ const BotSetup = () => {
 };
 
 export default BotSetup;
+
