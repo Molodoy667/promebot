@@ -109,6 +109,8 @@ const BotSetup = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingBot, setIsCheckingBot] = useState(false);
   const [verificationProgress, setVerificationProgress] = useState("");
+  const [verificationSteps, setVerificationSteps] = useState<string[]>([]);
+  const [verificationCurrentStep, setVerificationCurrentStep] = useState(0);
   
   const [bots, setBots] = useState<TelegramBot[]>([]);
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
@@ -656,15 +658,26 @@ const BotSetup = () => {
 
     setIsCheckingBot(true);
     setVerificationStatus({ isMember: null, hasPermissions: null });
-    setVerificationProgress("🔍 Крок 1/4: Перевірка формату каналу...");
+    
+    const steps = [
+      "Перевірка формату каналу...",
+      "Підключення до Telegram API...",
+      "Перевірка доступу бота...",
+      "Перевірка прав адміністратора...",
+      "Завершення налаштування..."
+    ];
+    setVerificationSteps(steps);
+    setVerificationCurrentStep(0);
+    setVerificationProgress(steps[0]);
 
     try {
       let channelIdentifier = targetChannel.trim();
       
       // Автоматично визначаємо приватний канал за invite-посиланням
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
-        setVerificationProgress("🔐 Крок 2/4: Підключення через userbot до приватного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(1);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Отримуємо активного spy
         const { data: activeSpy } = await supabase
@@ -683,8 +696,14 @@ const BotSetup = () => {
             duration: 5000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
+        
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
@@ -702,11 +721,18 @@ const BotSetup = () => {
             duration: 5000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
 
-        setVerificationProgress("✅ Крок 3/4: Приватний канал підключено...");
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
+        
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[4]);
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         // Зберігаємо chat_id з spy
         const chatId = spyData.channelInfo.id;
@@ -722,6 +748,8 @@ const BotSetup = () => {
         });
         
         setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
         return;
       }
       
@@ -756,17 +784,23 @@ const BotSetup = () => {
             duration: 8000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
       }
+      
+      setVerificationCurrentStep(1);
+      setVerificationProgress(steps[1]);
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Check if it looks like a chat_id (numeric, possibly negative)
       const isChatId = /^-?\d+$/.test(channelIdentifier);
       
       if (isChatId) {
-        // Handle as private channel with chat_id
-        setVerificationProgress("🔐 Крок 2/4: Підключення до приватного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const checkResponse = await fetch(
           `https://api.telegram.org/bot${selectedBot.bot_token}/getChat?chat_id=${channelIdentifier}`
@@ -782,13 +816,15 @@ const BotSetup = () => {
             duration: 6000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: null });
-        setVerificationProgress("🔑 Крок 3/4: Перевірка прав адміністратора...");
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const botId = selectedBot.bot_token.split(':')[0];
         const memberResponse = await fetch(
@@ -805,13 +841,14 @@ const BotSetup = () => {
             duration: 5000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
-        setVerificationProgress("Крок 4/4: Завершення налаштування...");
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress("Успішно підключено!");
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[4]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setBotVerified(true);
@@ -821,10 +858,14 @@ const BotSetup = () => {
           description: `Бот підключений до приватного каналу "${channelTitle}"`,
           duration: 3000,
         });
+        setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
       } else {
         // Handle as public channel with username
-        setVerificationProgress("🌐 Крок 2/4: Перевірка публічного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         // First check if it's a channel (not a group)
         const getChatResponse = await fetch(
@@ -840,8 +881,14 @@ const BotSetup = () => {
             duration: 5000,
           });
           setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           return;
         }
+        
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
           body: {
@@ -854,21 +901,12 @@ const BotSetup = () => {
 
         setVerificationStatus({
           isMember: data.isMember,
-          hasPermissions: null,
-        });
-        setVerificationProgress("🔑 Крок 3/4: Перевірка прав адміністратора...");
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setVerificationStatus({
-          isMember: data.isMember,
           hasPermissions: data.isAdmin,
         });
 
         if (data.isAdmin && data.isMember) {
-          setVerificationProgress("Крок 4/4: Завершення налаштування...");
-          await new Promise(resolve => setTimeout(resolve, 800));
-          setVerificationProgress("Успішно підключено!");
+          setVerificationCurrentStep(4);
+          setVerificationProgress(steps[4]);
           await new Promise(resolve => setTimeout(resolve, 600));
           
           setBotVerified(true);
@@ -901,6 +939,8 @@ const BotSetup = () => {
       });
     } finally {
       setIsCheckingBot(false);
+      setVerificationSteps([]);
+      setVerificationCurrentStep(0);
     }
   };
 
