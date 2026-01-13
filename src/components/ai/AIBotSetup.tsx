@@ -81,6 +81,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingBot, setIsCheckingBot] = useState(false);
   const [verificationProgress, setVerificationProgress] = useState("");
+  const [verificationSteps, setVerificationSteps] = useState<string[]>([]);
+  const [verificationCurrentStep, setVerificationCurrentStep] = useState(0);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [postCategories, setPostCategories] = useState<CategoryOption[]>([]);
   
   const [targetChannel, setTargetChannel] = useState("");
@@ -568,15 +571,28 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
     setIsCheckingBot(true);
     setVerificationStatus({ isMember: null, hasPermissions: null });
-    setVerificationProgress("🔍 Крок 1/4: Перевірка формату каналу...");
+    setVerificationError(null);
+    
+    const steps = [
+      "Перевірка формату каналу...",
+      "Підключення до Telegram API...",
+      "Перевірка доступу бота...",
+      "Перевірка прав адміністратора...",
+      "Завантаження інформації про канал...",
+      "Завершення налаштування..."
+    ];
+    setVerificationSteps(steps);
+    setVerificationCurrentStep(0);
+    setVerificationProgress(steps[0]);
 
     try {
       const channelInput = targetChannel.trim();
       
       // Автоматично визначаємо приватний канал за invite-посиланням
       if (channelInput.includes('t.me/+') || channelInput.includes('t.me/joinchat/')) {
-        setVerificationProgress("🔐 Крок 2/4: Підключення через userbot до приватного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(1);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Отримуємо активного spy
         const { data: activeSpy } = await supabase
@@ -588,15 +604,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           .maybeSingle();
 
         if (!activeSpy) {
-          toast({
-            title: "Userbot недоступний",
-            description: "Немає активного userbot для приватних каналів. Зверніться до адміністратора.",
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError("Немає активного userbot для приватних каналів");
           setIsCheckingBot(false);
           return;
         }
+        
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
@@ -607,23 +622,27 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         });
 
         if (spyError || !spyData?.success) {
-          toast({
-            title: "Помилка підключення",
-            description: spyData?.error || "Не вдалося підключитись до приватного каналу",
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError(spyData?.error || "Не вдалося підключитись до приватного каналу");
           setIsCheckingBot(false);
           return;
         }
 
-        setVerificationProgress("✅ Крок 3/4: Приватний канал підключено...");
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Зберігаємо chat_id з spy
         const chatId = spyData.channelInfo.id;
         setTargetChannel(chatId);
 
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[4]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        setVerificationCurrentStep(5);
+        setVerificationProgress(steps[5]);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
         setVerificationStatus({ isMember: true, hasPermissions: true });
         setChannelVerified(true);
         setChannelInfo({
@@ -640,6 +659,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         });
         
         setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
         return;
       }
 
@@ -647,14 +668,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       const parsed = parseTelegramChannel(targetChannel);
       
       if (!parsed.isValid) {
-        toast({
-          title: "Невірний формат каналу",
-          description: parsed.error || "Перевірте формат каналу",
-          variant: "destructive",
-        });
+        setVerificationError(parsed.error || "Невірний формат каналу");
         setIsCheckingBot(false);
         return;
       }
+      
+      setVerificationCurrentStep(1);
+      setVerificationProgress(steps[1]);
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       // Оновлюємо targetChannel на нормалізований формат
       const normalizedChannel = parsed.normalized;
@@ -675,15 +696,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       }
 
       if (existingService && existingService.id !== service?.id) {
-        toast({
-          title: "Канал вже додано",
-          description: "Цей канал вже підключений до цього AI бота. Оберіть інший канал.",
-          variant: "destructive",
-          duration: 8000,
-        });
+        setVerificationError("Цей канал вже підключений до цього AI бота");
         setIsCheckingBot(false);
         return;
       }
+      
+      setVerificationCurrentStep(2);
+      setVerificationProgress(steps[2]);
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Check if channel is already taken іншим користувачем
       const { data: ownerCheck, error: ownerError } = await supabase
@@ -697,12 +717,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       }
       
       if (ownerCheck?.is_taken) {
-        toast({
-          title: "Канал вже зайнятий",
-          description: "Цей канал вже використовується іншим користувачем",
-          variant: "destructive",
-          duration: 8000,
-        });
+        setVerificationError("Цей канал вже використовується іншим користувачем");
         setIsCheckingBot(false);
         return;
       }
@@ -710,8 +725,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       let channelIdentifier = normalizedChannel.replace('@', '');
       
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
-        setVerificationProgress("🔐 Крок 2/4: Підключення до приватного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const checkResponse = await fetch(
           `https://api.telegram.org/bot${botToken}/getChat?chat_id=${channelIdentifier}`
@@ -720,19 +736,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         if (!checkData.ok) {
           setVerificationStatus({ isMember: false, hasPermissions: false });
-          toast({
-            title: "Помилка доступу",
-            description: `Бот не має доступу до каналу. Переконайтеся що ви додали бота @${botUsername} як адміністратора`,
-            variant: "destructive",
-            duration: 6000,
-          });
+          setVerificationError(`Бот не має доступу до каналу. Додайте бота @${botUsername} як адміністратора`);
           setIsCheckingBot(false);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: null });
-        setVerificationProgress("🔑 Крок 3/4: Перевірка прав адміністратора...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[4]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const botIdNum = botToken.split(':')[0];
         const memberResponse = await fetch(
@@ -742,20 +754,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         if (!memberData.ok || (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator')) {
           setVerificationStatus({ isMember: true, hasPermissions: false });
-          toast({
-            title: "Недостатньо прав",
-            description: "Бот доданий до каналу, але не має прав адміністратора.",
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError("Бот доданий до каналу, але не має прав адміністратора");
           setIsCheckingBot(false);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
-        setVerificationProgress("Крок 4/4: Завершення налаштування...");
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress("Успішно підключено!");
+        setVerificationCurrentStep(5);
+        setVerificationProgress(steps[5]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setChannelVerified(true);
@@ -765,9 +771,13 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           description: `AI бот підключений до приватного каналу "${checkData.result.title}"`,
           duration: 3000,
         });
+        setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
       } else {
-        setVerificationProgress("Крок 2/4: Перевірка публічного каналу...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         // First check if it's a channel (not a group)
         const getChatResponse = await fetch(
@@ -776,15 +786,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         const getChatData = await getChatResponse.json();
         
         if (getChatData.ok && getChatData.result.type !== 'channel') {
-          toast({
-            title: "Неправильний тип",
-            description: `Це не канал, а ${getChatData.result.type === 'group' ? 'група' : getChatData.result.type === 'supergroup' ? 'супергрупа' : 'чат'}. Будь ласка, вкажіть посилання на канал (не групу/спільноту).`,
-            variant: "destructive",
-            duration: 5000,
-          });
+          const typeText = getChatData.result.type === 'group' ? 'група' : getChatData.result.type === 'supergroup' ? 'супергрупа' : 'чат';
+          setVerificationError(`Це не канал, а ${typeText}. Вкажіть посилання на канал`);
           setIsCheckingBot(false);
           return;
         }
+        
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[4]);
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
           body: {
@@ -797,38 +807,25 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         if (!data.isMember) {
           setVerificationStatus({ isMember: false, hasPermissions: false });
-          toast({
-            title: "Бот не доданий",
-            description: `Будь ласка, додайте бота @${botUsername} до каналу @${channelIdentifier}`,
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError(`Додайте бота @${botUsername} до каналу @${channelIdentifier}`);
           setIsCheckingBot(false);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: null });
-        setVerificationProgress("🔑 Крок 3/4: Перевірка прав адміністратора...");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVerificationCurrentStep(5);
+        setVerificationProgress(steps[5]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         if (!data.isAdmin) {
           setVerificationStatus({ isMember: true, hasPermissions: false });
-          toast({
-            title: "Недостатньо прав",
-            description: "Бот доданий до каналу, але не має прав адміністратора.",
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError("Бот доданий до каналу, але не має прав адміністратора");
           setIsCheckingBot(false);
           return;
         }
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
-        setVerificationProgress("Крок 4/4: Завершення налаштування...");
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setVerificationProgress("Успішно підключено!");
-        await new Promise(resolve => setTimeout(resolve, 600));
-
+        
         setChannelVerified(true);
         await loadChannelInfo(`@${channelIdentifier}`);
         toast({
@@ -839,13 +836,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       }
     } catch (error: any) {
       console.error("Error verifying channel:", error);
-      toast({
-        title: "Помилка",
-        description: error.message || "Не вдалося перевірити канал",
-        variant: "destructive",
-      });
+      setVerificationError(error.message || "Не вдалося перевірити канал");
     } finally {
       setIsCheckingBot(false);
+      setVerificationSteps([]);
+      setVerificationCurrentStep(0);
     }
   };
 
@@ -1185,14 +1180,38 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
                     </p>
                   </div>
                   
+                  {verificationSteps.length > 0 && (
+                    <div className="w-full space-y-2">
+                      {verificationSteps.map((step, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          {index < verificationCurrentStep ? (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          ) : index === verificationCurrentStep ? (
+                            <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-muted flex-shrink-0" />
+                          )}
+                          <span className={index <= verificationCurrentStep ? "text-foreground" : "text-muted-foreground"}>
+                            {step}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="w-full space-y-2">
                     <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
                       <div 
-                        className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
+                        className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full transition-all duration-500"
+                        style={{ width: `${((verificationCurrentStep + 1) / verificationSteps.length) * 100}%` }}
                       />
                     </div>
                     <p className="text-xs text-center text-muted-foreground">
-                      Будь ласка, зачекайте...
+                      Крок {verificationCurrentStep + 1} з {verificationSteps.length}
                     </p>
                   </div>
                 </div>

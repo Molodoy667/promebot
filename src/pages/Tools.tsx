@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BonusBalanceDisplay } from "@/components/BonusBalanceDisplay";
 import { BalanceDisplay } from "@/components/BalanceDisplay";
-import { Sparkles, Loader2, Download, Clock, FileText, Copy, Send, Image as ImageIcon, ArrowLeft, CheckCircle2, XCircle, Pencil, Check, X, MessageSquare, DollarSign } from "lucide-react";
+import { Sparkles, Loader2, Download, Clock, FileText, Copy, Send, Image as ImageIcon, ArrowLeft, CheckCircle2, XCircle, Pencil, Check, X, MessageSquare, DollarSign, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CategorySelector, CategoryOption } from "@/components/CategorySelector";
 import { Switch } from "@/components/ui/switch";
@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { NeuroPromotion } from "@/components/NeuroPromotion";
 
 type ToolView = "main" | "image-generation" | "post-generation";
 
@@ -36,6 +37,8 @@ export default function Tools() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingProgress, setGeneratingProgress] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [imageGenSteps, setImageGenSteps] = useState<string[]>([]);
+  const [imageGenCurrentStep, setImageGenCurrentStep] = useState(0);
   const [showImageResult, setShowImageResult] = useState(false);
   const [aiToolEnabled, setAiToolEnabled] = useState(false);
   const [aiPostToolEnabled, setAiPostToolEnabled] = useState(false);
@@ -63,6 +66,8 @@ export default function Tools() {
   const [isGeneratingPost, setIsGeneratingPost] = useState(false);
   const [generatingPostProgress, setGeneratingPostProgress] = useState("");
   const [generatedPost, setGeneratedPost] = useState<{ text: string; imageUrl?: string } | null>(null);
+  const [postGenSteps, setPostGenSteps] = useState<string[]>([]);
+  const [postGenCurrentStep, setPostGenCurrentStep] = useState(0);
   const [showPostResult, setShowPostResult] = useState(false);
   const [aiPricing, setAiPricing] = useState({ imagePrice: 5, postTextPrice: 5, postImagePrice: 2 });
   const [isVip, setIsVip] = useState(false);
@@ -73,6 +78,7 @@ export default function Tools() {
   const [channelInfo, setChannelInfo] = useState<Record<string, any>>({});
   const [isPublishing, setIsPublishing] = useState(false);
   const [toolsSettings, setToolsSettings] = useState<Record<string, any>>({});
+  const [showNeuroPromotion, setShowNeuroPromotion] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -276,6 +282,31 @@ export default function Tools() {
     setGeneratedImage(null);
     setShowImageResult(false);
     setGeneratingProgress("Підготовка промпту...");
+    
+    // Розширені кроки генерації зображення
+    const steps = [
+      "Аналіз вашого запиту...",
+      "Підготовка промпту...",
+      "Оптимізація параметрів...",
+      "Підключення до AI сервісу...",
+      "Генерація зображення...",
+      "Застосування стилізації...",
+      "Покращення якості...",
+      "Фінальна обробка..."
+    ];
+    setImageGenSteps(steps);
+    setImageGenCurrentStep(0);
+
+    // Анімація кроків
+    const stepInterval = setInterval(() => {
+      setImageGenCurrentStep((prev) => {
+        if (prev < steps.length - 1) {
+          setGeneratingProgress(steps[prev + 1]);
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 3000); // Кожні 3 секунди новий крок
 
     try {
       // Покращуємо та перекладаємо промпт в фоновому режимі
@@ -454,7 +485,10 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
         variant: "destructive",
       });
     } finally {
+      clearInterval(stepInterval);
       setIsGenerating(false);
+      setImageGenSteps([]);
+      setImageGenCurrentStep(0);
     }
   };
 
@@ -494,6 +528,33 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
     setGeneratedPost(null);
     setShowPostResult(false);
     setGeneratingPostProgress("Генерація тексту посту...");
+    
+    // Розширені кроки генерації посту
+    const steps = [
+      "Аналіз теми публікації...",
+      "Генерація тексту посту...",
+      "Підбір ключових слів...",
+      "Оптимізація структури...",
+      "Перевірка унікальності...",
+      "Додавання емодзі...",
+      withTags ? "Генерація хештегів..." : null,
+      withImage ? "Створення зображення..." : null,
+      "Фінальне оформлення..."
+    ].filter(Boolean) as string[];
+    
+    setPostGenSteps(steps);
+    setPostGenCurrentStep(0);
+
+    // Анімація кроків
+    const stepInterval = setInterval(() => {
+      setPostGenCurrentStep((prev) => {
+        if (prev < steps.length - 1) {
+          setGeneratingPostProgress(steps[prev + 1]);
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 2500); // Кожні 2.5 секунди новий крок
 
     try {
       // Спочатку генеруємо текст посту
@@ -583,7 +644,10 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
         variant: "destructive",
       });
     } finally {
+      clearInterval(stepInterval);
       setIsGeneratingPost(false);
+      setPostGenSteps([]);
+      setPostGenCurrentStep(0);
     }
   };
 
@@ -1059,20 +1123,46 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
                     
                     <div className="text-center space-y-2">
                       <h3 className="text-xl font-semibold">Зображення генерується...</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground text-sm animate-pulse">
                         {generatingProgress || "AI створює унікальне зображення для вас"}
                       </p>
                     </div>
                     
                     <div className="w-full space-y-2">
-                      <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Крок {imageGenCurrentStep + 1} з {imageGenSteps.length}</span>
+                        <span>{Math.round(((imageGenCurrentStep + 1) / imageGenSteps.length) * 100)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
+                          className="h-full bg-primary transition-all duration-500 ease-out"
+                          style={{ width: `${((imageGenCurrentStep + 1) / imageGenSteps.length) * 100}%` }}
                         />
                       </div>
-                      <p className="text-xs text-center text-muted-foreground">
-                        Будь ласка, зачекайте...
-                      </p>
+                    </div>
+
+                    <div className="w-full space-y-2 max-h-48 overflow-y-auto">
+                      {imageGenSteps.map((step, index) => (
+                        <div 
+                          key={index}
+                          className={`flex items-center gap-2 text-sm transition-all duration-300 ${
+                            index <= imageGenCurrentStep ? 'opacity-100' : 'opacity-30'
+                          }`}
+                        >
+                          <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                            index < imageGenCurrentStep ? 'bg-green-500' : 
+                            index === imageGenCurrentStep ? 'bg-primary animate-pulse' : 
+                            'bg-muted'
+                          }`} />
+                          <span className={
+                            index === imageGenCurrentStep ? 'text-primary font-medium' : 
+                            index < imageGenCurrentStep ? 'text-muted-foreground line-through' :
+                            'text-muted-foreground'
+                          }>
+                            {step}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -1364,20 +1454,46 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
                 
                 <div className="text-center space-y-2">
                   <h3 className="text-xl font-semibold">Пост генерується...</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm animate-pulse">
                     {generatingPostProgress || "AI створює контент для вас"}
                   </p>
                 </div>
                 
                 <div className="w-full space-y-2">
-                  <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Крок {postGenCurrentStep + 1} з {postGenSteps.length}</span>
+                    <span>{Math.round(((postGenCurrentStep + 1) / postGenSteps.length) * 100)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
+                      className="h-full bg-primary transition-all duration-500 ease-out"
+                      style={{ width: `${((postGenCurrentStep + 1) / postGenSteps.length) * 100}%` }}
                     />
                   </div>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Будь ласка, зачекайте...
-                  </p>
+                </div>
+
+                <div className="w-full space-y-2 max-h-48 overflow-y-auto">
+                  {postGenSteps.map((step, index) => (
+                    <div 
+                      key={index}
+                      className={`flex items-center gap-2 text-sm transition-all duration-300 ${
+                        index <= postGenCurrentStep ? 'opacity-100' : 'opacity-30'
+                      }`}
+                    >
+                      <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                        index < postGenCurrentStep ? 'bg-green-500' : 
+                        index === postGenCurrentStep ? 'bg-primary animate-pulse' : 
+                        'bg-muted'
+                      }`} />
+                      <span className={
+                        index === postGenCurrentStep ? 'text-primary font-medium' : 
+                        index < postGenCurrentStep ? 'text-muted-foreground line-through' :
+                        'text-muted-foreground'
+                      }>
+                        {step}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -1586,6 +1702,37 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
               </Card>
               )}
 
+              {/* Neuro Promotion Tool Card */}
+              <Card 
+                className="border-2 transition-all cursor-pointer hover:border-primary/50 hover:shadow-lg"
+                onClick={() => setShowNeuroPromotion(true)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-6 h-6 text-primary" />
+                      <CardTitle className="text-lg">
+                        НейроПросування
+                      </CardTitle>
+                    </div>
+                    <CheckCircle2 className="w-5 h-5 text-success" />
+                  </div>
+                  <CardDescription className="text-sm">
+                    Нейропросування автоматично налаштує ваш канал для просування в Telegram та автопублікацій
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Статус:</span>
+                    <span className="text-xs font-semibold text-success">Доступно</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Вартість:</span>
+                    <span className="text-xs font-semibold text-green-500">Безкоштовно</span>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* AI Chat Tool Card */}
               {toolsSettings['ai_chat']?.is_enabled && (
               <Card 
@@ -1718,6 +1865,9 @@ Return ONLY the enhanced English prompt (keeping any Ukrainian text unchanged). 
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Neuro Promotion Dialog */}
+      <NeuroPromotion open={showNeuroPromotion} onOpenChange={setShowNeuroPromotion} />
     </div>
   );
 }
