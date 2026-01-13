@@ -1873,15 +1873,41 @@ const BotSetup = () => {
                     </p>
                   </div>
                   
+                  {verificationSteps.length > 0 && (
+                    <div className="w-full space-y-2">
+                      {verificationSteps.map((step, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          {index < verificationCurrentStep ? (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          ) : index === verificationCurrentStep ? (
+                            <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-muted flex-shrink-0" />
+                          )}
+                          <span className={index <= verificationCurrentStep ? "text-foreground" : "text-muted-foreground"}>
+                            {step}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="w-full space-y-2">
                     <div className="h-2 bg-primary/20 rounded-full overflow-hidden relative">
                       <div 
-                        className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full absolute inset-0 animate-loading-bar"
+                        className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full transition-all duration-500"
+                        style={{ width: `${verificationSteps.length > 0 ? ((verificationCurrentStep + 1) / verificationSteps.length) * 100 : 0}%` }}
                       />
                     </div>
-                    <p className="text-xs text-center text-muted-foreground">
-                      Будь ласка, зачекайте...
-                    </p>
+                    {verificationSteps.length > 0 && (
+                      <p className="text-xs text-center text-muted-foreground">
+                        Крок {verificationCurrentStep + 1} з {verificationSteps.length}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
