@@ -747,7 +747,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           } else if (!botCheckData.isAdmin) {
             errorMsg = "Бот не має прав адміністратора. Надайте боту права";
           } else if (!botCheckData.canPostMessages) {
-            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора';
+            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
           }
           
           setVerificationError(errorMsg);
@@ -1035,7 +1035,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
             setVerificationProgress(steps[4]);
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            setVerificationError('Бот не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора');
+            setVerificationError('Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора');
             setTimeout(() => {
               setIsCheckingBot(false);
               setVerificationSteps([]);

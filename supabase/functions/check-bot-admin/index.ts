@@ -120,7 +120,7 @@ serve(async (req) => {
           isAdmin: true, 
           isMember: true,
           canPostMessages: false,
-          error: 'Бот є адміністратором, але не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора.' 
+          error: 'Бот є адміністратором, але не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора.' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
