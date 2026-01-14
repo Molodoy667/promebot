@@ -986,7 +986,16 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         } else {
           // Крок 4: Перевірка доступу
           if (!data.isMember) {
-            setVerificationError("Бот не доданий до каналу. Додайте бота як адміністратора");
+            let errorMsg = "Бот не доданий до каналу. Додайте бота як адміністратора";
+            
+            // Покращені повідомлення для різних ситуацій
+            if (data.error?.includes('was kicked')) {
+              errorMsg = "Бот був видалений з каналу. Видаліть бота повністю та додайте його заново як адміністратора";
+            } else if (data.error?.includes('chat not found')) {
+              errorMsg = "Бот не має доступу до каналу. Додайте бота як адміністратора";
+            }
+            
+            setVerificationError(errorMsg);
             setTimeout(() => {
               setIsCheckingBot(false);
               setVerificationSteps([]);
