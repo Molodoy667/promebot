@@ -740,12 +740,17 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           hasPermissions: botCheckData.isAdmin,
         });
 
-        if (!botCheckData.isAdmin || !botCheckData.isMember) {
+        if (!botCheckData.isAdmin || !botCheckData.isMember || !botCheckData.canPostMessages) {
+          let errorMsg = "";
           if (!botCheckData.isMember) {
-            setVerificationError("Бот не доданий до приватного каналу. Додайте бота як адміністратора");
-          } else {
-            setVerificationError("Бот не має прав адміністратора. Надайте боту права");
+            errorMsg = "Бот не доданий до приватного каналу. Додайте бота як адміністратора";
+          } else if (!botCheckData.isAdmin) {
+            errorMsg = "Бот не має прав адміністратора. Надайте боту права";
+          } else if (!botCheckData.canPostMessages) {
+            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора';
           }
+          
+          setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
@@ -977,7 +982,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           hasPermissions: data.isAdmin,
         });
 
-        if (data.isAdmin && data.isMember) {
+        if (data.isAdmin && data.isMember && data.canPostMessages) {
           setVerificationCurrentStep(4);
           setVerificationProgress(steps[4]);
           await new Promise(resolve => setTimeout(resolve, 600));
@@ -1009,13 +1014,28 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
             return;
           }
           
-          // Крок 5: Перевірка прав
+          // Крок 5: Перевірка прав адміністратора
           if (!data.isAdmin) {
             setVerificationCurrentStep(5);
             setVerificationProgress(steps[4]);
             await new Promise(resolve => setTimeout(resolve, 500));
             
             setVerificationError("Бот не має прав адміністратора. Надайте боту права");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+          
+          // Крок 5: Перевірка права публікації
+          if (!data.canPostMessages) {
+            setVerificationCurrentStep(5);
+            setVerificationProgress(steps[4]);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            setVerificationError('Бот не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора');
             setTimeout(() => {
               setIsCheckingBot(false);
               setVerificationSteps([]);

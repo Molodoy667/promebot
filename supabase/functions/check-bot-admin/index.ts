@@ -104,7 +104,23 @@ serve(async (req) => {
         JSON.stringify({ 
           isAdmin: false, 
           isMember: true,
+          canPostMessages: false,
           error: 'Бот доданий до каналу, але не має прав адміністратора. Надайте боту права адміністратора.' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Перевіряємо конкретні права на публікацію
+    const canPostMessages = member.status === 'creator' || member.can_post_messages === true;
+    
+    if (!canPostMessages) {
+      return new Response(
+        JSON.stringify({ 
+          isAdmin: true, 
+          isMember: true,
+          canPostMessages: false,
+          error: 'Бот є адміністратором, але не має права публікувати повідомлення. Увімкніть право "Post messages" в налаштуваннях адміністратора.' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -115,6 +131,7 @@ serve(async (req) => {
       JSON.stringify({ 
         isAdmin: true, 
         isMember: true,
+        canPostMessages: true,
         message: 'Бот успішно підключений і має всі необхідні права!' 
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
