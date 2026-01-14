@@ -681,10 +681,6 @@ const BotSetup = () => {
       
       // Автоматично визначаємо приватний канал за invite-посиланням
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
-        setVerificationCurrentStep(1);
-        setVerificationProgress(steps[1]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
         // Отримуємо активного spy
         const { data: activeSpy } = await supabase
           .from('telegram_spies')
@@ -695,57 +691,166 @@ const BotSetup = () => {
           .maybeSingle();
 
         if (!activeSpy) {
-          toast({
-            title: "Userbot недоступний",
-            description: "Немає активного userbot для приватних каналів. Зверніться до адміністратора.",
-            variant: "destructive",
-            duration: 5000,
-          });
+          setVerificationError("Немає активного userbot для приватних каналів");
           setIsCheckingBot(false);
           setVerificationSteps([]);
           setVerificationCurrentStep(0);
           return;
         }
         
+        // Крок 1: Перевірка існування каналу (спроба приєднатись)
+        setVerificationCurrentStep(1);
+        setVerificationProgress(steps[0]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        console.log('Checking private channel:', channelIdentifier);
+
+        // Спочатку намагаємося приєднатись до каналу
+        console.log('Attempting to join channel with userbot...');
+        
+        let joinData = null;
+        let joinError = null;
+        
+        try {
+          const response = await supabase.functions.invoke('spy-join-channel', {
+            body: {
+              spy_id: activeSpy.id,
+              channel_identifier: channelIdentifier
+            }
+          });
+          
+          joinData = response.data;
+          joinError = response.error;
+          
+          console.log('spy-join-channel response:', { joinData, joinError });
+          
+          // Перевірка чи join був успішний
+          if (joinError || (joinData && !joinData.success)) {
+            console.error('spy-join-channel failed:', { joinError, joinData });
+            
+            // Витягуємо повідомлення про помилку
+            let errorMessage = "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання";
+            
+            if (joinData?.error) {
+              errorMessage = joinData.error;
+            } else if (joinError?.message) {
+              errorMessage = joinError.message;
+            }
+            
+            setVerificationError(errorMessage);
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+        } catch (err: any) {
+          console.error('spy-join-channel exception:', err);
+          setVerificationError("Помилка підключення до сервера. Спробуйте пізніше");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Крок 2: Визначення типу каналу
         setVerificationCurrentStep(2);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Перевірка: чи отримали channel_id
+        if (!joinData?.channelInfo?.id) {
+          setVerificationError("Не вдалося отримати ID каналу");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Перевірка типу: має бути канал
+        if (joinData.channelInfo.type && joinData.channelInfo.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'група',
+            'supergroup': 'супергрупа',
+            'chat': 'чат'
+          };
+          const typeName = typeMap[joinData.channelInfo.type] || joinData.channelInfo.type;
+          
+          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
+          
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
+        console.log('Using channel_id from join result:', channelIdentifier);
+        
+        // Оновлюємо targetChannel для збереження в БД
+        setTargetChannel(channelIdentifier);
+
+        // Крок 3: Підключення до Telegram API
+        setVerificationCurrentStep(3);
         setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Викликаємо spy-get-channel-info
-        const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
+        // Крок 4: Перевірка доступу бота
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Викликаємо check-bot-admin з числовим ID
+        const { data: botCheckData, error: botCheckError } = await supabase.functions.invoke('check-bot-admin', {
           body: {
-            spy_id: activeSpy.id,
-            channel_identifier: channelIdentifier
-          }
+            botToken: selectedBot.bot_token,
+            channelUsername: channelIdentifier,
+          },
         });
 
-        if (spyError || !spyData?.success) {
-          toast({
-            title: "Помилка підключення",
-            description: spyData?.error || "Не вдалося підключитись до приватного каналу",
-            variant: "destructive",
-            duration: 5000,
-          });
-          setIsCheckingBot(false);
-          setVerificationSteps([]);
-          setVerificationCurrentStep(0);
+        if (botCheckError) throw botCheckError;
+        if (botCheckData?.error) throw new Error(botCheckData.error);
+
+        setVerificationStatus({
+          isMember: botCheckData.isMember,
+          hasPermissions: botCheckData.isAdmin,
+        });
+
+        if (!botCheckData.isAdmin || !botCheckData.isMember || !botCheckData.canPostMessages) {
+          let errorMsg = "";
+          if (!botCheckData.isMember) {
+            errorMsg = "Бот не доданий до приватного каналу. Додайте бота як адміністратора";
+          } else if (!botCheckData.isAdmin) {
+            errorMsg = "Бот не має прав адміністратора. Надайте боту права";
+          } else if (!botCheckData.canPostMessages) {
+            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
+          }
+          
+          setVerificationError(errorMsg);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
           return;
         }
 
-        setVerificationCurrentStep(3);
-        setVerificationProgress(steps[3]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        setVerificationCurrentStep(4);
+        // Крок 5: Завершення
+        setVerificationCurrentStep(5);
         setVerificationProgress(steps[4]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
-        // Зберігаємо chat_id з spy
-        const chatId = spyData.channelInfo.id;
-        setTargetChannel(chatId); // Зберігаємо numeric ID
-
-        setVerificationStatus({ isMember: true, hasPermissions: true });
         setBotVerified(true);
+        setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
         
         toast({
           title: "Успішно!",
