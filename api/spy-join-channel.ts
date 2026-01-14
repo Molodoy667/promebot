@@ -92,13 +92,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           
           console.log('[Spy Join Channel] Using invite hash:', inviteHash);
           
-          const result = await client.invoke(
-            new Api.messages.ImportChatInvite({
-              hash: inviteHash,
-            })
-          );
-          console.log('[Spy Join Channel] Successfully joined via invite link');
-          console.log('[Spy Join Channel] Join result:', result);
+          try {
+            const result = await client.invoke(
+              new Api.messages.ImportChatInvite({
+                hash: inviteHash,
+              })
+            );
+            console.log('[Spy Join Channel] Successfully joined via invite link');
+            console.log('[Spy Join Channel] Join result:', result);
+          } catch (inviteErr: any) {
+            // If already participant, that's fine
+            if (inviteErr.message.includes('USER_ALREADY_PARTICIPANT')) {
+              console.log('[Spy Join Channel] Already participant - getting entity');
+              alreadyJoined = true;
+            } else {
+              throw inviteErr;
+            }
+          }
         }
         // For public channels with @username or clean username
         else if (channel_identifier.startsWith('@') || (!channel_identifier.startsWith('+') && !channel_identifier.startsWith('-'))) {
