@@ -147,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const waitMinutes = Math.ceil(waitSeconds / 60);
             return res.status(429).json({
               success: false,
-              error: `Userbot занадто часто приєднується до каналів. Спробуйте через ${waitMinutes} хвилин.`,
+              error: `Вибачте, але Телеграм дав збій. Спробуйте додати ваш канал ще раз через ${waitMinutes} ${waitMinutes === 1 ? 'хвилину' : waitMinutes < 5 ? 'хвилини' : 'хвилин'}.`,
               wait_seconds: waitSeconds,
               error_type: 'FLOOD_WAIT'
             });

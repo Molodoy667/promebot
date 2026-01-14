@@ -700,21 +700,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           
           setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
           
-          // Вийти з групи/супергрупи, якщо щойно приєдналися
-          if (!joinData.already_joined) {
-            try {
-              await supabase.functions.invoke('spy-leave-channel', {
-                body: {
-                  spy_id: activeSpy.id,
-                  channel_id: joinData.channelInfo.id
-                }
-              });
-              console.log('Left non-channel chat');
-            } catch (err) {
-              console.error('Error leaving non-channel chat:', err);
-            }
-          }
-          
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
@@ -725,28 +710,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
         console.log('Using channel_id from join result:', channelIdentifier);
-
-        // Зберегти в pending_spy_channels для автовиходу через 5 хв
-        if (!joinData.already_joined) {
-          try {
-            const { error: pendingError } = await supabase
-              .from('pending_spy_channels')
-              .insert({
-                spy_id: activeSpy.id,
-                channel_id: joinData.channelInfo.id,
-                channel_identifier: targetChannel, // Оригінальний invite link
-                user_id: (await supabase.auth.getUser()).data.user?.id
-              });
-            
-            if (pendingError) {
-              console.error('Failed to save pending channel:', pendingError);
-            } else {
-              console.log('Saved pending channel - will auto-leave in 5 minutes if not confirmed');
-            }
-          } catch (err) {
-            console.error('Error saving pending channel:', err);
-          }
-        }
 
         // Крок 3: Підключення до Telegram API
         setVerificationCurrentStep(3);
