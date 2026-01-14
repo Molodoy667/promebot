@@ -965,7 +965,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         });
 
         if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+        
+        // Не викидаємо exception якщо бот просто не має прав - обробимо це окремо
+        // Викидаємо тільки якщо це критична помилка (канал не існує і т.д.)
+        if (data?.error && !data.isMember) {
+          throw new Error(data.error);
+        }
 
         setVerificationStatus({
           isMember: data.isMember,
