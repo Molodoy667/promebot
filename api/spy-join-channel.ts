@@ -138,6 +138,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (joinErr: any) {
         console.error('[Spy Join Channel] Failed to join:', joinErr.message);
         await client.disconnect();
+        
+        // Handle FloodWait error - extract wait time
+        if (joinErr.message.includes('A wait of') && joinErr.message.includes('seconds is required')) {
+          const waitMatch = joinErr.message.match(/A wait of (\d+) seconds is required/);
+          if (waitMatch) {
+            const waitSeconds = parseInt(waitMatch[1]);
+            const waitMinutes = Math.ceil(waitSeconds / 60);
+            return res.status(429).json({
+              success: false,
+              error: `Userbot занадто часто приєднується до каналів. Спробуйте через ${waitMinutes} хвилин.`,
+              wait_seconds: waitSeconds,
+              error_type: 'FLOOD_WAIT'
+            });
+          }
+        }
+        
         return res.status(400).json({
           success: false,
           error: `Failed to join channel: ${joinErr.message}`
