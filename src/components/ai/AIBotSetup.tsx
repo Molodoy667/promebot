@@ -678,33 +678,39 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         setVerificationProgress(steps[1]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Якщо приєдналися успішно і отримали channel_id - використовуємо його
-        let channelToCheck = channelIdentifier;
-        if (joinData?.channelInfo?.id) {
-          channelToCheck = joinData.channelInfo.id;
-          channelIdentifier = channelToCheck; // Оновлюємо channelIdentifier для подальших перевірок
-          console.log('Using channel_id from join result:', channelToCheck);
+        // Перевірка: чи отримали channel_id
+        if (!joinData?.channelInfo?.id) {
+          setVerificationError("Не вдалося отримати ID каналу");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
 
-          // Зберегти в pending_spy_channels для автовиходу через 5 хв
-          if (!joinData.already_joined) {
-            try {
-              const { error: pendingError } = await supabase
-                .from('pending_spy_channels')
-                .insert({
-                  spy_id: activeSpy.id,
-                  channel_id: joinData.channelInfo.id,
-                  channel_identifier: channelIdentifier,
-                  user_id: (await supabase.auth.getUser()).data.user?.id
-                });
-              
-              if (pendingError) {
-                console.error('Failed to save pending channel:', pendingError);
-              } else {
-                console.log('Saved pending channel - will auto-leave in 5 minutes if not confirmed');
-              }
-            } catch (err) {
-              console.error('Error saving pending channel:', err);
+        channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
+        console.log('Using channel_id from join result:', channelIdentifier);
+
+        // Зберегти в pending_spy_channels для автовиходу через 5 хв
+        if (!joinData.already_joined) {
+          try {
+            const { error: pendingError } = await supabase
+              .from('pending_spy_channels')
+              .insert({
+                spy_id: activeSpy.id,
+                channel_id: joinData.channelInfo.id,
+                channel_identifier: targetChannel, // Оригінальний invite link
+                user_id: (await supabase.auth.getUser()).data.user?.id
+              });
+            
+            if (pendingError) {
+              console.error('Failed to save pending channel:', pendingError);
+            } else {
+              console.log('Saved pending channel - will auto-leave in 5 minutes if not confirmed');
             }
+          } catch (err) {
+            console.error('Error saving pending channel:', err);
           }
         }
 
@@ -713,53 +719,33 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Викликаємо spy-get-channel-info
-        const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
-          body: {
-            spy_id: activeSpy.id,
-            channel_identifier: channelToCheck
-          }
-        });
-
-        console.log('spy-get-channel-info response:', { spyData, spyError });
-
-        if (spyError) {
-          console.error('spy-get-channel-info error:', spyError);
-          setVerificationError(`Помилка підключення: ${spyError.message || "Не вдалося підключитись до приватного каналу"}`);
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-
-        if (!spyData?.success) {
-          console.log('spy-get-channel-info failed:', spyData);
-          
-          // Перевіряємо чи це проблема з доступом
-          if (spyData?.error?.includes('Cannot find any entity') || spyData?.error?.includes('не знайдено')) {
-            setVerificationError("Канал не знайдено або userbot не може приєднатися. Переконайтеся що invite посилання дійсне і не прострочене");
-          } else {
-            setVerificationError(spyData?.error || spyData?.message || "Не вдалося підключитись до приватного каналу");
-          }
-          
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-
-        // Крок 4: Перевірка доступу бота
+        // Крок 4: Перевірка доступу бота (бот сам перевіряє через check-bot-admin)
         setVerificationCurrentStep(4);
         setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Перевіряємо чи userbot має доступ до каналу
-        if (!spyData.channelInfo || !spyData.channelInfo.id) {
-          setVerificationError("Не вдалося отримати інформацію про канал. Можливо userbot не має доступу");
+        // Викликаємо check-bot-admin з числовим ID
+        const { data: botCheckData, error: botCheckError } = await supabase.functions.invoke('check-bot-admin', {
+          body: {
+            botToken: botToken,
+            channelUsername: channelIdentifier, // Тепер це числовий ID
+          },
+        });
+
+        if (botCheckError) throw botCheckError;
+        if (botCheckData?.error) throw new Error(botCheckData.error);
+
+        setVerificationStatus({
+          isMember: botCheckData.isMember,
+          hasPermissions: botCheckData.isAdmin,
+        });
+
+        if (!botCheckData.isAdmin || !botCheckData.isMember) {
+          if (!botCheckData.isMember) {
+            setVerificationError("Бот не доданий до приватного каналу. Додайте бота як адміністратора");
+          } else {
+            setVerificationError("Бот не має прав адміністратора. Надайте боту права");
+          }
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
@@ -768,71 +754,19 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
 
-        // Перевіряємо тип каналу - має бути channel
-        if (spyData.channelInfo.type && spyData.channelInfo.type !== 'channel') {
-          const typeMap: Record<string, string> = {
-            'group': 'група',
-            'supergroup': 'супергрупа',
-            'private': 'приватний чат'
-          };
-          const typeName = typeMap[spyData.channelInfo.type] || spyData.channelInfo.type;
-          
-          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-        
-        // Крок 5: Перевірка прав адміністратора
+        // Крок 5: Завершення
         setVerificationCurrentStep(5);
         setVerificationProgress(steps[4]);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 600));
 
-        // Перевіряємо чи бот доданий до каналу як адміністратор
-        const chatId = spyData.channelInfo.id;
-        const botIdNum = botToken.split(':')[0];
+        setChannelVerified(true);
+        toast({
+          title: "Успішно!",
+          description: "Бот підключений до приватного каналу і має всі необхідні права",
+          duration: 2000,
+        });
         
-        try {
-          const memberResponse = await fetch(
-            `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${botIdNum}`
-          );
-          const memberData = await memberResponse.json();
-
-          if (!memberData.ok) {
-            setVerificationError("Бот не доданий до приватного каналу. Додайте бота як адміністратора");
-            setTimeout(() => {
-              setIsCheckingBot(false);
-              setVerificationSteps([]);
-              setVerificationCurrentStep(0);
-            }, 5000);
-            return;
-          }
-
-          if (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator') {
-            setVerificationError("Бот не має прав адміністратора в приватному каналі. Надайте боту права");
-            setTimeout(() => {
-              setIsCheckingBot(false);
-              setVerificationSteps([]);
-              setVerificationCurrentStep(0);
-            }, 5000);
-            return;
-          }
-        } catch (err) {
-          console.error("Error checking bot admin status:", err);
-          setVerificationError("Не вдалося перевірити права бота. Переконайтеся що бот доданий як адміністратор");
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-
-        // Крок 6: Синхронізація налаштувань
-        setVerificationCurrentStep(6);
+        // Продовжуємо обробку після успішної перевірки
         setVerificationProgress(steps[5]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
