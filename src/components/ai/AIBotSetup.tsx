@@ -704,6 +704,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
         console.log('Using channel_id from join result:', channelIdentifier);
+        
+        // Оновлюємо targetChannel для збереження в БД
+        setTargetChannel(channelIdentifier);
 
         // Крок 3: Підключення до Telegram API
         setVerificationCurrentStep(3);
