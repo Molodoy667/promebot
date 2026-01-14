@@ -22,16 +22,16 @@ serve(async (req) => {
 
     // Для числових ID не додаємо @, для username - додаємо
     const chatId = /^-?\d+$/.test(channelUsername) ? channelUsername : `@${channelUsername}`;
+    const isNumericId = /^-?\d+$/.test(channelUsername);
     
-    // Крок 1: Спочатку перевіряємо чи бот доданий (getChatMember працює навіть для приватних каналів)
-    const checkMemberUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${botToken.split(':')[0]}`;
-    
-    const memberResponse = await fetch(checkMemberUrl);
-    const memberData = await memberResponse.json();
+    // Крок 1: Перевірка існування та типу каналу
+    const getChatUrl = `https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatId}`;
+    const getChatResponse = await fetch(getChatUrl);
+    const getChatData = await getChatResponse.json();
 
-    if (!memberData.ok) {
-      // Якщо помилка "chat not found" - це приватний канал, до якого бот не доданий
-      if (memberData.description?.includes('chat not found')) {
+    if (!getChatData.ok) {
+      // Для числових ID (приватні канали): "chat not found" означає що бот не доданий
+      if (isNumericId && getChatData.description?.includes('chat not found')) {
         return new Response(
           JSON.stringify({ 
             isAdmin: false, 
@@ -44,40 +44,20 @@ serve(async (req) => {
         );
       }
       
-      // Інші помилки
+      // Для публічних каналів або інші помилки
       return new Response(
         JSON.stringify({ 
           isAdmin: false, 
           isMember: false,
           channelExists: false,
-          error: memberData.description || 'Не вдалося перевірити бота'
+          error: getChatData.description || 'Канал не знайдено'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Крок 2: Перевірка прав
-    const member = memberData.result;
-    const isAdmin = member.status === 'administrator' || member.status === 'creator';
-
-    if (!isAdmin) {
-      return new Response(
-        JSON.stringify({ 
-          isAdmin: false, 
-          isMember: true,
-          error: 'Бот доданий до каналу, але не має прав адміністратора. Надайте боту права адміністратора.' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Крок 3: Отримуємо інфо про канал (тепер вже можемо, бо бот доданий)
-    const getChatUrl = `https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatId}`;
-    const getChatResponse = await fetch(getChatUrl);
-    const getChatData = await getChatResponse.json();
-
-    // Перевірка типу (якщо вдалося отримати)
-    if (getChatData.ok && getChatData.result.type !== 'channel') {
+    // Перевірка типу
+    if (getChatData.result.type !== 'channel') {
       const typeMap: Record<string, string> = {
         'group': 'група',
         'supergroup': 'супергрупа',
@@ -88,10 +68,43 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           isAdmin: false, 
-          isMember: true,
+          isMember: false,
           channelExists: true,
           isChannel: false,
           error: `Це ${typeName}, а не канал`
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Крок 2: Перевірка чи бот доданий
+    const checkMemberUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${botToken.split(':')[0]}`;
+    
+    const response = await fetch(checkMemberUrl);
+    const data = await response.json();
+
+    if (!data.ok) {
+      return new Response(
+        JSON.stringify({ 
+          isAdmin: false, 
+          isMember: false,
+          channelExists: true,
+          isChannel: true,
+          error: 'Бот не доданий до каналу. Будь ласка, додайте бота до вашого каналу.' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const member = data.result;
+    const isAdmin = member.status === 'administrator' || member.status === 'creator';
+
+    if (!isAdmin) {
+      return new Response(
+        JSON.stringify({ 
+          isAdmin: false, 
+          isMember: true,
+          error: 'Бот доданий до каналу, але не має прав адміністратора. Надайте боту права адміністратора.' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
