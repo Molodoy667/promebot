@@ -636,9 +636,21 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         console.log('spy-join-channel response:', { joinData, joinError });
 
+        // Перевірка чи join був успішний
+        if (joinError || !joinData?.success) {
+          console.error('spy-join-channel failed:', { joinError, joinData });
+          setVerificationError(joinData?.error || joinError?.message || "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
         // Якщо приєдналися успішно і отримали channel_id - використовуємо його
         let channelToCheck = channelIdentifier;
-        if (joinData?.success && joinData?.channelInfo?.id) {
+        if (joinData?.channelInfo?.id) {
           channelToCheck = joinData.channelInfo.id;
           console.log('Using channel_id from join result:', channelToCheck);
 
