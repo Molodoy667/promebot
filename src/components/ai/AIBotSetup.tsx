@@ -901,22 +901,24 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         setVerificationCurrentStep(0);
       } else {
         // Handle as public channel with username
+        console.log('[Public Channel Check] Starting verification for:', channelIdentifier);
+        
         // Крок 1: Перевірка існування
         setVerificationCurrentStep(1);
         setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        console.log('Checking public channel:', channelIdentifier);
+        console.log('[Public Channel Check] Calling getChat with @' + channelIdentifier);
         
         const getChatResponse = await fetch(
           `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${channelIdentifier}`
         );
         const getChatData = await getChatResponse.json();
         
-        console.log('getChat response:', getChatData);
+        console.log('[Public Channel Check] getChat response:', getChatData);
         
         if (!getChatResponse.ok || !getChatData.ok) {
-          console.log('Channel not found or error:', getChatData.description);
+          console.log('[Public Channel Check] Error:', getChatData.description);
           setVerificationError(`Канал не знайдено: ${getChatData.description || "Перевірте правильність username або посилання"}`);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -925,6 +927,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           }, 5000);
           return;
         }
+        
+        console.log('[Public Channel Check] Channel found, type:', getChatData.result.type);
         
         // Крок 2: Визначення типу
         setVerificationCurrentStep(2);
