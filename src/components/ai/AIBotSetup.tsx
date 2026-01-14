@@ -689,6 +689,40 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
 
+        // Перевірка типу: має бути канал
+        if (joinData.channelInfo.type && joinData.channelInfo.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'група',
+            'supergroup': 'супергрупа',
+            'chat': 'чат'
+          };
+          const typeName = typeMap[joinData.channelInfo.type] || joinData.channelInfo.type;
+          
+          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
+          
+          // Вийти з групи/супергрупи, якщо щойно приєдналися
+          if (!joinData.already_joined) {
+            try {
+              await supabase.functions.invoke('spy-leave-channel', {
+                body: {
+                  spy_id: activeSpy.id,
+                  channel_id: joinData.channelInfo.id
+                }
+              });
+              console.log('Left non-channel chat');
+            } catch (err) {
+              console.error('Error leaving non-channel chat:', err);
+            }
+          }
+          
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
         channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
         console.log('Using channel_id from join result:', channelIdentifier);
 

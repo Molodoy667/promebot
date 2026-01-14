@@ -163,10 +163,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (chat.className === 'Channel' && !chatId.startsWith('-100')) {
             chatId = `-100${chatId}`;
           }
+          
+          // Determine type: Channel or Chat (group)
+          let chatType = 'unknown';
+          if (chat.className === 'Channel') {
+            // Channel can be either a channel or supergroup
+            chatType = (chat as any).broadcast ? 'channel' : 'supergroup';
+          } else if (chat.className === 'Chat') {
+            chatType = 'group';
+          }
+          
           channelInfo = {
             id: chatId,
             title: (chat as any).title || 'Unknown',
             username: (chat as any).username || null,
+            type: chatType,
           };
         } else if (inviteInfo.className === 'ChatInvite') {
           // We just joined, need to get from dialogs
@@ -181,10 +192,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (foundDialog.entity.className === 'Channel' && !entityId.startsWith('-100')) {
               entityId = `-100${entityId}`;
             }
+            
+            // Determine type
+            let chatType = 'unknown';
+            if (foundDialog.entity.className === 'Channel') {
+              chatType = (foundDialog.entity as any).broadcast ? 'channel' : 'supergroup';
+            } else if (foundDialog.entity.className === 'Chat') {
+              chatType = 'group';
+            }
+            
             channelInfo = {
               id: entityId,
               title: (foundDialog.entity as any).title || inviteInfo.title,
               username: (foundDialog.entity as any).username || null,
+              type: chatType,
             };
           }
         }
@@ -195,10 +216,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (entity.className === 'Channel' && !entityId.startsWith('-100')) {
           entityId = `-100${entityId}`;
         }
+        
+        // Determine type
+        let chatType = 'unknown';
+        if (entity.className === 'Channel') {
+          chatType = (entity as any).broadcast ? 'channel' : 'supergroup';
+        } else if (entity.className === 'Chat') {
+          chatType = 'group';
+        }
+        
         channelInfo = {
           id: entityId,
           title: (entity as any).title || 'Unknown',
           username: (entity as any).username || null,
+          type: chatType,
         };
       }
       console.log('[Spy Join Channel] Channel info:', channelInfo);
