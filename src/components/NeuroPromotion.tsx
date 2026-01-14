@@ -37,7 +37,7 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
   const [channelLink, setChannelLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [error, setError] = useState<{ type: 1 | 2 | 3; message: string } | null>(null);
+  const [errors, setErrors] = useState<Array<{ type: 1 | 2 | 3; message: string }>>([]);
   const [validationError, setValidationError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +55,7 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
     }
 
     setValidationError("");
-    setError(null);
+    setErrors([]);
     setIsLoading(true);
     setCurrentStep(0);
 
@@ -69,39 +69,25 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
       });
     }, 10000); // 10 секунд на кожен крок
 
-    // Через 60 секунд показуємо випадкову помилку
+    // Через 60 секунд показуємо ВСІ 3 помилки
     setTimeout(() => {
       clearInterval(interval);
       setIsLoading(false);
       
-      // Випадково вибираємо одну з трьох помилок
-      const randomValue = Math.random();
-      let errorType: 1 | 2 | 3;
-      
-      if (randomValue < 0.33) {
-        errorType = 1;
-      } else if (randomValue < 0.66) {
-        errorType = 2;
-      } else {
-        errorType = 3;
-      }
-      
-      if (errorType === 1) {
-        setError({
+      setErrors([
+        {
           type: 1,
           message: "Ваш канал раніше приймав участь в накрутці та не може бути доданий в наш сервіс через політику Telegram. Ми дотримуємось усіх правил та регламентів платформи."
-        });
-      } else if (errorType === 2) {
-        setError({
+        },
+        {
           type: 2,
           message: "Ваш канал зареєстрований раніше місяця. На жаль Telegram не допускає такі канали до просування та реклами. Ми щиро вибачаємось, але це політика Telegram і ми нічого з цим зробити не можемо."
-        });
-      } else {
-        setError({
+        },
+        {
           type: 3,
           message: "Ви не являєтесь власником цього каналу. Для додавання каналу в систему просування необхідно мати права адміністратора або власника каналу."
-        });
-      }
+        }
+      ]);
     }, 60000); // 60 секунд
   };
 
@@ -109,7 +95,7 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
     setChannelLink("");
     setIsLoading(false);
     setCurrentStep(0);
-    setError(null);
+    setErrors([]);
     setValidationError("");
     onOpenChange(false);
   };
@@ -127,7 +113,7 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
           </DialogDescription>
         </DialogHeader>
 
-        {!isLoading && !error && (
+        {!isLoading && errors.length === 0 && (
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="space-y-2">
               <Label htmlFor="channel-link">Посилання на Telegram канал</Label>
@@ -211,14 +197,16 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
           </div>
         )}
 
-        {error && (
+        {errors.length > 0 && (
           <div className="py-4 space-y-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm leading-relaxed">
-                {error.message}
-              </AlertDescription>
-            </Alert>
+            {errors.map((error, index) => (
+              <Alert key={error.type} variant="destructive" className="animate-in fade-in slide-in-from-top duration-300" style={{ animationDelay: `${index * 150}ms` }}>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm leading-relaxed">
+                  <strong>Помилка {error.type}:</strong> {error.message}
+                </AlertDescription>
+              </Alert>
+            ))}
 
             <div className="flex gap-2">
               <Button 
@@ -230,7 +218,7 @@ export function NeuroPromotion({ open, onOpenChange }: NeuroPromotionProps) {
               </Button>
               <Button 
                 onClick={() => {
-                  setError(null);
+                  setErrors([]);
                   setChannelLink("");
                   setValidationError("");
                 }}

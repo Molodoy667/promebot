@@ -62,10 +62,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         channelEntity = await client.getEntity(channel_identifier);
       } else if (channel_identifier.startsWith('-100')) {
         const channelId = BigInt(channel_identifier);
-        channelEntity = await client.getEntity(channelId);
+        channelEntity = await client.getEntity(channelId as any);
       } else if (/^-?\d+$/.test(channel_identifier)) {
         const channelId = BigInt(channel_identifier);
-        channelEntity = await client.getEntity(channelId);
+        channelEntity = await client.getEntity(channelId as any);
       } else {
         channelEntity = await client.getEntity(channel_identifier);
       }

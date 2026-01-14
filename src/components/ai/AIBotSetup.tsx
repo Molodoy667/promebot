@@ -591,8 +591,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       
       // Автоматично визначаємо приватний канал за invite-посиланням
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
+        // Крок 1: Перевірка існування
         setVerificationCurrentStep(1);
-        setVerificationProgress(steps[1]);
+        setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Отримуємо активного spy
@@ -612,9 +613,17 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
         
+        // Крок 2: Визначення типу каналу
         setVerificationCurrentStep(2);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Крок 3: Підключення до Telegram API
+        setVerificationCurrentStep(3);
         setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
+
+        console.log('Checking private channel:', channelIdentifier);
 
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
@@ -624,30 +633,121 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           }
         });
 
-        if (spyError || !spyData?.success) {
-          toast({
-            title: "Помилка підключення",
-            description: spyData?.error || "Не вдалося підключитись до приватного каналу",
-            variant: "destructive",
-            duration: 5000,
-          });
-          setIsCheckingBot(false);
-          setVerificationSteps([]);
-          setVerificationCurrentStep(0);
+        console.log('spy-get-channel-info response:', { spyData, spyError });
+
+        if (spyError) {
+          console.error('spy-get-channel-info error:', spyError);
+          setVerificationError(`Помилка підключення: ${spyError.message || "Не вдалося підключитись до приватного каналу"}`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
           return;
         }
 
-        setVerificationCurrentStep(3);
+        if (!spyData?.success) {
+          console.log('spy-get-channel-info failed:', spyData);
+          setVerificationError(spyData?.error || spyData?.message || "Канал не знайдено або userbot не має доступу. Перевірте правильність invite посилання");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Крок 4: Перевірка доступу бота
+        setVerificationCurrentStep(4);
         setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Перевіряємо чи userbot має доступ до каналу
+        if (!spyData.channelInfo || !spyData.channelInfo.id) {
+          setVerificationError("Не вдалося отримати інформацію про канал. Можливо userbot не має доступу");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Перевіряємо тип каналу - має бути channel
+        if (spyData.channelInfo.type && spyData.channelInfo.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'група',
+            'supergroup': 'супергрупа',
+            'private': 'приватний чат'
+          };
+          const typeName = typeMap[spyData.channelInfo.type] || spyData.channelInfo.type;
+          
+          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
         
-        setVerificationCurrentStep(4);
+        // Крок 5: Перевірка прав адміністратора
+        setVerificationCurrentStep(5);
         setVerificationProgress(steps[4]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Перевіряємо чи бот доданий до каналу як адміністратор
+        const chatId = spyData.channelInfo.id;
+        const botIdNum = botToken.split(':')[0];
+        
+        try {
+          const memberResponse = await fetch(
+            `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${botIdNum}`
+          );
+          const memberData = await memberResponse.json();
+
+          if (!memberData.ok) {
+            setVerificationError("Бот не доданий до приватного каналу. Додайте бота як адміністратора");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+
+          if (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator') {
+            setVerificationError("Бот не має прав адміністратора в приватному каналі. Надайте боту права");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+        } catch (err) {
+          console.error("Error checking bot admin status:", err);
+          setVerificationError("Не вдалося перевірити права бота. Переконайтеся що бот доданий як адміністратор");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Крок 6: Синхронізація налаштувань
+        setVerificationCurrentStep(6);
+        setVerificationProgress(steps[5]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
+        // Крок 7: Завершення підключення
+        setVerificationCurrentStep(7);
+        setVerificationProgress(steps[6]);
+        await new Promise(resolve => setTimeout(resolve, 400));
+
         // Зберігаємо chat_id з spy
-        const chatId = spyData.channelInfo.id;
-        setTargetChannel(chatId);
+        setTargetChannel(chatId.toString());
 
         setVerificationStatus({ isMember: true, hasPermissions: true });
         setChannelVerified(true);
@@ -717,16 +817,30 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         const checkData = await checkResponse.json();
 
         if (!checkData.ok) {
-          setVerificationStatus({ isMember: false, hasPermissions: false });
-          toast({
-            title: "Помилка доступу",
-            description: `Бот не має доступу до каналу. Переконайтеся що ви:\n1. Додали бота @${botUsername || 'вашого_бота'} як адміністратора\n2. Вказали правильний chat_id`,
-            variant: "destructive",
-            duration: 6000,
-          });
-          setIsCheckingBot(false);
-          setVerificationSteps([]);
-          setVerificationCurrentStep(0);
+          setVerificationError(`Не вдалося підключитись до каналу: ${checkData.description || "Перевірте chat_id та права бота"}`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        // Перевіряємо тип каналу
+        if (checkData.result.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'група',
+            'supergroup': 'супергрупа',
+            'private': 'приватний чат'
+          };
+          const typeName = typeMap[checkData.result.type] || checkData.result.type;
+          
+          setVerificationError(`Це ${typeName}, а не канал. Вкажіть посилання на канал`);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
           return;
         }
 
@@ -741,17 +855,24 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         );
         const memberData = await memberResponse.json();
 
-        if (!memberData.ok || (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator')) {
+        if (!memberData.ok) {
+          setVerificationError("Бот не доданий до каналу. Додайте бота як адміністратора");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        if (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator') {
           setVerificationStatus({ isMember: true, hasPermissions: false });
-          toast({
-            title: "Недостатньо прав",
-            description: "Бот доданий до каналу, але не має прав адміністратора. Надайте боту права адміністратора.",
-            variant: "destructive",
-            duration: 5000,
-          });
-          setIsCheckingBot(false);
-          setVerificationSteps([]);
-          setVerificationCurrentStep(0);
+          setVerificationError("Бот не має прав адміністратора. Надайте боту права адміністратора");
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
           return;
         }
 
@@ -777,6 +898,8 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
         
+        console.log('Checking public channel:', channelIdentifier);
+        
         const getChatResponse = await fetch(
           `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${channelIdentifier}`
         );
@@ -784,9 +907,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         
         console.log('getChat response:', getChatData);
         
-        if (!getChatData.ok) {
+        if (!getChatResponse.ok || !getChatData.ok) {
           console.log('Channel not found or error:', getChatData.description);
-          setVerificationError(`Канал не знайдено: ${getChatData.description || "Перевірте правильність username"}`);
+          setVerificationError(`Канал не знайдено: ${getChatData.description || "Перевірте правильність username або посилання"}`);
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
