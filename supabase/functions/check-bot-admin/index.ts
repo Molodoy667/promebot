@@ -21,7 +21,9 @@ serve(async (req) => {
     }
 
     // Крок 1: Перевірка існування та типу каналу
-    const getChatUrl = `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${channelUsername}`;
+    // Для числових ID не додаємо @, для username - додаємо
+    const chatId = /^-?\d+$/.test(channelUsername) ? channelUsername : `@${channelUsername}`;
+    const getChatUrl = `https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatId}`;
     const getChatResponse = await fetch(getChatUrl);
     const getChatData = await getChatResponse.json();
 
@@ -59,7 +61,7 @@ serve(async (req) => {
     }
 
     // Крок 2: Перевірка чи бот доданий
-    const checkMemberUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${channelUsername}&user_id=${botToken.split(':')[0]}`;
+    const checkMemberUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${chatId}&user_id=${botToken.split(':')[0]}`;
     
     const response = await fetch(checkMemberUrl);
     const data = await response.json();

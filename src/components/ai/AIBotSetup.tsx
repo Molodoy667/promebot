@@ -682,6 +682,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         let channelToCheck = channelIdentifier;
         if (joinData?.channelInfo?.id) {
           channelToCheck = joinData.channelInfo.id;
+          channelIdentifier = channelToCheck; // Оновлюємо channelIdentifier для подальших перевірок
           console.log('Using channel_id from join result:', channelToCheck);
 
           // Зберегти в pending_spy_channels для автовиходу через 5 хв
@@ -1047,6 +1048,7 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         });
 
         if (error) throw error;
+        if (data?.error) throw new Error(data.error);
 
         setVerificationStatus({
           isMember: data.isMember,

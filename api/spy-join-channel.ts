@@ -49,26 +49,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await client.connect();
     console.log('[Spy Join Channel] Client connected');
 
+    // Extract invite hash early if it's an invite link
+    let inviteHash = '';
+    let isInviteLink = false;
+    if (channel_identifier.includes('t.me/+')) {
+      inviteHash = channel_identifier.split('t.me/+')[1].split(/[?#]/)[0];
+      isInviteLink = true;
+    } else if (channel_identifier.includes('t.me/joinchat/')) {
+      inviteHash = channel_identifier.split('t.me/joinchat/')[1].split(/[?#]/)[0];
+      isInviteLink = true;
+    }
+
     // Try to get entity first - if successful, already joined
+    // For invite links, skip this check and go straight to join
     let alreadyJoined = false;
-    try {
-      const entity = await client.getEntity(channel_identifier);
-      console.log('[Spy Join Channel] Channel found, checking membership...');
-      
-      // Try to get full channel info to confirm membership
-      if (entity.className === 'Channel') {
-        try {
-          await client.invoke(
-            new Api.channels.GetFullChannel({ channel: entity })
-          );
-          alreadyJoined = true;
-          console.log('[Spy Join Channel] Already a member');
-        } catch (err) {
-          console.log('[Spy Join Channel] Not a member yet');
+    if (!isInviteLink) {
+      try {
+        const entity = await client.getEntity(channel_identifier);
+        console.log('[Spy Join Channel] Channel found, checking membership...');
+        
+        // Try to get full channel info to confirm membership
+        if (entity.className === 'Channel') {
+          try {
+            await client.invoke(
+              new Api.channels.GetFullChannel({ channel: entity })
+            );
+            alreadyJoined = true;
+            console.log('[Spy Join Channel] Already a member');
+          } catch (err) {
+            console.log('[Spy Join Channel] Not a member yet');
+          }
         }
+      } catch (err: any) {
+        console.log('[Spy Join Channel] Channel not accessible, will try to join:', err.message);
       }
-    } catch (err: any) {
-      console.log('[Spy Join Channel] Channel not accessible, will try to join:', err.message);
     }
 
     // If not already joined, try to join
@@ -77,15 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[Spy Join Channel] Attempting to join channel...');
         
         // For invite links (t.me/+xxx or t.me/joinchat/xxx)
-        if (channel_identifier.includes('t.me/+') || channel_identifier.includes('t.me/joinchat/')) {
-          // Extract invite hash from URL
-          let inviteHash = '';
-          if (channel_identifier.includes('t.me/+')) {
-            inviteHash = channel_identifier.split('t.me/+')[1].split(/[?#]/)[0];
-          } else if (channel_identifier.includes('t.me/joinchat/')) {
-            inviteHash = channel_identifier.split('t.me/joinchat/')[1].split(/[?#]/)[0];
-          }
-          
+        if (isInviteLink) {
           if (!inviteHash) {
             throw new Error('Invalid invite link format');
           }
@@ -142,15 +148,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get channel info after joining
     let channelInfo: any = null;
     try {
-      const entity = await client.getEntity(channel_identifier);
-      channelInfo = {
-        id: entity.id?.toString(),
-        title: (entity as any).title || 'Unknown',
-        username: (entity as any).username || null,
-      };
+      // For invite links, we need to get updates to find the channel
+      if (isInviteLink) {
+        console.log('[Spy Join Channel] Getting channel info via checkChatInvite...');
+        const inviteInfo = await client.invoke(
+          new Api.messages.CheckChatInvite({ hash: inviteHash })
+        );
+        
+        if (inviteInfo.className === 'ChatInviteAlready') {
+          const chat = inviteInfo.chat;
+          channelInfo = {
+            id: chat.id?.toString(),
+            title: (chat as any).title || 'Unknown',
+            username: (chat as any).username || null,
+          };
+        } else if (inviteInfo.className === 'ChatInvite') {
+          // We just joined, need to get from dialogs
+          const dialogs = await client.getDialogs({ limit: 10 });
+          const foundDialog = dialogs.find(d => 
+            d.title === inviteInfo.title || 
+            (d.entity && (d.entity as any).title === inviteInfo.title)
+          );
+          if (foundDialog && foundDialog.entity) {
+            channelInfo = {
+              id: foundDialog.entity.id?.toString(),
+              title: (foundDialog.entity as any).title || inviteInfo.title,
+              username: (foundDialog.entity as any).username || null,
+            };
+          }
+        }
+      } else {
+        const entity = await client.getEntity(channel_identifier);
+        channelInfo = {
+          id: entity.id?.toString(),
+          title: (entity as any).title || 'Unknown',
+          username: (entity as any).username || null,
+        };
+      }
       console.log('[Spy Join Channel] Channel info:', channelInfo);
-    } catch (err) {
-      console.log('[Spy Join Channel] Could not get channel info after join:', err);
+    } catch (err: any) {
+      console.log('[Spy Join Channel] Could not get channel info after join:', err.message);
     }
 
     await client.disconnect();
