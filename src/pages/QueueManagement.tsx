@@ -558,9 +558,16 @@ export default function QueueManagement() {
                                 let eta = new Date(base.getTime() + publishInterval * index * 60_000);
                                 eta = nextWindowStart(eta);
 
-                                // If we're outside the window right now, show explicit waiting for the first post
-                                if (index === 0 && timeFrom && timeTo && !inWindow(nowLocal)) {
-                                  return `Чекає ${timeFrom.substring(0, 5)}`;
+                                // For the first post, if it will be published within 5 minutes
+                                if (index === 0) {
+                                  const timeUntilPublish = (eta.getTime() - nowLocal.getTime()) / 1000 / 60; // in minutes
+                                  if (timeUntilPublish <= 5 && timeUntilPublish >= 0) {
+                                    return "Опублікується протягом 5 хвилин";
+                                  }
+                                  // If we're outside the window right now, show explicit waiting
+                                  if (timeFrom && timeTo && !inWindow(nowLocal)) {
+                                    return `Чекає ${timeFrom.substring(0, 5)}`;
+                                  }
                                 }
 
                                 // If interval is unknown (no lastPublishedAt and index>0), fall back to queue number
