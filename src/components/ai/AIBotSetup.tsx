@@ -627,19 +627,54 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         // Спочатку намагаємося приєднатись до каналу
         console.log('Attempting to join channel with userbot...');
-        const { data: joinData, error: joinError } = await supabase.functions.invoke('spy-join-channel', {
-          body: {
-            spy_id: activeSpy.id,
-            channel_identifier: channelIdentifier
+        
+        let joinData = null;
+        let joinError = null;
+        
+        try {
+          const response = await supabase.functions.invoke('spy-join-channel', {
+            body: {
+              spy_id: activeSpy.id,
+              channel_identifier: channelIdentifier
+            }
+          });
+          
+          joinData = response.data;
+          joinError = response.error;
+          
+          console.log('spy-join-channel response:', { joinData, joinError });
+          
+          // Перевірка чи join був успішний - перевіряємо і error і data.success
+          if (joinError || (joinData && !joinData.success)) {
+            console.error('spy-join-channel failed:', { joinError, joinData });
+            
+            // Витягуємо повідомлення про помилку
+            let errorMessage = "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання";
+            
+            if (joinData?.error) {
+              // Якщо помилка містить технічні деталі, показуємо користувачу зрозуміле повідомлення
+              if (joinData.error.includes('INVITE_HASH_INVALID') || joinData.error.includes('Cannot find any entity')) {
+                errorMessage = "Посилання на канал невалідне або прострочене";
+              } else if (joinData.error.includes('CHANNELS_TOO_MUCH')) {
+                errorMessage = "Userbot досяг ліміту каналів. Зверніться до адміністратора";
+              } else {
+                errorMessage = joinData.error;
+              }
+            } else if (joinError?.message) {
+              errorMessage = joinError.message;
+            }
+            
+            setVerificationError(errorMessage);
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
           }
-        });
-
-        console.log('spy-join-channel response:', { joinData, joinError });
-
-        // Перевірка чи join був успішний
-        if (joinError || !joinData?.success) {
-          console.error('spy-join-channel failed:', { joinError, joinData });
-          setVerificationError(joinData?.error || joinError?.message || "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання");
+        } catch (err: any) {
+          console.error('spy-join-channel exception:', err);
+          setVerificationError("Помилка підключення до сервера. Спробуйте пізніше");
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
