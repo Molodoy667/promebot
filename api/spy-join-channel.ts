@@ -157,8 +157,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         if (inviteInfo.className === 'ChatInviteAlready') {
           const chat = inviteInfo.chat;
+          // Convert BigInt ID to proper format for Bot API
+          let chatId = chat.id?.toString() || '';
+          // For channels, prepend -100 if not already there
+          if (chat.className === 'Channel' && !chatId.startsWith('-100')) {
+            chatId = `-100${chatId}`;
+          }
           channelInfo = {
-            id: chat.id?.toString(),
+            id: chatId,
             title: (chat as any).title || 'Unknown',
             username: (chat as any).username || null,
           };
@@ -170,8 +176,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             (d.entity && (d.entity as any).title === inviteInfo.title)
           );
           if (foundDialog && foundDialog.entity) {
+            let entityId = foundDialog.entity.id?.toString() || '';
+            // For channels, prepend -100 if not already there
+            if (foundDialog.entity.className === 'Channel' && !entityId.startsWith('-100')) {
+              entityId = `-100${entityId}`;
+            }
             channelInfo = {
-              id: foundDialog.entity.id?.toString(),
+              id: entityId,
               title: (foundDialog.entity as any).title || inviteInfo.title,
               username: (foundDialog.entity as any).username || null,
             };
@@ -179,8 +190,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } else {
         const entity = await client.getEntity(channel_identifier);
+        let entityId = entity.id?.toString() || '';
+        // For channels, prepend -100 if not already there
+        if (entity.className === 'Channel' && !entityId.startsWith('-100')) {
+          entityId = `-100${entityId}`;
+        }
         channelInfo = {
-          id: entity.id?.toString(),
+          id: entityId,
           title: (entity as any).title || 'Unknown',
           username: (entity as any).username || null,
         };
