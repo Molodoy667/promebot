@@ -1246,7 +1246,7 @@ const MyChannels = () => {
                     <h3 className="text-lg font-bold truncate">
                       {group.channelInfo?.title || group.service.target_channel}
                     </h3>
-                    {group.channelInfo?.username && (
+                    {group.channelInfo?.username ? (
                       <a 
                         href={`https://t.me/${group.channelInfo.username}`}
                         target="_blank"
@@ -1256,6 +1256,12 @@ const MyChannels = () => {
                       >
                         @{group.channelInfo.username}
                       </a>
+                    ) : (
+                      <span className="text-sm text-muted-foreground truncate block">
+                        {group.service.target_channel.startsWith('-100') 
+                          ? 'Приватний канал' 
+                          : group.service.target_channel}
+                      </span>
                     )}
                   </div>
                 </div>
