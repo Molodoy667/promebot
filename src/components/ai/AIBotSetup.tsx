@@ -591,11 +591,6 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       
       // Автоматично визначаємо приватний канал за invite-посиланням
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
-        // Крок 1: Перевірка існування
-        setVerificationCurrentStep(1);
-        setVerificationProgress(steps[0]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
         // Отримуємо активного spy
         const { data: activeSpy } = await supabase
           .from('telegram_spies')
@@ -613,19 +608,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
         
-        // Крок 2: Визначення типу каналу
-        setVerificationCurrentStep(2);
-        setVerificationProgress(steps[1]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Крок 3: Підключення до Telegram API
-        setVerificationCurrentStep(3);
-        setVerificationProgress(steps[2]);
+        // Крок 1: Перевірка існування каналу (спроба приєднатись)
+        setVerificationCurrentStep(1);
+        setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         console.log('Checking private channel:', channelIdentifier);
 
-        // Спочатку намагаємося приєднатись до каналу
+        // Спочатку намагаємося приєднатись до каналу (це і є перевірка існування)
         console.log('Attempting to join channel with userbot...');
         
         let joinData = null;
@@ -683,6 +673,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
 
+        // Крок 2: Визначення типу каналу
+        setVerificationCurrentStep(2);
+        setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         // Якщо приєдналися успішно і отримали channel_id - використовуємо його
         let channelToCheck = channelIdentifier;
         if (joinData?.channelInfo?.id) {
@@ -711,6 +706,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
             }
           }
         }
+
+        // Крок 3: Підключення до Telegram API
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[2]);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
