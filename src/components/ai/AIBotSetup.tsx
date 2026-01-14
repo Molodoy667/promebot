@@ -1275,20 +1275,20 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
       if (anySettingsChanged && service?.is_running) {
         toast({
           title: "Успішно",
-          description: "Налаштування збережено. Бот зупинено та згенеровані пости очищено. Запустіть бота знову в розділі 'Мої канали'.",
+          description: "Налаштування збережено. Бот зупинено та згенеровані пости очищено. Не забудьте запустити бота в розділі 'Мої канали'.",
           duration: 5000,
         });
       } else {
         toast({
           title: "Успішно",
-          description: "Налаштування збережено",
+          description: "Налаштування збережено. Не забудьте запустити бота.",
         });
       }
 
-      // Call onSaveSuccess callback if provided
-      if (onSaveSuccess) {
-        setTimeout(() => onSaveSuccess(), 1000);
-      }
+      // Redirect to My Channels after 1 second
+      setTimeout(() => {
+        window.location.href = '/my-channels';
+      }, 1000);
     } catch (error: any) {
       console.error("Error saving settings:", error);
       toast({
