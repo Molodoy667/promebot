@@ -33,19 +33,55 @@ serve(async (req) => {
       );
     }
 
+    // Get spy credentials from database
+    const { data: spy, error: spyError } = await supabase
+      .from('telegram_spies')
+      .select('session_string, api_id, api_hash')
+      .eq('id', spy_id)
+      .single();
+
+    if (spyError || !spy) {
+      console.error('Failed to get spy credentials:', spyError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Spy not found or invalid spy_id' 
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!spy.session_string || !spy.api_id || !spy.api_hash) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Spy credentials incomplete' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     // Get Vercel API URL from environment
     const VERCEL_API_URL = Deno.env.get('VERCEL_API_URL') || 'https://promobot.store';
 
     console.log(`Calling Vercel API: ${VERCEL_API_URL}/api/spy-get-channel-info`);
 
-    // Forward request to Vercel API
+    // Forward request to Vercel API with spy credentials
     const response = await fetch(`${VERCEL_API_URL}/api/spy-get-channel-info`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        spy_id,
+        session_string: spy.session_string,
+        api_id: spy.api_id,
+        api_hash: spy.api_hash,
         channel_identifier
       })
     });
