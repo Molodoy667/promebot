@@ -940,6 +940,32 @@ const MyChannels = () => {
     try {
       const serviceId = groupToDelete.service.id;
       const serviceType = groupToDelete.type;
+      const spyId = groupToDelete.service.spy_id;
+      const targetChannel = groupToDelete.service.target_channel;
+      
+      // Якщо є spy прив'язаний до приватного каналу - виходимо з нього
+      if (spyId && targetChannel && targetChannel.startsWith('-100')) {
+        console.log('[MyChannels] Leaving spy from private channel:', { spyId, targetChannel });
+        
+        try {
+          const { data: leaveData, error: leaveError } = await supabase.functions.invoke('spy-leave-channel', {
+            body: {
+              spy_id: spyId,
+              channel_id: targetChannel
+            }
+          });
+          
+          if (leaveError || !leaveData?.success) {
+            console.error('[MyChannels] Failed to leave channel:', leaveError || leaveData);
+            // Продовжуємо видалення навіть якщо вихід не вдався
+          } else {
+            console.log('[MyChannels] Successfully left channel');
+          }
+        } catch (err) {
+          console.error('[MyChannels] Exception during leave:', err);
+          // Продовжуємо видалення навіть якщо вихід не вдався
+        }
+      }
       
       // Delete posts history
       if (serviceType === 'plagiarist') {
