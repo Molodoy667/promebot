@@ -625,6 +625,20 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         console.log('Checking private channel:', channelIdentifier);
 
+        // Спочатку намагаємося приєднатись до каналу
+        console.log('Attempting to join channel with userbot...');
+        const { data: joinData, error: joinError } = await supabase.functions.invoke('spy-join-channel', {
+          body: {
+            spy_id: activeSpy.id,
+            channel_identifier: channelIdentifier
+          }
+        });
+
+        console.log('spy-join-channel response:', { joinData, joinError });
+
+        // Якщо не вдалося приєднатись - це може означати що вже є в каналі або канал не існує
+        // Продовжуємо перевірку в будь-якому випадку
+
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
           body: {
@@ -648,7 +662,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         if (!spyData?.success) {
           console.log('spy-get-channel-info failed:', spyData);
-          setVerificationError(spyData?.error || spyData?.message || "Канал не знайдено або userbot не має доступу. Перевірте правильність invite посилання");
+          
+          // Перевіряємо чи це проблема з доступом
+          if (spyData?.error?.includes('Cannot find any entity') || spyData?.error?.includes('не знайдено')) {
+            setVerificationError("Канал не знайдено або userbot не може приєднатися. Переконайтеся що invite посилання дійсне і не прострочене");
+          } else {
+            setVerificationError(spyData?.error || spyData?.message || "Не вдалося підключитись до приватного каналу");
+          }
+          
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
