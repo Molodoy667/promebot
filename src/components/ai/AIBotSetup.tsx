@@ -760,36 +760,15 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setChannelVerified(true);
+        setIsCheckingBot(false);
+        setVerificationSteps([]);
+        setVerificationCurrentStep(0);
+        
         toast({
           title: "Успішно!",
           description: "Бот підключений до приватного каналу і має всі необхідні права",
           duration: 2000,
         });
-        
-        // Продовжуємо обробку після успішної перевірки
-        setVerificationProgress(steps[5]);
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        // Крок 7: Завершення підключення
-        setVerificationCurrentStep(7);
-        setVerificationProgress(steps[6]);
-        await new Promise(resolve => setTimeout(resolve, 400));
-
-        // Зберігаємо chat_id з spy
-        setTargetChannel(chatId.toString());
-
-        setVerificationStatus({ isMember: true, hasPermissions: true });
-        setChannelVerified(true);
-        
-        toast({
-          title: "Успішно!",
-          description: `Приватний канал "${spyData.channelInfo.title}" підключено через userbot`,
-          duration: 3000,
-        });
-        
-        setIsCheckingBot(false);
-        setVerificationSteps([]);
-        setVerificationCurrentStep(0);
         return;
       }
 
