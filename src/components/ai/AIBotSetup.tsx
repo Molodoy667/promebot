@@ -636,14 +636,40 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
         console.log('spy-join-channel response:', { joinData, joinError });
 
-        // Якщо не вдалося приєднатись - це може означати що вже є в каналі або канал не існує
-        // Продовжуємо перевірку в будь-якому випадку
+        // Якщо приєдналися успішно і отримали channel_id - використовуємо його
+        let channelToCheck = channelIdentifier;
+        if (joinData?.success && joinData?.channelInfo?.id) {
+          channelToCheck = joinData.channelInfo.id;
+          console.log('Using channel_id from join result:', channelToCheck);
+
+          // Зберегти в pending_spy_channels для автовиходу через 5 хв
+          if (!joinData.already_joined) {
+            try {
+              const { error: pendingError } = await supabase
+                .from('pending_spy_channels')
+                .insert({
+                  spy_id: activeSpy.id,
+                  channel_id: joinData.channelInfo.id,
+                  channel_identifier: channelIdentifier,
+                  user_id: (await supabase.auth.getUser()).data.user?.id
+                });
+              
+              if (pendingError) {
+                console.error('Failed to save pending channel:', pendingError);
+              } else {
+                console.log('Saved pending channel - will auto-leave in 5 minutes if not confirmed');
+              }
+            } catch (err) {
+              console.error('Error saving pending channel:', err);
+            }
+          }
+        }
 
         // Викликаємо spy-get-channel-info
         const { data: spyData, error: spyError } = await supabase.functions.invoke('spy-get-channel-info', {
           body: {
             spy_id: activeSpy.id,
-            channel_identifier: channelIdentifier
+            channel_identifier: channelToCheck
           }
         });
 
@@ -1167,6 +1193,25 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         if (serviceError) throw serviceError;
         serviceId = newService.id;
         setService(newService as AIBotService);
+        
+        // Підтвердити pending канал - змінити статус на "confirmed" щоб не видаляти
+        if (normalizedChannel) {
+          try {
+            const { error: confirmError } = await supabase
+              .from('pending_spy_channels')
+              .update({ status: 'confirmed' })
+              .eq('channel_id', normalizedChannel)
+              .eq('status', 'pending');
+            
+            if (confirmError) {
+              console.error('Failed to confirm pending channel:', confirmError);
+            } else {
+              console.log('Confirmed pending channel - will not auto-leave');
+            }
+          } catch (err) {
+            console.error('Error confirming pending channel:', err);
+          }
+        }
       }
       // Save publishing settings
       const { error: settingsError } = await supabase

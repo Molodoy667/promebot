@@ -98,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
           );
           console.log('[Spy Join Channel] Successfully joined via invite link');
+          console.log('[Spy Join Channel] Join result:', result);
         }
         // For public channels with @username or clean username
         else if (channel_identifier.startsWith('@') || (!channel_identifier.startsWith('+') && !channel_identifier.startsWith('-'))) {
@@ -128,12 +129,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Get channel info after joining
+    let channelInfo: any = null;
+    try {
+      const entity = await client.getEntity(channel_identifier);
+      channelInfo = {
+        id: entity.id?.toString(),
+        title: (entity as any).title || 'Unknown',
+        username: (entity as any).username || null,
+      };
+      console.log('[Spy Join Channel] Channel info:', channelInfo);
+    } catch (err) {
+      console.log('[Spy Join Channel] Could not get channel info after join:', err);
+    }
+
     await client.disconnect();
 
     return res.status(200).json({
       success: true,
       already_joined: alreadyJoined,
-      message: alreadyJoined ? 'Already a member' : 'Successfully joined channel'
+      message: alreadyJoined ? 'Already a member' : 'Successfully joined channel',
+      channelInfo
     });
 
   } catch (error: any) {

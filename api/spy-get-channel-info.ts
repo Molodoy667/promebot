@@ -110,7 +110,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       // If not invite link or join didn't return entity, get it normally
       if (!entity) {
-        entity = await client.getEntity(channel_identifier);
+        // If it's a numeric ID (from join result), convert to BigInt
+        if (/^\d+$/.test(channel_identifier)) {
+          console.log('[Spy Get Channel Info] Using numeric ID:', channel_identifier);
+          entity = await client.getEntity(BigInt(channel_identifier) as any);
+        } else {
+          entity = await client.getEntity(channel_identifier);
+        }
       }
       
       console.log('[Spy Get Channel Info] Entity resolved:', entity.className);
