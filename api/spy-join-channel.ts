@@ -76,8 +76,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         console.log('[Spy Join Channel] Attempting to join channel...');
         
-        // For public channels with @username
-        if (channel_identifier.startsWith('@') || (!channel_identifier.startsWith('+') && !channel_identifier.startsWith('-'))) {
+        // For invite links (t.me/+xxx or t.me/joinchat/xxx)
+        if (channel_identifier.includes('t.me/+') || channel_identifier.includes('t.me/joinchat/')) {
+          // Extract invite hash from URL
+          let inviteHash = '';
+          if (channel_identifier.includes('t.me/+')) {
+            inviteHash = channel_identifier.split('t.me/+')[1].split(/[?#]/)[0];
+          } else if (channel_identifier.includes('t.me/joinchat/')) {
+            inviteHash = channel_identifier.split('t.me/joinchat/')[1].split(/[?#]/)[0];
+          }
+          
+          if (!inviteHash) {
+            throw new Error('Invalid invite link format');
+          }
+          
+          console.log('[Spy Join Channel] Using invite hash:', inviteHash);
+          
+          const result = await client.invoke(
+            new Api.messages.ImportChatInvite({
+              hash: inviteHash,
+            })
+          );
+          console.log('[Spy Join Channel] Successfully joined via invite link');
+        }
+        // For public channels with @username or clean username
+        else if (channel_identifier.startsWith('@') || (!channel_identifier.startsWith('+') && !channel_identifier.startsWith('-'))) {
           const entity = await client.getEntity(channel_identifier);
           await client.invoke(
             new Api.channels.JoinChannel({
@@ -85,12 +108,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
           );
           console.log('[Spy Join Channel] Successfully joined public channel');
-        } else {
-          console.log('[Spy Join Channel] Private channel or chat ID - cannot auto-join');
+        } 
+        // For chat IDs like -1001234567890
+        else {
+          console.log('[Spy Join Channel] Chat ID - cannot auto-join');
           await client.disconnect();
           return res.status(400).json({
             success: false,
-            error: 'Cannot auto-join private channels or chat IDs. Spy must be manually added.'
+            error: 'Cannot auto-join using chat ID. Use invite link or @username instead.'
           });
         }
       } catch (joinErr: any) {
