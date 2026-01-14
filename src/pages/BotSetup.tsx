@@ -1113,7 +1113,7 @@ const BotSetup = () => {
           
           // Try to join channel with spy for statistics collection
           try {
-            const { error: joinError } = await supabase.functions.invoke('spy-join-channel', {
+            const { data: joinData, error: joinError } = await supabase.functions.invoke('spy-join-channel', {
               body: { 
                 spy_id: activeSpy.id, 
                 channel_identifier: targetChannel 
@@ -1124,6 +1124,28 @@ const BotSetup = () => {
               console.log('[Bot Setup] Spy join warning:', joinError.message);
             } else {
               console.log('[Bot Setup] Spy joined target channel for statistics');
+              
+              // Зберегти в pending_spy_channels якщо це новий join
+              if (joinData?.success && joinData?.channelInfo?.id && !joinData.already_joined) {
+                try {
+                  const { error: pendingError } = await supabase
+                    .from('pending_spy_channels')
+                    .insert({
+                      spy_id: activeSpy.id,
+                      channel_id: joinData.channelInfo.id,
+                      channel_identifier: targetChannel,
+                      user_id: user?.id
+                    });
+                  
+                  if (pendingError) {
+                    console.error('[Bot Setup] Failed to save pending channel:', pendingError);
+                  } else {
+                    console.log('[Bot Setup] Saved pending channel - will auto-leave in 5 minutes if not confirmed');
+                  }
+                } catch (err) {
+                  console.error('[Bot Setup] Error saving pending channel:', err);
+                }
+              }
             }
           } catch (joinErr) {
             console.log('[Bot Setup] Non-critical: spy join failed (will still collect available stats)');
@@ -1135,6 +1157,25 @@ const BotSetup = () => {
         if (error) throw error;
         console.log("✅ Bot service created via save:", data);
         setBotService(data);
+        
+        // Підтвердити pending канал - змінити статус на "confirmed" щоб не видаляти
+        if (targetChannel) {
+          try {
+            const { error: confirmError } = await supabase
+              .from('pending_spy_channels')
+              .update({ status: 'confirmed' })
+              .eq('channel_identifier', targetChannel)
+              .eq('status', 'pending');
+            
+            if (confirmError) {
+              console.error('[Bot Setup] Failed to confirm pending channel:', confirmError);
+            } else {
+              console.log('[Bot Setup] Confirmed pending channel - will not auto-leave');
+            }
+          } catch (err) {
+            console.error('[Bot Setup] Error confirming pending channel:', err);
+          }
+        }
         
         // Додаємо всі pending джерела в БД
         if (pendingSourceChannels.length > 0) {
@@ -1162,6 +1203,27 @@ const BotSetup = () => {
             });
           } else {
             console.log(`✅ Added ${pendingSourceChannels.length} sources`);
+            
+            // Підтвердити pending канали для джерел
+            for (const source of pendingSourceChannels) {
+              if (source.is_private && source.spy_id) {
+                try {
+                  const { error: confirmError } = await supabase
+                    .from('pending_spy_channels')
+                    .update({ status: 'confirmed' })
+                    .eq('spy_id', source.spy_id)
+                    .eq('channel_identifier', source.username)
+                    .eq('status', 'pending');
+                  
+                  if (!confirmError) {
+                    console.log(`[Bot Setup] Confirmed pending source channel: ${source.username}`);
+                  }
+                } catch (err) {
+                  console.error('[Bot Setup] Error confirming pending source:', err);
+                }
+              }
+            }
+            
             // Очищаємо pending список
             setPendingSourceChannels([]);
             // Завантажуємо джерела з БД
