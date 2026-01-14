@@ -638,18 +638,12 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           if (joinError || (joinData && !joinData.success)) {
             console.error('spy-join-channel failed:', { joinError, joinData });
             
-            // Витягуємо повідомлення про помилку
+            // Витягуємо повідомлення про помилку - показуємо як є
             let errorMessage = "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання";
             
             if (joinData?.error) {
-              // Якщо помилка містить технічні деталі, показуємо користувачу зрозуміле повідомлення
-              if (joinData.error.includes('INVITE_HASH_INVALID') || joinData.error.includes('Cannot find any entity')) {
-                errorMessage = "Посилання на канал невалідне або прострочене";
-              } else if (joinData.error.includes('CHANNELS_TOO_MUCH')) {
-                errorMessage = "Userbot досяг ліміту каналів. Зверніться до адміністратора";
-              } else {
-                errorMessage = joinData.error;
-              }
+              // Показуємо помилку з API як є (вона вже локалізована)
+              errorMessage = joinData.error;
             } else if (joinError?.message) {
               errorMessage = joinError.message;
             }
