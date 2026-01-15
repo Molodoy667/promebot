@@ -575,11 +575,11 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
     
     const steps = [
       "Перевірка існування каналу",
+      "Перевірка на дублікат",
       "Визначення типу каналу",
       "Підключення до Telegram API",
       "Перевірка доступу бота",
       "Перевірка прав адміністратора",
-      "Синхронізація налаштувань",
       "Завершення підключення"
     ];
     setVerificationSteps(steps);
@@ -671,6 +671,39 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         // Крок 2: Визначення типу каналу
         setVerificationCurrentStep(2);
         setVerificationProgress(steps[1]);
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // Check for duplicate channels
+        const { data: existingChannels, error: checkError } = await supabase
+          .from('ai_bot_services')
+          .select('id, target_channel')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .eq('bot_id', selectedBot);
+
+        if (checkError) {
+          console.error('[AIBotSetup] Error checking duplicates:', checkError);
+        } else if (existingChannels && existingChannels.length > 0) {
+          const channelIdToCheck = joinData.channelInfo.id;
+          const isDuplicate = existingChannels.some(ch => 
+            ch.target_channel === channelIdToCheck || 
+            ch.target_channel === targetChannel
+          );
+
+          if (isDuplicate) {
+            const errorMsg = "Цей канал вже підключений до обраного бота";
+            setVerificationError(errorMsg);
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+        }
+
+        // Крок 3
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Перевірка: чи отримали channel_id
@@ -709,14 +742,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
         // Оновлюємо targetChannel для збереження в БД
         setTargetChannel(channelIdentifier);
 
-        // Крок 3: Підключення до Telegram API
-        setVerificationCurrentStep(3);
-        setVerificationProgress(steps[2]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Крок 4: Перевірка доступу бота (бот сам перевіряє через check-bot-admin)
+        // Крок 4: Підключення до Telegram API
         setVerificationCurrentStep(4);
         setVerificationProgress(steps[3]);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Крок 5: Перевірка доступу бота
+        setVerificationCurrentStep(5);
+        setVerificationProgress(steps[4]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Викликаємо check-bot-admin з числовим ID
@@ -754,9 +787,14 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
 
-        // Крок 5: Завершення
-        setVerificationCurrentStep(5);
-        setVerificationProgress(steps[4]);
+        // Крок 6: Перевірка прав адміністратора
+        setVerificationCurrentStep(6);
+        setVerificationProgress(steps[5]);
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // Крок 7: Завершення
+        setVerificationCurrentStep(7);
+        setVerificationProgress(steps[6]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setChannelVerified(true);
@@ -952,9 +990,9 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
           return;
         }
         
-        // Крок 3: Підключення до API
-        setVerificationCurrentStep(3);
-        setVerificationProgress(steps[2]);
+        // Крок 4: Підключення до API
+        setVerificationCurrentStep(4);
+        setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
