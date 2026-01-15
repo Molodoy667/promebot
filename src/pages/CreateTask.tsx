@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { CategorySelector, CategoryOption } from "@/components/CategorySelector";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { Loading } from "@/components/Loading";
@@ -37,7 +38,6 @@ import {
   Send,
   AlertCircle,
   Sparkles,
-  DollarSign,
   Clock,
   Camera,
   Users,
@@ -642,7 +642,7 @@ const CreateTask = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base font-semibold flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-warning" />
+                      <span className="text-warning font-bold text-xl">₴</span>
                       Тип балансу для оплати
                     </FormLabel>
                     <FormControl>
@@ -991,53 +991,43 @@ const CreateTask = () => {
                   control={form.control}
                   name="reward_amount"
                   render={({ field }) => {
-                    const value = parseFloat(field.value as any);
+                    const value = typeof field.value === 'number' ? field.value : parseFloat(field.value as any) || 1;
                     const balanceType = form.watch("balance_type");
                     const currentBalance = balanceType === "bonus" ? userProfile?.bonus_balance : userProfile?.balance;
-                    const isOverLimit = !isNaN(value) && value > 100;
-                    const isUnderLimit = !isNaN(value) && value < 1 && value !== 0;
-                    const isOverBalance = !isNaN(value) && value > (currentBalance || 0);
-                    const hasError = isOverLimit || isOverBalance || isUnderLimit;
+                    const isOverBalance = value > (currentBalance || 0);
                     
                     return (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-warning" />
-                          Винагорода (₴)
-                        </FormLabel>
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel className="text-base font-semibold flex items-center gap-2">
+                            <span className="text-warning font-bold">₴</span>
+                            Винагорода
+                          </FormLabel>
+                          <span className="text-sm font-semibold text-primary">
+                            {value} ₴
+                          </span>
+                        </div>
                         <FormControl>
-                          <Input
-                            type="text"
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || !isNaN(parseFloat(value))) {
-                                field.onChange(value);
-                              }
-                            }}
-                            className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                            placeholder="1"
+                          <Slider
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={[value]}
+                            onValueChange={(val) => field.onChange(val[0])}
+                            className="w-full"
                           />
                         </FormControl>
-                        {isUnderLimit && (
-                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Мінімальна винагорода 1 грн
-                          </p>
-                        )}
-                        {!isUnderLimit && isOverLimit && (
-                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Максимальна винагорода 100 грн
-                          </p>
-                        )}
-                        {!isUnderLimit && !isOverLimit && isOverBalance && (
+                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                          <span>1 ₴</span>
+                          <span>100 ₴</span>
+                        </div>
+                        {isOverBalance && (
                           <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
                             <AlertCircle className="w-3 h-3" />
                             Недостатньо коштів. Баланс: {currentBalance?.toFixed(2)} грн
                           </p>
                         )}
-                        {!hasError && <FormDescription>Винагорода від 1 до 100 грн</FormDescription>}
+                        {!isOverBalance && <FormDescription>Винагорода від 1 до 100 грн</FormDescription>}
                         <FormMessage />
                       </FormItem>
                     );
@@ -1048,44 +1038,34 @@ const CreateTask = () => {
                   control={form.control}
                   name="time_limit_hours"
                   render={({ field }) => {
-                    const value = parseInt(field.value as any);
-                    const isOverLimit = value > 6;
-                    const isUnderLimit = value < 1 && field.value !== '';
-                    const hasError = isOverLimit || isUnderLimit;
+                    const value = typeof field.value === 'number' ? field.value : parseInt(field.value as any) || 1;
                     
                     return (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          Час на виконання (годин)
-                        </FormLabel>
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel className="text-base font-semibold flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-primary" />
+                            Час на виконання
+                          </FormLabel>
+                          <span className="text-sm font-semibold text-primary">
+                            {value} {value === 1 ? 'година' : value < 5 ? 'години' : 'годин'}
+                          </span>
+                        </div>
                         <FormControl>
-                          <Input
-                            type="text"
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || !isNaN(parseInt(value))) {
-                                field.onChange(value === '' ? '' : parseInt(value));
-                              }
-                            }}
-                            className={`bg-background/80 ${hasError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                            placeholder="1"
+                          <Slider
+                            min={1}
+                            max={6}
+                            step={1}
+                            value={[value]}
+                            onValueChange={(val) => field.onChange(val[0])}
+                            className="w-full"
                           />
                         </FormControl>
-                        {isOverLimit && (
-                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Максимум 6 годин
-                          </p>
-                        )}
-                        {isUnderLimit && (
-                          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
-                            <AlertCircle className="w-3 h-3" />
-                            Мінімум 1 година
-                          </p>
-                        )}
-                        {!hasError && <FormDescription>Від 1 до 6 годин</FormDescription>}
+                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                          <span>1 год</span>
+                          <span>6 год</span>
+                        </div>
+                        <FormDescription>Від 1 до 6 годин</FormDescription>
                         <FormMessage />
                       </FormItem>
                     );

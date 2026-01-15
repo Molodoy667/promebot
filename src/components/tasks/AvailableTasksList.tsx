@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, DollarSign, Users, Camera, ClipboardList, Crown } from "lucide-react";
+import { Clock, Users, Camera, ClipboardList, Crown } from "lucide-react";
 import { useState } from "react";
 import { TaskDetailsDialog } from "./TaskDetailsDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

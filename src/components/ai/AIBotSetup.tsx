@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -1290,7 +1291,10 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
 
       // Redirect to My Channels after 1 second
       setTimeout(() => {
-        window.location.href = '/my-channels';
+        // Не переадресовуємо, якщо є onSaveSuccess
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        }
       }, 1000);
     } catch (error: any) {
       console.error("Error saving settings:", error);
@@ -1833,31 +1837,30 @@ export const AIBotSetup = ({ botId, botUsername, botToken, userId, serviceId, on
             </div>
 
             {enableTimerPublish && (
-              <div className="space-y-2 pl-6">
-                <Label htmlFor="post-interval">Інтервал публікації (хвилин)</Label>
-                <Input
+              <div className="space-y-3 pl-6">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="post-interval">Інтервал публікації</Label>
+                  <span className="text-sm font-semibold text-primary">
+                    {postInterval} хвилин
+                  </span>
+                </div>
+                <Slider
                   id="post-interval"
-                  type="text"
-                  inputMode="numeric"
-                  value={postInterval}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^\d*$/.test(value)) {
-                      setPostInterval(value === '' ? '' : parseInt(value));
-                      setHasUnsavedChanges(true);
-                    }
+                  min={60}
+                  max={300}
+                  step={5}
+                  value={[postInterval]}
+                  onValueChange={(value) => {
+                    setPostInterval(value[0]);
+                    setHasUnsavedChanges(true);
                   }}
-                  onBlur={(e) => {
-                    const value = parseInt(e.target.value) || 60;
-                    setPostInterval(Math.max(60, Math.min(300, value)));
-                  }}
-                  onFocus={(e) => e.target.select()}
                   disabled={!enableTimerPublish}
-                  placeholder="60"
+                  className="w-full"
                 />
-                <p className="text-sm text-muted-foreground">
-                  {postInterval === 60 ? 'За замовчуванням' : `${postInterval} хвилин`} (від 60 до 300 хвилин)
-                </p>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>60 хв</span>
+                  <span>300 хв</span>
+                </div>
               </div>
             )}
 

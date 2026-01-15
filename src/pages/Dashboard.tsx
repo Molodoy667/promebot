@@ -27,7 +27,6 @@ import {
   Pause,
   BarChart3,
   Users,
-  DollarSign,
   Shield,
   Edit2,
   Package,
@@ -896,7 +895,7 @@ const Dashboard = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-info/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-info" />
+                <span className="text-info font-bold text-2xl">₴</span>
               </div>
             </div>
             <p className="text-2xl font-bold mb-1 truncate">Завдання</p>

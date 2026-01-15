@@ -226,7 +226,7 @@ const TaskModerationDetail = () => {
                   {task.task_type === "telegram_subscription" ? "📢 Підписка" : "📝 Завдання"}
                 </Badge>
                 <div className="flex items-center gap-1 bg-gradient-to-br from-warning/20 to-warning/10 px-4 py-2 rounded-lg border border-warning/30">
-                  <DollarSign className="w-5 h-5 text-warning" />
+                  <span className="text-warning font-bold text-xl">₴</span>
                   <span className="text-xl font-bold text-warning">{task.reward_amount.toFixed(2)}₴</span>
                 </div>
               </div>

@@ -1118,7 +1118,7 @@ const MinerGame = () => {
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           <Card className="p-4 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30">
             <div className="flex items-center gap-3">
-              <CircleDollarSign className="w-8 h-8 text-yellow-500" />
+              <span className="text-yellow-500 font-bold text-4xl">₴</span>
               <div>
                 <p className="text-xs text-muted-foreground">Бонусний баланс</p>
                 <p className="text-2xl font-bold">

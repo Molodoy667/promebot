@@ -228,7 +228,7 @@ export default function LotteryPage() {
             {/* Ticket Price */}
             <div className="space-y-2">
               <Label htmlFor="ticket_price" className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
+                <span className="font-bold">₴</span>
                 Ціна квитка (₴)
               </Label>
               <Input

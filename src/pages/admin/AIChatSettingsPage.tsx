@@ -160,7 +160,7 @@ export default function AIChatSettingsPage() {
         <Card className="glass-effect border-border/50">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-success" />
+              <span className="text-success font-bold text-xl">₴</span>
               <CardTitle>Ціноутворення</CardTitle>
             </div>
             <CardDescription>
@@ -171,7 +171,7 @@ export default function AIChatSettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="rental_price" className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
+                  <span className="font-bold">₴</span>
                   Ціна оренди (бонусні ₴)
                 </Label>
                 <Input

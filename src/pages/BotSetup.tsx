@@ -14,7 +14,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { BotSelector } from "@/components/BotSelector";
 import { BotCategoriesPanel } from "@/components/BotCategoriesPanel";
 import { ChannelInfo } from "@/components/ChannelInfo";
-import { ChannelVerificationProgress } from "@/components/ChannelVerificationProgress";
 import { AIBotSetup } from "@/components/ai/AIBotSetup";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
@@ -111,15 +110,8 @@ const BotSetup = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingBot, setIsCheckingBot] = useState(false);
   const [verificationProgress, setVerificationProgress] = useState("");
-  interface VerificationStep {
-    id: number;
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'success' | 'error';
-    errorMessage?: string;
-  }
   
-  const [verificationSteps, setVerificationSteps] = useState<VerificationStep[]>([]);
+  const [verificationSteps, setVerificationSteps] = useState<string[]>([]);
   const [verificationCurrentStep, setVerificationCurrentStep] = useState(0);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   
@@ -671,7 +663,7 @@ const BotSetup = () => {
     setIsCheckingBot(true);
     setVerificationStatus({ isMember: null, hasPermissions: null });
     
-    const stepTitles = [
+    const steps = [
       "Перевірка існування каналу",
       "Визначення типу каналу",
       "Підключення до Telegram API",
@@ -680,25 +672,11 @@ const BotSetup = () => {
       "Синхронізація налаштувань",
       "Завершення підключення"
     ];
-
-    const initialSteps: VerificationStep[] = stepTitles.map((title, index) => ({
-      id: index + 1,
-      title,
-      description: '',
-      status: 'pending'
-    }));
-
-    setVerificationSteps(initialSteps);
-    setVerificationCurrentStep(0);
-    setVerificationProgress(stepTitles[0]);
-    setVerificationError(null);
     
-    // Функція для оновлення статусу кроку
-    const updateStepStatus = (stepIndex: number, status: VerificationStep['status'], errorMessage?: string) => {
-      setVerificationSteps(prev => prev.map((step, idx) => 
-        idx === stepIndex ? { ...step, status, errorMessage } : step
-      ));
-    };
+    setVerificationSteps(steps);
+    setVerificationCurrentStep(0);
+    setVerificationProgress(steps[0]);
+    setVerificationError(null);
 
     try {
       let channelIdentifier = targetChannel.trim();
@@ -724,8 +702,7 @@ const BotSetup = () => {
         
         // Крок 1: Перевірка існування каналу (спроба приєднатись)
         setVerificationCurrentStep(1);
-        updateStepStatus(0, 'in_progress');
-        setVerificationProgress(stepTitles[0]);
+        setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         console.log('Checking private channel:', channelIdentifier);
@@ -762,7 +739,6 @@ const BotSetup = () => {
               errorMessage = joinError.message;
             }
             
-            updateStepStatus(0, 'error', errorMessage);
             setVerificationError(errorMessage);
             setTimeout(() => {
               setIsCheckingBot(false);
@@ -774,7 +750,6 @@ const BotSetup = () => {
         } catch (err: any) {
           console.error('spy-join-channel exception:', err);
           const errorMsg = "Помилка підключення до сервера. Спробуйте пізніше";
-          updateStepStatus(0, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -784,18 +759,14 @@ const BotSetup = () => {
           return;
         }
 
-        updateStepStatus(0, 'success');
-
         // Крок 2: Визначення типу каналу
         setVerificationCurrentStep(2);
-        updateStepStatus(1, 'in_progress');
-        setVerificationProgress(stepTitles[1]);
+        setVerificationProgress(steps[1]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Перевірка: чи отримали channel_id
         if (!joinData?.channelInfo?.id) {
           const errorMsg = "Не вдалося отримати ID каналу";
-          updateStepStatus(1, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -815,7 +786,6 @@ const BotSetup = () => {
           const typeName = typeMap[joinData.channelInfo.type] || joinData.channelInfo.type;
           const errorMsg = `Це ${typeName}, а не канал. Вкажіть посилання на канал`;
           
-          updateStepStatus(1, 'error', errorMsg);
           setVerificationError(errorMsg);
           
           setTimeout(() => {
@@ -831,19 +801,15 @@ const BotSetup = () => {
         
         // Оновлюємо targetChannel для збереження в БД
         setTargetChannel(channelIdentifier);
-        updateStepStatus(1, 'success');
 
         // Крок 3: Підключення до Telegram API
         setVerificationCurrentStep(3);
-        updateStepStatus(2, 'in_progress');
-        setVerificationProgress(stepTitles[2]);
+        setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
-        updateStepStatus(2, 'success');
 
         // Крок 4: Перевірка доступу бота
         setVerificationCurrentStep(4);
-        updateStepStatus(3, 'in_progress');
-        setVerificationProgress(stepTitles[3]);
+        setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         // Викликаємо check-bot-admin з числовим ID
@@ -872,7 +838,6 @@ const BotSetup = () => {
             errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
           }
           
-          updateStepStatus(3, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -882,12 +847,9 @@ const BotSetup = () => {
           return;
         }
 
-        updateStepStatus(3, 'success');
-
         // Крок 5: Завершення
         setVerificationCurrentStep(5);
-        updateStepStatus(4, 'success');
-        setVerificationProgress(stepTitles[4]);
+        setVerificationProgress(steps[4]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setBotVerified(true);
@@ -1019,8 +981,7 @@ const BotSetup = () => {
         // Handle as public channel with username
         // Крок 1: Перевірка існування
         setVerificationCurrentStep(1);
-        updateStepStatus(0, 'in_progress');
-        setVerificationProgress(stepTitles[0]);
+        setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
         
         const getChatResponse = await fetch(
@@ -1033,7 +994,6 @@ const BotSetup = () => {
         if (!getChatData.ok) {
           console.log('Channel not found or error:', getChatData.description);
           const errorMsg = `Канал не знайдено: ${getChatData.description || "Перевірте правильність username"}`;
-          updateStepStatus(0, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -1043,12 +1003,9 @@ const BotSetup = () => {
           return;
         }
         
-        updateStepStatus(0, 'success');
-        
         // Крок 2: Визначення типу
         setVerificationCurrentStep(2);
-        updateStepStatus(1, 'in_progress');
-        setVerificationProgress(stepTitles[1]);
+        setVerificationProgress(steps[1]);
         await new Promise(resolve => setTimeout(resolve, 500));
         
         if (getChatData.result.type !== 'channel') {
@@ -1060,7 +1017,6 @@ const BotSetup = () => {
           const typeName = typeMap[getChatData.result.type] || getChatData.result.type;
           const errorMsg = `Це ${typeName}, а не канал. Вкажіть посилання на канал`;
           
-          updateStepStatus(1, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -1070,14 +1026,10 @@ const BotSetup = () => {
           return;
         }
         
-        updateStepStatus(1, 'success');
-        
         // Крок 3: Підключення до API
         setVerificationCurrentStep(3);
-        updateStepStatus(2, 'in_progress');
-        setVerificationProgress(stepTitles[2]);
+        setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 500));
-        updateStepStatus(2, 'success');
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
           body: {
@@ -1099,10 +1051,8 @@ const BotSetup = () => {
         });
 
         if (data.isAdmin && data.isMember && data.canPostMessages) {
-          updateStepStatus(3, 'success');
           setVerificationCurrentStep(5);
-          updateStepStatus(4, 'success');
-          setVerificationProgress(stepTitles[4]);
+          setVerificationProgress(steps[4]);
           await new Promise(resolve => setTimeout(resolve, 600));
           
           setBotVerified(true);
@@ -1122,7 +1072,6 @@ const BotSetup = () => {
             errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
           }
           
-          updateStepStatus(3, 'error', errorMsg);
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -2130,13 +2079,61 @@ const BotSetup = () => {
       <>
         {isCheckingBot && (
           <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="w-[90%] max-w-2xl">
-              <ChannelVerificationProgress
-                steps={verificationSteps}
-                currentStep={verificationCurrentStep}
-                totalSteps={verificationSteps.length}
-              />
-            </div>
+            <Card className="w-[90%] max-w-2xl p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold">Перевірка підключення</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round((verificationCurrentStep / verificationSteps.length) * 100)}% завершено
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  {verificationSteps.length > 0 && (
+                    <div className="space-y-2">
+                      {verificationSteps.map((step, index) => (
+                        <div 
+                          key={index} 
+                          className={`flex items-center gap-3 p-2 rounded-lg transition-all ${
+                            index === verificationCurrentStep 
+                              ? 'bg-primary/10 border border-primary/30' 
+                              : index < verificationCurrentStep 
+                              ? 'opacity-60' 
+                              : 'opacity-40'
+                          }`}
+                        >
+                          {index < verificationCurrentStep ? (
+                            <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
+                          ) : index === verificationCurrentStep ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-muted flex-shrink-0" />
+                          )}
+                          <span className="text-sm">{step}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden mt-4">
+                    <div 
+                      className="bg-primary h-full transition-all duration-500 ease-out"
+                      style={{ width: `${((verificationCurrentStep + 1) / verificationSteps.length) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Крок {verificationCurrentStep + 1} з {verificationSteps.length}
+                  </p>
+                </div>
+                
+                {verificationError && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>{verificationError}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </Card>
           </div>
         )}
         <div className="min-h-screen">

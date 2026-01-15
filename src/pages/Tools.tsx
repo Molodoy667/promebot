@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BonusBalanceDisplay } from "@/components/BonusBalanceDisplay";
 import { BalanceDisplay } from "@/components/BalanceDisplay";
-import { Sparkles, Loader2, Download, Clock, FileText, Copy, Send, Image as ImageIcon, ArrowLeft, CheckCircle2, XCircle, Pencil, Check, X, MessageSquare, DollarSign, TrendingUp } from "lucide-react";
+import { Sparkles, Loader2, Download, Clock, FileText, Copy, Send, Image as ImageIcon, ArrowLeft, CheckCircle2, XCircle, Pencil, Check, X, MessageSquare, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CategorySelector, CategoryOption } from "@/components/CategorySelector";
 import { Switch } from "@/components/ui/switch";

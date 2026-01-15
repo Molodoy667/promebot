@@ -417,17 +417,31 @@ const MyChannels = () => {
 
   const getChannelInfo = async (channelUsername: string, botToken: string): Promise<ChannelInfo | null> => {
     try {
-      let identifier = channelUsername.trim().replace('@', '');
-      if (identifier.includes('t.me/')) {
-        const match = identifier.match(/t\.me\/([^/?]+)/);
-        if (match) identifier = match[1];
+      let identifier = channelUsername.trim();
+      
+      // Перевіряємо чи це chat_id (починається з -)
+      const isChatId = /^-?\d+$/.test(identifier);
+      
+      if (!isChatId) {
+        // Для username - очищуємо
+        identifier = identifier.replace(/^@+/, '').replace(/^\++/, '');
+        if (identifier.includes('t.me/')) {
+          const match = identifier.match(/t\.me\/([^/?]+)/);
+          if (match) identifier = match[1];
+        }
+        // Видаляємо всі невалідні символи для username
+        identifier = identifier.replace(/[^a-zA-Z0-9_]/g, '');
+        
+        if (!identifier || identifier.length === 0) {
+          console.warn('Invalid channel identifier after cleanup:', channelUsername);
+          return null;
+        }
       }
 
-      const isChatId = /^-?\d+$/.test(identifier);
       const chatIdentifier = isChatId ? identifier : `@${identifier}`;
 
       const response = await fetch(
-        `https://api.telegram.org/bot${botToken}/getChat?chat_id=${chatIdentifier}`
+        `https://api.telegram.org/bot${botToken}/getChat?chat_id=${encodeURIComponent(chatIdentifier)}`
       );
       const data = await response.json();
 
@@ -943,28 +957,11 @@ const MyChannels = () => {
       const spyId = groupToDelete.service.spy_id;
       const targetChannel = groupToDelete.service.target_channel;
       
-      // Якщо є spy прив'язаний до приватного каналу - виходимо з нього
+      // Якщо є spy прив'язаний до приватного каналу - просто очищуємо зв'язок
+      // Не викликаємо spy-leave-channel, бо це може призвести до помилок
       if (spyId && targetChannel && targetChannel.startsWith('-100')) {
-        console.log('[MyChannels] Leaving spy from private channel:', { spyId, targetChannel });
-        
-        try {
-          const { data: leaveData, error: leaveError } = await supabase.functions.invoke('spy-leave-channel', {
-            body: {
-              spy_id: spyId,
-              channel_id: targetChannel
-            }
-          });
-          
-          if (leaveError || !leaveData?.success) {
-            console.error('[MyChannels] Failed to leave channel:', leaveError || leaveData);
-            // Продовжуємо видалення навіть якщо вихід не вдався
-          } else {
-            console.log('[MyChannels] Successfully left channel');
-          }
-        } catch (err) {
-          console.error('[MyChannels] Exception during leave:', err);
-          // Продовжуємо видалення навіть якщо вихід не вдався
-        }
+        console.log('[MyChannels] Clearing spy link from private channel:', { spyId, targetChannel });
+        // Просто видаляємо запис - spy_channel_data видалиться через CASCADE
       }
       
       // Delete posts history
@@ -981,13 +978,18 @@ const MyChannels = () => {
       }
 
       // Delete channel stats history
-      await (supabase
-        .from('channel_stats_history' as any)
+      const { error: statsError } = await supabase
+        .from('channel_stats_history')
         .delete()
         .eq('service_id', serviceId)
-        .eq('service_type', serviceType) as any);
+        .eq('service_type', serviceType);
+      
+      if (statsError) {
+        console.warn('Error deleting stats history:', statsError);
+        // Продовжуємо навіть якщо не вдалося видалити статистику
+      }
 
-      // Delete source channels or categories
+      // Delete source channels or AI content sources
       if (serviceType === 'plagiarist') {
         await supabase
           .from("source_channels")
@@ -995,7 +997,7 @@ const MyChannels = () => {
           .eq("bot_service_id", serviceId);
       } else {
         await supabase
-          .from("ai_bot_categories")
+          .from("ai_content_sources")
           .delete()
           .eq("ai_bot_service_id", serviceId);
       }
@@ -1023,11 +1025,12 @@ const MyChannels = () => {
       setDeleteStats(null);
     } catch (error: any) {
       console.error("Error deleting channel:", error);
+      console.error("Error details:", error.message, error.details, error.hint);
       toast({
         title: "Помилка",
-        description: "Не вдалося видалити канал",
+        description: error.message || "Не вдалося видалити канал",
         variant: "destructive",
-        duration: 1500,
+        duration: 3000,
       });
     }
   };

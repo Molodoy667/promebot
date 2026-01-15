@@ -96,6 +96,7 @@ export default function ChannelPosts() {
   const [timelineRange, setTimelineRange] = useState<'3d' | '7d' | '14d' | '30d' | 'all'>('all');
   const [hourFilter, setHourFilter] = useState<number | 'all'>('all');
   const [dayFilter, setDayFilter] = useState<number | 'all'>('all');
+  const [topPostsSort, setTopPostsSort] = useState<'views' | 'reactions'>('views');
 
   useEffect(() => {
     if (!serviceId || !serviceType) {
@@ -215,38 +216,30 @@ export default function ChannelPosts() {
   const loadTopPosts = async () => {
     try {
       if (serviceType === 'plagiarist') {
-        // For plagiarist bots - load all published posts and sort by views
+        // For plagiarist bots - load all published posts
         const { data, error } = await supabase
           .from("posts_history")
           .select("*")
           .eq("bot_service_id", serviceId)
           .eq("status", "published")
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(50); // Load more to have data for both sorting options
 
         if (error) throw error;
-
-        // Sort by views and take top 5
-        const sorted = (data || [])
-          .sort((a, b) => {
-            const aViews = a.scraping_stats?.views || a.mtproto_stats?.views || 0;
-            const bViews = b.scraping_stats?.views || b.mtproto_stats?.views || 0;
-            return bViews - aViews;
-          })
-          .slice(0, 5);
-
-        setTopPosts(sorted);
+        console.log('[ChannelPosts] Loaded plagiarist posts:', data?.slice(0, 3));
+        setTopPosts(data || []);
       } else {
-        // For AI bots - load top 5 directly from database
+        // For AI bots - load all published posts
         const { data, error } = await supabase
           .from("ai_generated_posts")
           .select("*")
           .eq("ai_bot_service_id", serviceId)
           .eq("status", "published")
-          .order("views", { ascending: false })
-          .limit(5);
+          .order("created_at", { ascending: false })
+          .limit(50);
 
         if (error) throw error;
+        console.log('[ChannelPosts] Loaded AI posts:', data?.slice(0, 3));
         setTopPosts(data || []);
       }
     } catch (error) {
@@ -373,13 +366,15 @@ export default function ChannelPosts() {
       // Get last post date
       const { data: lastPost } = await (supabase as any)
         .from(table)
-        .select('created_at')
+        .select('created_at, published_at')
         .eq(idField, serviceId)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      setLastPostDate(lastPost?.created_at || null);
+      
+      // Use published_at if available (real Telegram time), otherwise created_at
+      setLastPostDate(lastPost?.published_at || lastPost?.created_at || null);
 
       // Count scheduled posts (only for AI bots)
       if (serviceType === 'ai') {
@@ -679,8 +674,11 @@ export default function ChannelPosts() {
                   <div className="text-sm font-bold truncate">
                     {lastPostDate 
                       ? (() => {
+                          // Parse as UTC and convert to local time
                           const date = new Date(lastPostDate);
                           const now = new Date();
+                          
+                          // Calculate difference
                           const diffMs = now.getTime() - date.getTime();
                           const diffMins = Math.floor(diffMs / 60000);
                           const diffHours = Math.floor(diffMs / 3600000);
@@ -715,14 +713,38 @@ export default function ChannelPosts() {
           <div id="top-posts-section" className="mt-8">
             <Card className="glass-effect">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-primary" />
-                  Топ-5 публікацій за переглядами
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Топ-5 публікацій</CardTitle>
+                  <Select value={topPostsSort} onValueChange={(value: 'views' | 'reactions') => setTopPostsSort(value)}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue>
+                        {topPostsSort === 'views' ? 'За переглядами' : 'За реакціями'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="views">За переглядами</SelectItem>
+                      <SelectItem value="reactions">За реакціями</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {topPosts.slice(0, showAllTopPosts ? 5 : 1).map((post, index) => (
+                  {(() => {
+                    // Sort posts based on selected criteria
+                    const sorted = [...topPosts].sort((a, b) => {
+                      if (topPostsSort === 'views') {
+                        const aViews = a.views || a.scraping_stats?.views || a.mtproto_stats?.views || 0;
+                        const bViews = b.views || b.scraping_stats?.views || b.mtproto_stats?.views || 0;
+                        return bViews - aViews;
+                      } else {
+                        const aReactions = a.reactions || a.scraping_stats?.reactions || a.mtproto_stats?.reactions || 0;
+                        const bReactions = b.reactions || b.scraping_stats?.reactions || b.mtproto_stats?.reactions || 0;
+                        return bReactions - aReactions;
+                      }
+                    }).slice(0, 5);
+                    
+                    return sorted.slice(0, showAllTopPosts ? 5 : 1).map((post, index) => (
                     <div 
                       key={index}
                       className="p-4 rounded-lg bg-accent/50 border border-border/30 hover:bg-accent/70 transition-colors"
@@ -743,7 +765,7 @@ export default function ChannelPosts() {
                             {post.content}
                           </p>
                           <div className="space-y-2">
-                            <StatsDisplay post={post} showDetails={false} />
+                            <StatsDisplay post={post} showDetails={false} highlightMetric={topPostsSort} />
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Calendar className="w-3.5 h-3.5" />
                               <span>
@@ -758,7 +780,8 @@ export default function ChannelPosts() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ));
+                  })()}
                   
                   {!showAllTopPosts && topPosts.length > 1 && (
                     <Button 

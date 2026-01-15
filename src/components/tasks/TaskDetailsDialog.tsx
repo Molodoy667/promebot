@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Users, Camera, AlertCircle, ClipboardList, BarChart3, Crown } from "lucide-react";
+import { Clock, Users, Camera, AlertCircle, ClipboardList, BarChart3, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TaskDetailsDialogProps {
@@ -216,7 +216,7 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange }: TaskDetailsDialo
 
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
+                  <span className="text-primary font-bold text-lg">₴</span>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Винагорода</p>

@@ -13,9 +13,10 @@ interface StatsDisplayProps {
     mtproto_stats?: any;
   };
   showDetails?: boolean;
+  highlightMetric?: 'views' | 'reactions';
 }
 
-export const StatsDisplay = ({ post, showDetails = false }: StatsDisplayProps) => {
+export const StatsDisplay = ({ post, showDetails = false, highlightMetric = 'views' }: StatsDisplayProps) => {
   const stats = mergeStats(post);
   const isFresh = isStatsFresh(stats.lastUpdated);
 
@@ -49,16 +50,34 @@ export const StatsDisplay = ({ post, showDetails = false }: StatsDisplayProps) =
     <div className="flex items-center gap-2">
       {/* Main Stats */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-medium">{stats.views.toLocaleString()}</span>
-          <span className="text-xs text-muted-foreground">переглядів</span>
-        </div>
-        
-        {stats.reactions > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-sm">❤️</span>
-            <span className="text-sm">{stats.reactions}</span>
-          </div>
+        {highlightMetric === 'views' ? (
+          <>
+            <div className="flex items-center gap-1">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{stats.views.toLocaleString()}</span>
+              <span className="text-xs text-muted-foreground">переглядів</span>
+            </div>
+            
+            {stats.reactions > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-sm">❤️</span>
+                <span className="text-sm">{stats.reactions}</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-1">
+              <span className="text-sm">❤️</span>
+              <span className="text-sm font-medium">{stats.reactions}</span>
+              <span className="text-xs text-muted-foreground">реакцій</span>
+            </div>
+            
+            <div className="flex items-center gap-1 opacity-60">
+              <Eye className="w-4 h-4" />
+              <span className="text-sm">{stats.views.toLocaleString()}</span>
+            </div>
+          </>
         )}
         
         {stats.forwards > 0 && (

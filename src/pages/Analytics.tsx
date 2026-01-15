@@ -27,7 +27,7 @@ import {
 } from "recharts";
 import { 
   TrendingUp, 
-  DollarSign, 
+ 
   Bot, 
   MessageSquare,
   Calendar,
@@ -552,7 +552,7 @@ const Analytics = () => {
               <p className="text-sm text-muted-foreground">Заробіток</p>
               <p className="text-3xl font-bold mt-2">{totalEarnings.toLocaleString()} ₴</p>
             </div>
-            <DollarSign className="w-12 h-12 text-green-500 opacity-50" />
+            <span className="text-green-500 opacity-50 font-bold text-5xl">₴</span>
           </div>
         </Card>
 
@@ -696,7 +696,7 @@ const Analytics = () => {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-primary" />
+                <span className="text-primary font-bold text-xl">₴</span>
                 <h2 className="text-xl font-bold">Динаміка Заробітку</h2>
               </div>
               
@@ -772,7 +772,7 @@ const Analytics = () => {
             ) : (
               <div className="h-[400px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <span className="font-bold text-6xl mx-auto mb-4 opacity-50 block">₴</span>
                   <p>Немає даних про заробіток</p>
                 </div>
               </div>

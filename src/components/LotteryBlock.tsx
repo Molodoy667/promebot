@@ -337,7 +337,7 @@ export const LotteryBlock = ({ userId, userBalance }: { userId: string; userBala
 
           <div className="bg-background/50 rounded-lg p-3 border">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <DollarSign className="w-4 h-4" />
+              <span className="font-bold">₴</span>
               <span className="text-xs">Ціна квитка</span>
             </div>
             <div className="text-xl font-bold">

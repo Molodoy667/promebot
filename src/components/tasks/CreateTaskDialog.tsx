@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 const taskSchema = z.object({
   title: z.string().min(5, "Назва повинна містити мінімум 5 символів"),
@@ -406,25 +407,26 @@ export const CreateTaskDialog = ({ open, onOpenChange }: CreateTaskDialogProps) 
               name="reward_amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Винагорода (0.50 - 10.00 ₴)</FormLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel>Винагорода</FormLabel>
+                    <span className="text-sm font-semibold text-primary">
+                      {field.value} ₴
+                    </span>
+                  </div>
                   <FormControl>
-                    <Input 
-                      type="text" 
-                      inputMode="decimal"
-                      placeholder="0.50"
-                      value={field.value === 0 ? '' : field.value.toString()}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                          const numValue = value === '' ? 0 : parseFloat(value);
-                          // Clamp between 0.50 and 10.00
-                          const clampedValue = Math.min(Math.max(numValue, 0), 10);
-                          field.onChange(clampedValue);
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
+                    <Slider
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      className="w-full"
                     />
                   </FormControl>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>1 ₴</span>
+                    <span>100 ₴</span>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -457,24 +459,26 @@ export const CreateTaskDialog = ({ open, onOpenChange }: CreateTaskDialogProps) 
               name="time_limit_hours"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Час на виконання (годин)</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(parseInt(value))} 
-                    defaultValue={field.value.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((hours) => (
-                        <SelectItem key={hours} value={hours.toString()}>
-                          {hours} {hours === 1 ? "година" : "години"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel>Час на виконання</FormLabel>
+                    <span className="text-sm font-semibold text-primary">
+                      {field.value} {field.value === 1 ? 'година' : field.value < 5 ? 'години' : 'годин'}
+                    </span>
+                  </div>
+                  <FormControl>
+                    <Slider
+                      min={1}
+                      max={6}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>1 год</span>
+                    <span>6 год</span>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
