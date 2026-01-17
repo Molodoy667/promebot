@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, FileText, Loader2, Info } from "lucide-react";
+import { Users, FileText, Loader2, Info, Globe, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ChannelInfoProps {
@@ -36,9 +36,24 @@ export const ChannelInfo = ({ channelUsername, botToken, compact = false, target
       setIsLoading(true);
       try {
         // Get channel info from Telegram
-        const cleanUsername = channelUsername.startsWith('@') ? channelUsername.substring(1) : channelUsername;
+        let identifier = channelUsername.trim();
+        
+        // Перевіряємо чи це chat_id (починається з - або це число)
+        const isChatId = /^-?\d+$/.test(identifier);
+        
+        if (!isChatId) {
+          // Для username - очищуємо
+          identifier = identifier.replace(/^@+/, '');
+          if (identifier.includes('t.me/')) {
+            const match = identifier.match(/t\.me\/([^/?]+)/);
+            if (match) identifier = match[1];
+          }
+        }
+        
+        const chatIdentifier = isChatId ? identifier : `@${identifier}`;
+        
         const response = await fetch(
-          `https://api.telegram.org/bot${botToken}/getChat?chat_id=@${cleanUsername}`
+          `https://api.telegram.org/bot${botToken}/getChat?chat_id=${encodeURIComponent(chatIdentifier)}`
         );
         
         if (!response.ok) {
@@ -72,11 +87,12 @@ export const ChannelInfo = ({ channelUsername, botToken, compact = false, target
 
         // Get posts count from database
         // Використовуємо частковий збіг і шукаємо обидва статуси (success і published)
+        const searchIdentifier = isChatId ? identifier : identifier;
         const { count, error } = await supabase
           .from("posts_history")
           .select("*", { count: 'exact', head: true })
           .or(
-            `source_channel.ilike.%${cleanUsername}%,target_channel.ilike.%${cleanUsername}%`
+            `source_channel.ilike.%${searchIdentifier}%,target_channel.ilike.%${searchIdentifier}%`
           )
           .in("status", ["published", "success"]);
         
@@ -163,16 +179,11 @@ export const ChannelInfo = ({ channelUsername, botToken, compact = false, target
         </Avatar>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate">{channelInfo.title}</h3>
-              <p className="text-sm text-muted-foreground truncate">
-                {channelUsername}
-              </p>
-            </div>
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 ml-2 flex-shrink-0">
-              Підключено
-            </Badge>
+          <div className="mb-3">
+            <h3 className="font-semibold text-lg truncate">{channelInfo.title}</h3>
+            <p className="text-sm text-muted-foreground truncate">
+              {channelUsername}
+            </p>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
@@ -188,16 +199,30 @@ export const ChannelInfo = ({ channelUsername, botToken, compact = false, target
               </div>
             )}
             <div className="flex items-center gap-2 p-3 rounded-lg bg-background/50">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
               <div className="min-w-0">
-                <div className="text-xs text-muted-foreground">Тип каналу</div>
-                <div className="font-semibold text-lg">
-                  {channelInfo.username ? "Публічний" : "Приватний"}
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">Тип каналу</div>
+                <Badge variant="outline" className={`${channelInfo.username ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-orange-500/10 text-orange-600 border-orange-500/30'} flex items-center gap-1 w-fit`}>
+                  {channelInfo.username ? (
+                    <>
+                      <Globe className="w-3 h-3" />
+                      Публічний
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3 h-3" />
+                      Приватний
+                    </>
+                  )}
+                </Badge>
               </div>
             </div>
+          </div>
+          
+          {/* Status Badge under channel info */}
+          <div className="mt-3 flex justify-end">
+            <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+              Підключено
+            </Badge>
           </div>
         </div>
       </div>

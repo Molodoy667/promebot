@@ -152,6 +152,9 @@ const BotSetup = () => {
     canRead: boolean | null;
     isPublic: boolean | null;
   }>({ canRead: null, isPublic: null });
+  const [sourceVerificationSteps, setSourceVerificationSteps] = useState<string[]>([]);
+  const [sourceVerificationCurrentStep, setSourceVerificationCurrentStep] = useState(0);
+  const [sourceVerificationError, setSourceVerificationError] = useState<string | null>(null);
   
   // Статистика використання для відображення лімітів
   const [usageStats, setUsageStats] = useState({
@@ -1535,6 +1538,111 @@ const BotSetup = () => {
   };
 
   const handleAddSourceChannel = async () => {
+    if (!newChannelUsername.trim()) {
+      toast({
+        title: "Помилка",
+        description: "Вкажіть username або посилання на канал",
+        variant: "destructive",
+        duration: 1500,
+      });
+      return;
+    }
+
+    const maxSources = 5;
+    if (sourceChannels.length >= maxSources) {
+      toast({
+        title: "Ліміт досягнуто",
+        description: `Максимум ${maxSources} каналів-джерел для одного цільового каналу.`,
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsCheckingChannel(true);
+    setChannelVerificationStatus({ canRead: null, isPublic: null });
+    
+    const steps = [
+      "Перевірка доступності каналу",
+      "Визначення типу каналу",
+      "Перевірка на дублікат",
+      "Підключення до API"
+    ];
+    
+    setSourceVerificationSteps(steps);
+    setSourceVerificationCurrentStep(0);
+    setSourceVerificationError(null);
+
+    try {
+      // Step 1: Перевірка доступності
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const cleanUsername = newChannelUsername.trim().replace(/^@+/, '').replace(/^https?:\/\/(t\.me|telegram\.me)\//, '');
+      
+      // Перевіряємо чи канал доступний
+      let chatId = cleanUsername;
+      if (!/^-?\d+$/.test(cleanUsername)) {
+        chatId = `@${cleanUsername}`;
+      }
+      
+      const botToken = bots.find(b => b.id === selectedBotId)?.bot_token;
+      if (!botToken) {
+        throw new Error("Токен бота не знайдено");
+      }
+
+      const chatResponse = await fetch(
+        `https://api.telegram.org/bot${botToken}/getChat?chat_id=${encodeURIComponent(chatId)}`
+      );
+      const chatData = await chatResponse.json();
+      
+      if (!chatData.ok) {
+        throw new Error("Канал недоступний або бот не є учасником");
+      }
+      
+      setChannelVerificationStatus(prev => ({ ...prev, canRead: true }));
+      setSourceVerificationCurrentStep(1);
+
+      // Step 2: Визначення типу
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const isPublic = !!chatData.result.username;
+      setChannelVerificationStatus(prev => ({ ...prev, isPublic: true }));
+      setSourceVerificationCurrentStep(2);
+
+      // Step 3: Перевірка на дублікат
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const normalizedNew = cleanUsername.toLowerCase().replace(/^@/, '');
+      const isDuplicate = sourceChannels.some(ch => {
+        const normalized = ch.channel_username.toLowerCase().replace(/^@/, '');
+        return normalized === normalizedNew;
+      });
+      
+      if (isDuplicate) {
+        throw new Error("Цей канал вже додано до джерел");
+      }
+      
+      setSourceVerificationCurrentStep(3);
+
+      // Step 4: Підключення до API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Викликаємо оригінальну логіку збереження
+      await handleAddSourceChannelLogic(cleanUsername, chatData.result);
+      
+    } catch (error: any) {
+      console.error("Error adding source:", error);
+      setSourceVerificationError(error.message || "Помилка додавання каналу");
+      setChannelVerificationStatus({ canRead: false, isPublic: false });
+      setTimeout(() => {
+        setIsCheckingChannel(false);
+        setSourceVerificationSteps([]);
+        setSourceVerificationCurrentStep(0);
+      }, 3000);
+    }
+  };
+
+  const handleAddSourceChannelLogic = async (cleanUsername: string, chatInfo: any) => {
     // Allow adding sources before botService exists
     if (!selectedBotId || !botVerified) {
       toast({
@@ -1566,7 +1674,7 @@ const BotSetup = () => {
       return;
     }
 
-    const input = newChannelUsername.trim();
+    const input = cleanUsername.trim();
     
     // Normalize channel identifiers for comparison
     const normalizeChannelId = (channelId: string) => {
@@ -1610,10 +1718,11 @@ const BotSetup = () => {
     }
 
     // Check tariff limits
-    if (tariff && tariff.sources_limit && sourceChannels.length >= tariff.sources_limit) {
+    const maxSources = 5;
+    if (sourceChannels.length >= maxSources) {
       toast({
         title: "Досягнуто ліміту",
-        description: `Ваш тариф дозволяє лише ${tariff.sources_limit} каналів-джерел. Оновіть тариф для додавання більше каналів.`,
+        description: `Максимум ${maxSources} каналів-джерел для одного цільового каналу.`,
         variant: "destructive",
         duration: 3000,
       });
@@ -1966,6 +2075,9 @@ const BotSetup = () => {
 
       setNewChannelUsername("");
       setChannelVerificationStatus({ canRead: null, isPublic: null });
+      setSourceVerificationSteps([]);
+      setSourceVerificationCurrentStep(0);
+      setSourceVerificationError(null);
       
       toast({
         title: "✅ Джерельний канал успішно додано!",
@@ -1975,6 +2087,11 @@ const BotSetup = () => {
     } catch (error: any) {
       console.error("Error adding source channel:", error);
       setChannelVerificationStatus({ canRead: false, isPublic: false });
+      setSourceVerificationError(error.message || "Не вдалося додати канал");
+      setTimeout(() => {
+        setSourceVerificationSteps([]);
+        setSourceVerificationCurrentStep(0);
+      }, 3000);
       toast({
         title: "Помилка",
         description: error.message || "Не вдалося додати канал",
@@ -2306,23 +2423,14 @@ const BotSetup = () => {
       <PageBreadcrumbs />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
+
           {/* Target Channel Info */}
-          {targetChannel && targetChannel.trim() !== '' && selectedBotId && bots.find(b => b.id === selectedBotId)?.bot_token && (
-            <Card className="p-6 glass-effect border-primary/20">
-              <div className="mb-4">
-                <h2 className="text-xl font-bold mb-1 flex items-center gap-2">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                  Цільовий канал
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Канал, в який бот публікує контент
-                </p>
-              </div>
-              <ChannelInfo 
-                channelUsername={targetChannel} 
-                botToken={bots.find(b => b.id === selectedBotId)!.bot_token}
-              />
-            </Card>
+          {botVerified && targetChannel && targetChannel.trim() !== '' && selectedBotId && bots.find(b => b.id === selectedBotId)?.bot_token && (
+            <ChannelInfo 
+              channelUsername={targetChannel} 
+              botToken={bots.find(b => b.id === selectedBotId)!.bot_token}
+              targetChannelType="target"
+            />
           )}
 
           <Card className="p-6">
@@ -2330,11 +2438,9 @@ const BotSetup = () => {
               <h2 className="text-xl font-bold mb-1">Канали-джерела</h2>
               <p className="text-sm text-muted-foreground">
                 Канали, з яких бот копіює контент для публікації
-                {tariff && (
-                  <span className="ml-1">
-                    ({sourceChannels.length} з {tariff.sources_limit || '∞'})
-                  </span>
-                )}
+                <span className="ml-1">
+                  ({sourceChannels.length + pendingSourceChannels.length}/5)
+                </span>
               </p>
             </div>
             
@@ -2440,14 +2546,14 @@ const BotSetup = () => {
                     value={newChannelUsername}
                     onChange={(e) => setNewChannelUsername(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !isCheckingChannel && newChannelUsername.trim() && handleAddSourceChannel()}
-                    disabled={isCheckingChannel || (tariff !== null && tariff.sources_limit !== null && sourceChannels.length >= tariff.sources_limit)}
+                    disabled={isCheckingChannel || sourceChannels.length >= 5}
                   />
                   <Button 
                     onClick={handleAddSourceChannel}
                     disabled={
                       isCheckingChannel || 
                       !newChannelUsername.trim() ||
-                      (tariff !== null && tariff.sources_limit !== null && sourceChannels.length >= tariff.sources_limit)
+                      sourceChannels.length >= 5
                     }
                   >
                     {isCheckingChannel ? (
@@ -2466,68 +2572,56 @@ const BotSetup = () => {
               </div>
 
               {/* Channel Verification Progress */}
-              {(isCheckingChannel || channelVerificationStatus.canRead !== null) && (
-                <Card className="p-4 bg-muted/30">
-                  <h3 className="font-semibold mb-3">Перевірка каналу:</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      {isCheckingChannel && channelVerificationStatus.canRead === null ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                      ) : channelVerificationStatus.canRead === true ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      ) : channelVerificationStatus.canRead === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">✕</span>
-                      ) : null}
-                      <span className={channelVerificationStatus.canRead === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Канал доступний
-                      </span>
+              {isCheckingChannel && sourceVerificationSteps.length > 0 && (
+                <Card className="p-4 mt-4 bg-muted/30">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{sourceVerificationSteps[sourceVerificationCurrentStep] || 'Зачекайте...'}</span>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                      {isCheckingChannel && channelVerificationStatus.isPublic === null ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                      ) : channelVerificationStatus.isPublic === true ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      ) : channelVerificationStatus.isPublic === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">✕</span>
-                      ) : null}
-                      <span className={channelVerificationStatus.isPublic === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Бот є учасником каналу
-                      </span>
+                    <div className="space-y-2">
+                      {sourceVerificationSteps.map((step, index) => (
+                        <div key={index} className="flex items-center gap-2 text-xs">
+                          {index < sourceVerificationCurrentStep ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              <span className="text-green-600 dark:text-green-400">{step}</span>
+                            </>
+                          ) : index === sourceVerificationCurrentStep ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                              <span className="text-foreground font-medium">{step}</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-4 h-4 rounded-full border-2 border-muted flex-shrink-0"></div>
+                              <span className="text-muted-foreground">{step}</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
                     </div>
+                    
+                    {sourceVerificationError && (
+                      <Alert className="bg-destructive/10 border-destructive/20 mt-3">
+                        <XCircle className="w-4 h-4 text-destructive" />
+                        <AlertDescription className="text-sm text-destructive">
+                          {sourceVerificationError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
-                  
-                  {!isCheckingChannel && channelVerificationStatus.canRead !== null && (
-                    channelVerificationStatus.canRead && channelVerificationStatus.isPublic ? (
-                      <Alert className="mt-3 bg-green-500/10 border-green-500/20">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <AlertDescription>
-                          <div className="text-green-600 dark:text-green-400">
-                            Канал успішно перевірено і додано!
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <Alert className="mt-3 bg-red-500/10 border-red-500/20">
-                        <Info className="w-4 h-4 text-red-500" />
-                        <AlertDescription>
-                          <div className="text-red-600 dark:text-red-400 font-semibold">
-                            Не вдалося додати канал. Перевірте доступність.
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )
-                  )}
                 </Card>
               )}
             </div>
             
-            {tariff && tariff.sources_limit && sourceChannels.length >= tariff.sources_limit && (
+            {sourceChannels.length >= 5 && (
               <Alert className="mb-4 bg-orange-500/10 border-orange-500/20">
                 <Info className="w-4 h-4 text-orange-500" />
                 <AlertDescription>
                   <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
-                    Ви досягли ліміту джерел ({tariff.sources_limit}). Не можна додати більше джерел. Оновіть тариф або видаліть існуюче джерело.
+                    Ви досягли ліміту джерел (5). Не можна додати більше джерел. Видаліть існуюче джерело.
                   </div>
                 </AlertDescription>
               </Alert>
@@ -2646,18 +2740,6 @@ const BotSetup = () => {
           <Card className="p-6">
             <h2 className="text-xl font-bold mb-4">Основні налаштування</h2>
             <div className="space-y-6">
-              {/* Channel Info */}
-              <div className="space-y-2">
-                <Label>Цільовий канал</Label>
-                {targetChannel && bots.find(b => b.id === selectedBotId)?.bot_token && (
-                  <ChannelInfo 
-                    channelUsername={targetChannel} 
-                    botToken={bots.find(b => b.id === selectedBotId)!.bot_token}
-                  />
-                )}
-              </div>
-
-              <Separator />
 
               {/* Filters Section */}
               <Collapsible open={showFilters} onOpenChange={setShowFilters}>

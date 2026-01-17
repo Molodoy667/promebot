@@ -495,6 +495,31 @@ Deno.serve(async (req) => {
           })
           .eq('id', postToPublish.id);
 
+        // Save to posts_history
+        const historyData: any = {
+          bot_id: service.bot_id,
+          source_channel: postToPublish.source_channel || null,
+          target_channel: service.target_channel,
+          message_id: messageId,
+          content: postToPublish.content?.substring(0, 1000) || null,
+          status: 'published',
+          published_at: new Date().toISOString(),
+          category: postToPublish.category || null,
+        };
+
+        // Add task_id if exists
+        if (postToPublish.task_id) {
+          historyData.task_id = postToPublish.task_id;
+        }
+
+        const { error: historyError } = await supabase
+          .from('posts_history')
+          .insert(historyData);
+
+        if (historyError) {
+          console.error(`Failed to save post history for post ${postToPublish.id}:`, historyError);
+        }
+
         // Update service last publish time
         await supabase
           .from('ai_bot_services')
