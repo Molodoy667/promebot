@@ -323,11 +323,6 @@ export const TicketsManagement = () => {
       setUploadedFiles([]);
       setShowAttachMenu(false);
       await loadTicketDetails(selectedTicket.id);
-
-      toast({
-        title: "Успішно",
-        description: "Відповідь надіслано",
-      });
     } catch (error) {
       console.error("Error sending reply:", error);
       toast({
@@ -448,8 +443,8 @@ export const TicketsManagement = () => {
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
+          <div className="flex-1 p-4 border-b">
+            <div className="h-[500px] overflow-y-auto space-y-4">
               {messages.map((msg) => {
                 const profile = userProfiles[msg.user_id];
                 const isOwnMessage = false; // Admin never sees their own messages as "own"
@@ -466,7 +461,7 @@ export const TicketsManagement = () => {
               })}
               <div ref={messagesEndRef} />
             </div>
-          </ScrollArea>
+          </div>
 
           {/* Input */}
           {selectedTicket.status !== "closed" && (

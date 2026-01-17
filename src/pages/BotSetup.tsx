@@ -145,6 +145,7 @@ const BotSetup = () => {
   const [tariff, setTariff] = useState<Tariff | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [useKeywordFilter, setUseKeywordFilter] = useState(false);
+  const [instantPublish, setInstantPublish] = useState<boolean | null>(null);
   const [isCheckingChannel, setIsCheckingChannel] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [channelVerificationStatus, setChannelVerificationStatus] = useState<{
@@ -2305,6 +2306,25 @@ const BotSetup = () => {
       <PageBreadcrumbs />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
+          {/* Target Channel Info */}
+          {targetChannel && targetChannel.trim() !== '' && selectedBotId && bots.find(b => b.id === selectedBotId)?.bot_token && (
+            <Card className="p-6 glass-effect border-primary/20">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold mb-1 flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  Цільовий канал
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Канал, в який бот публікує контент
+                </p>
+              </div>
+              <ChannelInfo 
+                channelUsername={targetChannel} 
+                botToken={bots.find(b => b.id === selectedBotId)!.bot_token}
+              />
+            </Card>
+          )}
+
           <Card className="p-6">
             <div className="mb-4">
               <h2 className="text-xl font-bold mb-1">Канали-джерела</h2>
@@ -2654,7 +2674,63 @@ const BotSetup = () => {
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Копіювання медіа */}
+                    {/* Динамічні фільтри з тарифу features_list */}
+                    {tariff?.features_list && Array.isArray(tariff.features_list) && tariff.features_list
+                      .filter((feature: any) => feature.enabled && ['allow_keyword_filter', 'allow_scheduled_posting', 'allow_post_as_channel', 'allow_auto_delete'].includes(feature.key))
+                      .map((feature: any) => {
+                        let switchId = '';
+                        let checked = false;
+                        let onCheckedChange = (checked: boolean) => {};
+                        let description = '';
+                        
+                        switch(feature.key) {
+                          case 'allow_keyword_filter':
+                            switchId = 'use_keyword_filter';
+                            checked = useKeywordFilter;
+                            onCheckedChange = setUseKeywordFilter;
+                            description = 'Пошук по словам';
+                            break;
+                          case 'allow_scheduled_posting':
+                            switchId = 'publish_immediately';
+                            checked = !(botService?.publish_immediately ?? false);
+                            onCheckedChange = (c) => updateBotServiceField('publish_immediately', !c);
+                            description = 'Інтервал між постами';
+                            break;
+                          case 'allow_post_as_channel':
+                            switchId = 'post_as_bot';
+                            checked = !(botService?.post_as_bot ?? true);
+                            onCheckedChange = (c) => updateBotServiceField('post_as_bot', !c);
+                            description = 'Без підпису бота';
+                            break;
+                          case 'allow_auto_delete':
+                            switchId = 'allow_auto_delete';
+                            checked = botService?.allow_auto_delete ?? false;
+                            onCheckedChange = (c) => updateBotServiceField('allow_auto_delete', c);
+                            description = 'Видалення через час';
+                            break;
+                          default:
+                            return null;
+                        }
+                        
+                        return (
+                          <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex-1">
+                              <Label htmlFor={switchId} className="cursor-pointer font-medium">
+                                {feature.label}
+                              </Label>
+                              <p className="text-xs text-muted-foreground">{description}</p>
+                            </div>
+                            <Switch
+                              id={switchId}
+                              checked={checked}
+                              onCheckedChange={onCheckedChange}
+                            />
+                          </div>
+                        );
+                      })
+                    }
+                    
+                    {/* Медіа файли */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_media ? '' : 'opacity-50 bg-muted/50'
                     }`}>
@@ -2889,7 +2965,32 @@ const BotSetup = () => {
 
               <Separator />
 
-              {/* Posts & Intervals Configuration */}
+              {/* Instant Publishing Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="space-y-0.5">
+                  <Label htmlFor="instant_publish" className="text-base font-semibold">
+                    Публікувати миттєво
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Публікувати пости одразу після появи в джерелі
+                  </p>
+                </div>
+                <Switch
+                  id="instant_publish"
+                  checked={botService ? (botService.instant_publish ?? true) : (instantPublish ?? true)}
+                  onCheckedChange={(checked) => {
+                    if (botService) {
+                      updateBotServiceField('instant_publish', checked);
+                    } else {
+                      setInstantPublish(checked);
+                      setHasUnsavedChanges(true);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Posts & Intervals Configuration - показувати тільки якщо не миттєва публікація */}
+              {!(botService ? (botService.instant_publish ?? true) : (instantPublish ?? true)) && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="posts_per_day">
@@ -2938,6 +3039,7 @@ const BotSetup = () => {
                   </div>
                 )}
               </div>
+              )}
 
               {hasUnsavedChanges && (
                 <Alert>

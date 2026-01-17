@@ -20,6 +20,7 @@ export type Database = {
           created_at: string | null
           error_count: number | null
           id: string
+          instant_publish: boolean | null
           is_running: boolean | null
           last_error: string | null
           last_error_at: string | null
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: string | null
           error_count?: number | null
           id?: string
+          instant_publish?: boolean | null
           is_running?: boolean | null
           last_error?: string | null
           last_error_at?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string | null
           error_count?: number | null
           id?: string
+          instant_publish?: boolean | null
           is_running?: boolean | null
           last_error?: string | null
           last_error_at?: string | null
@@ -1193,6 +1196,50 @@ export type Database = {
           used?: boolean | null
         }
         Relationships: []
+      }
+      pending_spy_channels: {
+        Row: {
+          channel_id: string
+          channel_identifier: string
+          created_at: string | null
+          id: string
+          joined_at: string
+          should_leave_at: string
+          spy_id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel_id: string
+          channel_identifier: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string
+          should_leave_at?: string
+          spy_id: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel_id?: string
+          channel_identifier?: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string
+          should_leave_at?: string
+          spy_id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_spy_channels_spy_id_fkey"
+            columns: ["spy_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_spies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts_history: {
         Row: {
@@ -2680,6 +2727,9 @@ export type Database = {
         Args: { channel_identifier: string; current_user_id?: string }
         Returns: Json
       }
+      cleanup_old_ai_posts: { Args: never; Returns: undefined }
+      cleanup_old_posts_history: { Args: never; Returns: undefined }
+      cleanup_old_transactions: { Args: never; Returns: undefined }
       create_bot_error_notification: {
         Args: {
           p_bot_name: string

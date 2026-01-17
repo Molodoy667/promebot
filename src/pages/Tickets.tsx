@@ -321,11 +321,6 @@ const Tickets = () => {
       setUploadedFiles([]);
       setShowAttachMenu(false);
       await loadTicketDetails(selectedTicket.id);
-
-      toast({
-        title: "Успішно",
-        description: "Повідомлення надіслано",
-      });
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -443,8 +438,8 @@ const Tickets = () => {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
+            <div className="flex-1 p-4 border-b">
+              <div className="h-[500px] overflow-y-auto space-y-4">
                 {messages.map((msg) => {
                 const profile = profiles[msg.user_id];
                 const isOwnMessage = user && msg.user_id === user.id && !msg.is_admin_reply;
@@ -461,7 +456,7 @@ const Tickets = () => {
                 })}
                 <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             {selectedTicket.status !== "closed" && (

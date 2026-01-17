@@ -28,7 +28,6 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "general");
   
   // General Info
-  const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -72,7 +71,6 @@ const Settings = () => {
       if (error) throw error;
       
       setProfile(data);
-      setUsername(data.telegram_username || "");
       setFullName(data.full_name || "");
       setAvatarUrl(data.avatar_url || "");
 
@@ -158,7 +156,6 @@ const Settings = () => {
       const { error } = await supabase
         .from("profiles")
         .update({
-          username,
           full_name: fullName,
         })
         .eq("id", user.id);
@@ -332,17 +329,6 @@ const Settings = () => {
                       JPG, PNG або GIF. Максимум 5MB
                     </p>
                   </div>
-                </div>
-
-                {/* Username */}
-                <div className="space-y-2">
-                  <Label htmlFor="username">Нікнейм</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Ваш нікнейм"
-                  />
                 </div>
 
                 {/* Full Name */}

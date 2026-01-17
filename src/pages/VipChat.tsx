@@ -2,10 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, Send, ImagePlus, Smile, X, Users } from "lucide-react";
+import { Crown, Send, ImagePlus, X, Users, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { Loading } from "@/components/Loading";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { PageHeader } from "@/components/PageHeader";
@@ -34,11 +33,11 @@ export default function VipChat() {
   const [loading, setLoading] = useState(true);
   const [isVip, setIsVip] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -74,6 +73,15 @@ export default function VipChat() {
     }
 
     setUser(authUser);
+
+    // Check user role
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", authUser.id)
+      .single();
+    
+    setUserRole(profileData?.role || null);
 
     // Check VIP status
     const { data: vipData } = await supabase
@@ -279,7 +287,6 @@ export default function VipChat() {
 
       setNewMessage("");
       removeImage();
-      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({ title: "Помилка", description: "Помилка відправки повідомлення", variant: "destructive" });
@@ -288,8 +295,31 @@ export default function VipChat() {
     }
   };
 
-  const onEmojiClick = (emojiData: EmojiClickData) => {
-    setNewMessage(prev => prev + emojiData.emoji);
+  const deleteMessage = async (messageId: string) => {
+    if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) return;
+
+    try {
+      const { error } = await supabase
+        .from("vip_chat_messages")
+        .delete()
+        .eq("id", messageId);
+
+      if (error) throw error;
+
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      
+      toast({
+        title: "Успішно",
+        description: "Повідомлення видалено",
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося видалити повідомлення",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -316,10 +346,10 @@ export default function VipChat() {
           </div>
         </PageHeader>
         
-        <div className="glass-effect rounded-xl shadow-card border border-amber-500/20 overflow-hidden">
+        <div className="glass-effect rounded-xl shadow-card border border-amber-500/20 overflow-hidden backdrop-blur-xl bg-background/50">
 
           {/* Messages */}
-          <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-background">
+          <div className="h-[500px] overflow-y-auto p-6 space-y-4">
             {messages.map((msg) => {
               const isOwnMessage = msg.user_id === user?.id;
               const avatar = msg.profiles?.telegram_photo_url || msg.profiles?.avatar_url;
@@ -328,7 +358,7 @@ export default function VipChat() {
               return (
                 <div
                   key={msg.id}
-                  className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                  className={`flex gap-3 group ${isOwnMessage ? "flex-row-reverse" : ""}`}
                 >
                   <div className="flex-shrink-0">
                     {avatar ? (
@@ -347,12 +377,22 @@ export default function VipChat() {
                     <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "flex-row-reverse" : ""}`}>
                       <Crown className="h-3 w-3 text-amber-600" />
                       <p className="text-sm font-semibold text-foreground">{name}</p>
+                      {(userRole === 'admin' || userRole === 'moderator') && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deleteMessage(msg.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                     <div
-                      className={`inline-block px-4 py-2 rounded-2xl ${
+                      className={`inline-block px-4 py-2 rounded-2xl border ${
                         isOwnMessage
-                          ? "bg-gradient-primary text-primary-foreground"
-                          : "glass-effect border border-amber-500/20 text-foreground"
+                          ? "bg-gradient-primary text-primary-foreground border-amber-500/30"
+                          : "glass-effect border-amber-500/20 text-foreground backdrop-blur-xl bg-background/40"
                       }`}
                     >
                       {msg.attachment_url && (
@@ -379,7 +419,7 @@ export default function VipChat() {
           </div>
 
           {/* Input */}
-          <div className="p-4 bg-card border-t border-amber-500/20">
+          <div className="p-4 border-t border-amber-500/20 backdrop-blur-xl bg-background/30">
             {imagePreview && (
               <div className="mb-3 relative inline-block">
                 <img 
@@ -397,16 +437,6 @@ export default function VipChat() {
                 </Button>
               </div>
             )}
-            
-            {showEmojiPicker && (
-              <div className="mb-3">
-                <EmojiPicker 
-                  onEmojiClick={onEmojiClick}
-                  width="100%"
-                  height={350}
-                />
-              </div>
-            )}
 
             <div className="flex gap-2">
               <input
@@ -422,21 +452,10 @@ export default function VipChat() {
                 variant="outline"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                className="border-amber-500/30 hover:border-amber-500"
+                className="border-amber-500/30 hover:border-amber-500 backdrop-blur-sm"
                 disabled={uploading}
               >
                 <ImagePlus className="h-5 w-5" />
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="border-amber-500/30 hover:border-amber-500"
-                disabled={uploading}
-              >
-                <Smile className="h-5 w-5" />
               </Button>
 
               <Input
@@ -444,7 +463,7 @@ export default function VipChat() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                 placeholder="Напишіть повідомлення..."
-                className="flex-1 border-amber-500/30 focus:border-amber-500"
+                className="flex-1 border-amber-500/30 focus:border-amber-500 backdrop-blur-sm bg-background/50"
                 disabled={uploading}
               />
               
