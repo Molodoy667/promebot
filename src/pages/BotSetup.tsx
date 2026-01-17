@@ -1,4 +1,4 @@
-// @ts-nocheck
+п»ї// @ts-nocheck
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,11 +28,12 @@ import {
   Loader2,
   Zap,
   Info,
+  Sparkles,
+  XCircle,
   FileText,
   HelpCircle,
   ChevronDown,
-  ChevronUp,
-  XCircle
+  ChevronUp
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
@@ -132,7 +133,7 @@ const BotSetup = () => {
     is_private?: boolean,
     invite_hash?: string,
     spy_id?: string
-  }[]>([]); // Локальні джерела до збереження
+  }[]>([]); // Р›РѕРєР°Р»СЊРЅС– РґР¶РµСЂРµР»Р° РґРѕ Р·Р±РµСЂРµР¶РµРЅРЅСЏ
   const [newChannelUsername, setNewChannelUsername] = useState("");
   const [newChannelType, setNewChannelType] = useState<"public" | "private">("public");
   const [inviteLink, setInviteLink] = useState("");
@@ -151,7 +152,7 @@ const BotSetup = () => {
     isPublic: boolean | null;
   }>({ canRead: null, isPublic: null });
   
-  // Статистика використання для відображення лімітів
+  // РЎС‚Р°С‚РёСЃС‚РёРєР° РІРёРєРѕСЂРёСЃС‚Р°РЅРЅСЏ РґР»СЏ РІС–РґРѕР±СЂР°Р¶РµРЅРЅСЏ Р»С–РјС–С‚С–РІ
   const [usageStats, setUsageStats] = useState({
     botsUsed: 0,
     channelsUsed: 0,
@@ -170,7 +171,7 @@ const BotSetup = () => {
 
       setUser(session.user);
       await loadUserBots(session.user.id);
-      await loadUserTariff(session.user.id); // Завантажуємо тариф окремо
+      await loadUserTariff(session.user.id); // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ С‚Р°СЂРёС„ РѕРєСЂРµРјРѕ
       await loadUsageStats(session.user.id);
       
       // Check if we have a specific botServiceId (plagiarist) or aiServiceId (AI) in location state
@@ -206,7 +207,7 @@ const BotSetup = () => {
       }
     });
 
-    // Підписка на реал-тайм зміни ботів
+    // РџС–РґРїРёСЃРєР° РЅР° СЂРµР°Р»-С‚Р°Р№Рј Р·РјС–РЅРё Р±РѕС‚С–РІ
     const botsChannel = supabase
       .channel('telegram_bots_changes')
       .on(
@@ -303,7 +304,7 @@ const BotSetup = () => {
 
   const loadUserTariff = async (userId: string) => {
     try {
-      // Завантажуємо активну підписку користувача
+      // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ Р°РєС‚РёРІРЅСѓ РїС–РґРїРёСЃРєСѓ РєРѕСЂРёСЃС‚СѓРІР°С‡Р°
       const { data: subscription, error } = await supabase
         .from("subscriptions")
         .select(`
@@ -326,19 +327,19 @@ const BotSetup = () => {
             ? Math.floor(rawTariff.posts_per_month / (rawTariff.duration_days || 30))
             : 0);
 
-        console.log("? Тариф завантажено:", rawTariff);
+        console.log("вњ… РўР°СЂРёС„ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРѕ:", rawTariff);
         setTariff({ ...rawTariff, posts_per_day: computedPostsPerDay });
       } else {
-        console.log("?? Тариф не знайдено. Subscription:", subscription);
+        console.log("вљ пёЏ РўР°СЂРёС„ РЅРµ Р·РЅР°Р№РґРµРЅРѕ. Subscription:", subscription);
       }
     } catch (error) {
-      console.error("? Помилка завантаження тарифу:", error);
+      console.error("вќЊ РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С‚Р°СЂРёС„Сѓ:", error);
     }
   };
 
   const loadUsageStats = async (userId: string) => {
     try {
-      // Отримуємо кешовані дані з таблиці profiles
+      // РћС‚СЂРёРјСѓС”РјРѕ РєРµС€РѕРІР°РЅС– РґР°РЅС– Р· С‚Р°Р±Р»РёС†С– profiles
       const { data: userData, error } = await supabase
         .from("profiles")
         .select("bots_used_count, channels_used_count, sources_used_count, posts_current_period")
@@ -346,7 +347,7 @@ const BotSetup = () => {
         .single();
       
       if (error) {
-        console.error("Помилка завантаження статистики:", error);
+        console.error("РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ СЃС‚Р°С‚РёСЃС‚РёРєРё:", error);
         return;
       }
       
@@ -357,7 +358,7 @@ const BotSetup = () => {
         postsToday: userData?.posts_current_period || 0
       });
     } catch (error) {
-      console.error("Помилка завантаження статистики використання:", error);
+      console.error("РџРѕРјРёР»РєР° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ СЃС‚Р°С‚РёСЃС‚РёРєРё РІРёРєРѕСЂРёСЃС‚Р°РЅРЅСЏ:", error);
     }
   };
 
@@ -370,15 +371,15 @@ const BotSetup = () => {
 
       if (error) throw error;
 
-      // Розрахувати статистику для кожного бота окремо
+      // Р РѕР·СЂР°С…СѓРІР°С‚Рё СЃС‚Р°С‚РёСЃС‚РёРєСѓ РґР»СЏ РєРѕР¶РЅРѕРіРѕ Р±РѕС‚Р° РѕРєСЂРµРјРѕ
       const botsWithStats = await Promise.all((data || []).map(async (bot) => {
         let postsCount = 0;
         let channelsCount = 0;
         let usersCount = 0;
 
-        // Рахуємо користувачів які використовують цей бот на сайті
+        // Р Р°С…СѓС”РјРѕ РєРѕСЂРёСЃС‚СѓРІР°С‡С–РІ СЏРєС– РІРёРєРѕСЂРёСЃС‚РѕРІСѓСЋС‚СЊ С†РµР№ Р±РѕС‚ РЅР° СЃР°Р№С‚С–
         if (bot.bot_type === 'plagiarist') {
-          // Для plagiarist - всі користувачі які мають bot_services
+          // Р”Р»СЏ plagiarist - РІСЃС– РєРѕСЂРёСЃС‚СѓРІР°С‡С– СЏРєС– РјР°СЋС‚СЊ bot_services
           const { data: uniqueUsers } = await supabase
             .from("bot_services")
             .select("user_id");
@@ -386,7 +387,7 @@ const BotSetup = () => {
           const uniqueUserIds = new Set(uniqueUsers?.map(s => s.user_id) || []);
           usersCount = uniqueUserIds.size;
         } else if (bot.bot_type === 'ai') {
-          // Для AI бота - користувачі які мають ai_bot_services для цього бота
+          // Р”Р»СЏ AI Р±РѕС‚Р° - РєРѕСЂРёСЃС‚СѓРІР°С‡С– СЏРєС– РјР°СЋС‚СЊ ai_bot_services РґР»СЏ С†СЊРѕРіРѕ Р±РѕС‚Р°
           const { data: uniqueUsers } = await supabase
             .from("ai_bot_services")
             .select("user_id")
@@ -397,14 +398,14 @@ const BotSetup = () => {
         }
 
         if (bot.bot_type === 'plagiarist') {
-          // Рахуємо канали для плагіатор бота (всі bot_services користувача)
+          // Р Р°С…СѓС”РјРѕ РєР°РЅР°Р»Рё РґР»СЏ РїР»Р°РіС–Р°С‚РѕСЂ Р±РѕС‚Р° (РІСЃС– bot_services РєРѕСЂРёСЃС‚СѓРІР°С‡Р°)
           const { count: servicesCount } = await supabase
             .from("bot_services")
             .select("*", { count: 'exact', head: true })
             .eq("user_id", userId);
           channelsCount = servicesCount || 0;
 
-          // Рахуємо ВСІ пости (не тільки published)
+          // Р Р°С…СѓС”РјРѕ Р’РЎР† РїРѕСЃС‚Рё (РЅРµ С‚С–Р»СЊРєРё published)
           const { data: services } = await supabase
             .from("bot_services")
             .select("id")
@@ -418,7 +419,7 @@ const BotSetup = () => {
             postsCount = posts || 0;
           }
         } else if (bot.bot_type === 'ai') {
-          // Рахуємо канали для AI бота
+          // Р Р°С…СѓС”РјРѕ РєР°РЅР°Р»Рё РґР»СЏ AI Р±РѕС‚Р°
           const { count: aiServicesCount } = await supabase
             .from("ai_bot_services")
             .select("*", { count: 'exact', head: true })
@@ -426,7 +427,7 @@ const BotSetup = () => {
             .eq("user_id", userId);
           channelsCount = aiServicesCount || 0;
 
-          // Рахуємо пости
+          // Р Р°С…СѓС”РјРѕ РїРѕСЃС‚Рё
           const { data: aiServices } = await supabase
             .from("ai_bot_services")
             .select("id")
@@ -570,8 +571,8 @@ const BotSetup = () => {
     } catch (error: any) {
       console.error("Error loading specific bot service:", error);
       toast({
-        title: "Помилка",
-        description: "Не вдалося завантажити налаштування каналу",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РєР°РЅР°Р»Сѓ",
         variant: "destructive",
         duration: 2000,
       });
@@ -597,8 +598,8 @@ const BotSetup = () => {
     } catch (error: any) {
       console.error("Error loading AI bot service:", error);
       toast({
-        title: "Помилка",
-        description: "Не вдалося завантажити налаштування AI бота",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ AI Р±РѕС‚Р°",
         variant: "destructive",
         duration: 2000,
       });
@@ -649,8 +650,8 @@ const BotSetup = () => {
   const handleVerifyBot = async () => {
     if (!selectedBotId || !targetChannel) {
       toast({
-        title: "Помилка",
-        description: "Спочатку оберіть бота та вкажіть цільовий канал",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РЎРїРѕС‡Р°С‚РєСѓ РѕР±РµСЂС–С‚СЊ Р±РѕС‚Р° С‚Р° РІРєР°Р¶С–С‚СЊ С†С–Р»СЊРѕРІРёР№ РєР°РЅР°Р»",
         variant: "destructive",
         duration: 1500,
       });
@@ -664,13 +665,13 @@ const BotSetup = () => {
     setVerificationStatus({ isMember: null, hasPermissions: null });
     
     const steps = [
-      "Перевірка існування каналу",
-      "Перевірка на дублікат",
-      "Визначення типу каналу",
-      "Підключення до Telegram API",
-      "Перевірка доступу бота",
-      "Перевірка прав адміністратора",
-      "Завершення підключення"
+      "РџРµСЂРµРІС–СЂРєР° С–СЃРЅСѓРІР°РЅРЅСЏ РєР°РЅР°Р»Сѓ",
+      "Р’РёР·РЅР°С‡РµРЅРЅСЏ С‚РёРїСѓ РєР°РЅР°Р»Сѓ",
+      "РџС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ Telegram API",
+      "РџРµСЂРµРІС–СЂРєР° РґРѕСЃС‚СѓРїСѓ Р±РѕС‚Р°",
+      "РџРµСЂРµРІС–СЂРєР° РїСЂР°РІ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°",
+      "РЎРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ РЅР°Р»Р°С€С‚СѓРІР°РЅСЊ",
+      "Р—Р°РІРµСЂС€РµРЅРЅСЏ РїС–РґРєР»СЋС‡РµРЅРЅСЏ"
     ];
     
     setVerificationSteps(steps);
@@ -681,9 +682,9 @@ const BotSetup = () => {
     try {
       let channelIdentifier = targetChannel.trim();
       
-      // Автоматично визначаємо приватний канал за invite-посиланням
+      // РђРІС‚РѕРјР°С‚РёС‡РЅРѕ РІРёР·РЅР°С‡Р°С”РјРѕ РїСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р» Р·Р° invite-РїРѕСЃРёР»Р°РЅРЅСЏРј
       if (channelIdentifier.includes('t.me/+') || channelIdentifier.includes('t.me/joinchat/')) {
-        // Отримуємо активного spy
+        // РћС‚СЂРёРјСѓС”РјРѕ Р°РєС‚РёРІРЅРѕРіРѕ spy
         const { data: activeSpy } = await supabase
           .from('telegram_spies')
           .select('id')
@@ -693,21 +694,21 @@ const BotSetup = () => {
           .maybeSingle();
 
         if (!activeSpy) {
-          setVerificationError("Немає активного userbot для приватних каналів");
+          setVerificationError("РќРµРјР°С” Р°РєС‚РёРІРЅРѕРіРѕ userbot РґР»СЏ РїСЂРёРІР°С‚РЅРёС… РєР°РЅР°Р»С–РІ");
           setIsCheckingBot(false);
           setVerificationSteps([]);
           setVerificationCurrentStep(0);
           return;
         }
         
-        // Крок 1: Перевірка існування каналу (спроба приєднатись)
+        // РљСЂРѕРє 1: РџРµСЂРµРІС–СЂРєР° С–СЃРЅСѓРІР°РЅРЅСЏ РєР°РЅР°Р»Сѓ (СЃРїСЂРѕР±Р° РїСЂРёС”РґРЅР°С‚РёСЃСЊ)
         setVerificationCurrentStep(1);
         setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
         console.log('Checking private channel:', channelIdentifier);
 
-        // Спочатку намагаємося приєднатись до каналу
+        // РЎРїРѕС‡Р°С‚РєСѓ РЅР°РјР°РіР°С”РјРѕСЃСЏ РїСЂРёС”РґРЅР°С‚РёСЃСЊ РґРѕ РєР°РЅР°Р»Сѓ
         console.log('Attempting to join channel with userbot...');
         
         let joinData = null;
@@ -726,12 +727,12 @@ const BotSetup = () => {
           
           console.log('spy-join-channel response:', { joinData, joinError });
           
-          // Перевірка чи join був успішний
+          // РџРµСЂРµРІС–СЂРєР° С‡Рё join Р±СѓРІ СѓСЃРїС–С€РЅРёР№
           if (joinError || (joinData && !joinData.success)) {
             console.error('spy-join-channel failed:', { joinError, joinData });
             
-            // Витягуємо повідомлення про помилку
-            let errorMessage = "Не вдалося приєднатись до каналу. Перевірте правильність invite посилання";
+            // Р’РёС‚СЏРіСѓС”РјРѕ РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ РїСЂРѕ РїРѕРјРёР»РєСѓ
+            let errorMessage = "РќРµ РІРґР°Р»РѕСЃСЏ РїСЂРёС”РґРЅР°С‚РёСЃСЊ РґРѕ РєР°РЅР°Р»Сѓ. РџРµСЂРµРІС–СЂС‚Рµ РїСЂР°РІРёР»СЊРЅС–СЃС‚СЊ invite РїРѕСЃРёР»Р°РЅРЅСЏ";
             
             if (joinData?.error) {
               errorMessage = joinData.error;
@@ -749,7 +750,7 @@ const BotSetup = () => {
           }
         } catch (err: any) {
           console.error('spy-join-channel exception:', err);
-          const errorMsg = "Помилка підключення до сервера. Спробуйте пізніше";
+          const errorMsg = "РџРѕРјРёР»РєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ СЃРµСЂРІРµСЂР°. РЎРїСЂРѕР±СѓР№С‚Рµ РїС–Р·РЅС–С€Рµ";
           setVerificationError(errorMsg);
           setTimeout(() => {
             setIsCheckingBot(false);
@@ -759,92 +760,60 @@ const BotSetup = () => {
           return;
         }
 
-        // Крок 2: Перевірка на дублікат
+        // РљСЂРѕРє 2: Р’РёР·РЅР°С‡РµРЅРЅСЏ С‚РёРїСѓ РєР°РЅР°Р»Сѓ
         setVerificationCurrentStep(2);
         setVerificationProgress(steps[1]);
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Check for duplicate channels
-        const { data: existingChannels, error: checkError } = await supabase
-          .from('bot_services')
-          .select('id, target_channel')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .eq('bot_id', selectedBot);
-
-        if (checkError) {
-          console.error('Error checking duplicates:', checkError);
-        } else if (existingChannels && existingChannels.length > 0) {
-          const channelIdToCheck = joinData.channelInfo.id;
-          const isDuplicate = existingChannels.some(ch => 
-            ch.target_channel === channelIdToCheck || 
-            ch.target_channel === targetChannel
-          );
-
-          if (isDuplicate) {
-            const errorMsg = "Цей канал вже підключений до обраного бота";
-            setVerificationError(errorMsg);
-            setTimeout(() => {
-              setIsCheckingBot(false);
-              setVerificationSteps([]);
-              setVerificationCurrentStep(0);
-            }, 5000);
-            return;
-          }
+        // РџРµСЂРµРІС–СЂРєР°: С‡Рё РѕС‚СЂРёРјР°Р»Рё channel_id
+        if (!joinData?.channelInfo?.id) {
+          const errorMsg = "РќРµ РІРґР°Р»РѕСЃСЏ РѕС‚СЂРёРјР°С‚Рё ID РєР°РЅР°Р»Сѓ";
+          setVerificationError(errorMsg);
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
         }
 
-        // Крок 3: Визначення типу каналу
+        // РџРµСЂРµРІС–СЂРєР° С‚РёРїСѓ: РјР°С” Р±СѓС‚Рё РєР°РЅР°Р»
+        if (joinData.channelInfo.type && joinData.channelInfo.type !== 'channel') {
+          const typeMap: Record<string, string> = {
+            'group': 'РіСЂСѓРїР°',
+            'supergroup': 'СЃСѓРїРµСЂРіСЂСѓРїР°',
+            'chat': 'С‡Р°С‚'
+          };
+          const typeName = typeMap[joinData.channelInfo.type] || joinData.channelInfo.type;
+          const errorMsg = `Р¦Рµ ${typeName}, Р° РЅРµ РєР°РЅР°Р». Р’РєР°Р¶С–С‚СЊ РїРѕСЃРёР»Р°РЅРЅСЏ РЅР° РєР°РЅР°Р»`;
+          
+          setVerificationError(errorMsg);
+          
+          setTimeout(() => {
+            setIsCheckingBot(false);
+            setVerificationSteps([]);
+            setVerificationCurrentStep(0);
+          }, 5000);
+          return;
+        }
+
+        channelIdentifier = joinData.channelInfo.id; // Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ С‡РёСЃР»РѕРІРёР№ ID
+        console.log('Using channel_id from join result:', channelIdentifier);
+        
+        // РћРЅРѕРІР»СЋС”РјРѕ targetChannel РґР»СЏ Р·Р±РµСЂРµР¶РµРЅРЅСЏ РІ Р‘Р”
+        setTargetChannel(channelIdentifier);
+
+        // РљСЂРѕРє 3: РџС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ Telegram API
         setVerificationCurrentStep(3);
         setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Перевірка: чи отримали channel_id
-        if (!joinData?.channelInfo?.id) {
-          setVerificationError("Не вдалося отримати ID каналу");
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-
-        // Перевірка типу: має бути канал
-        if (joinData.channelInfo.type && joinData.channelInfo.type !== 'channel') {
-          const typeMap: Record<string, string> = {
-            'group': 'група',
-            'supergroup': 'супергрупа',
-            'chat': 'чат'
-          };
-          const typeName = typeMap[joinData.channelInfo.type] || joinData.channelInfo.type;
-          const errorMsg = `Це ${typeName}, а не канал. Вкажіть посилання на канал`;
-          
-          setVerificationError(errorMsg);
-          
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
-        }
-
-        channelIdentifier = joinData.channelInfo.id; // Використовуємо числовий ID
-        console.log('Using channel_id from join result:', channelIdentifier);
-        
-        // Оновлюємо targetChannel для збереження в БД
-        setTargetChannel(channelIdentifier);
-
-        // Крок 4: Підключення до Telegram API
+        // РљСЂРѕРє 4: РџРµСЂРµРІС–СЂРєР° РґРѕСЃС‚СѓРїСѓ Р±РѕС‚Р°
         setVerificationCurrentStep(4);
         setVerificationProgress(steps[3]);
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Крок 5: Перевірка доступу бота
-        setVerificationCurrentStep(5);
-        setVerificationProgress(steps[4]);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Викликаємо check-bot-admin з числовим ID
+        // Р’РёРєР»РёРєР°С”РјРѕ check-bot-admin Р· С‡РёСЃР»РѕРІРёРј ID
         const { data: botCheckData, error: botCheckError } = await supabase.functions.invoke('check-bot-admin', {
           body: {
             botToken: selectedBot.bot_token,
@@ -863,11 +832,11 @@ const BotSetup = () => {
         if (!botCheckData.isAdmin || !botCheckData.isMember || !botCheckData.canPostMessages) {
           let errorMsg = "";
           if (!botCheckData.isMember) {
-            errorMsg = "Бот не доданий до приватного каналу. Додайте бота як адміністратора";
+            errorMsg = "Р‘РѕС‚ РЅРµ РґРѕРґР°РЅРёР№ РґРѕ РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ. Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° СЏРє Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°";
           } else if (!botCheckData.isAdmin) {
-            errorMsg = "Бот не має прав адміністратора. Надайте боту права";
+            errorMsg = "Р‘РѕС‚ РЅРµ РјР°С” РїСЂР°РІ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°. РќР°РґР°Р№С‚Рµ Р±РѕС‚Сѓ РїСЂР°РІР°";
           } else if (!botCheckData.canPostMessages) {
-            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
+            errorMsg = 'Р‘РѕС‚ РЅРµ РјР°С” РїСЂР°РІР° РїСѓР±Р»С–РєСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ. РЈРІС–РјРєРЅС–С‚СЊ РїСЂР°РІРѕ "РљРµСЂСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏРјРё" РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏС… Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°';
           }
           
           setVerificationError(errorMsg);
@@ -879,14 +848,9 @@ const BotSetup = () => {
           return;
         }
 
-        // Крок 6: Перевірка прав адміністратора
-        setVerificationCurrentStep(6);
-        setVerificationProgress(steps[5]);
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        // Крок 7: Завершення
-        setVerificationCurrentStep(7);
-        setVerificationProgress(steps[6]);
+        // РљСЂРѕРє 5: Р—Р°РІРµСЂС€РµРЅРЅСЏ
+        setVerificationCurrentStep(5);
+        setVerificationProgress(steps[4]);
         await new Promise(resolve => setTimeout(resolve, 600));
 
         setBotVerified(true);
@@ -895,14 +859,10 @@ const BotSetup = () => {
         setVerificationCurrentStep(0);
         
         toast({
-          title: "Успішно!",
-          description: `Приватний канал "${spyData.channelInfo.title}" підключено через userbot`,
-          duration: 3000,
+          title: "РЈСЃРїС–С€РЅРѕ!",
+          description: "Р‘РѕС‚ РїС–РґРєР»СЋС‡РµРЅРёР№ РґРѕ РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ С– РјР°С” РІСЃС– РЅРµРѕР±С…С–РґРЅС– РїСЂР°РІР°",
+          duration: 2000,
         });
-        
-        setIsCheckingBot(false);
-        setVerificationSteps([]);
-        setVerificationCurrentStep(0);
         return;
       }
       
@@ -931,8 +891,8 @@ const BotSetup = () => {
         
         if (ownerCheck?.is_taken) {
           toast({
-            title: "Канал вже зайнятий",
-            description: "Цей канал вже використовується іншим користувачем",
+            title: "РљР°РЅР°Р» РІР¶Рµ Р·Р°Р№РЅСЏС‚РёР№",
+            description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ С–РЅС€РёРј РєРѕСЂРёСЃС‚СѓРІР°С‡РµРј",
             variant: "destructive",
             duration: 8000,
           });
@@ -963,8 +923,8 @@ const BotSetup = () => {
         if (!checkData.ok) {
           setVerificationStatus({ isMember: false, hasPermissions: false });
           toast({
-            title: "Помилка доступу",
-            description: `Бот не має доступу до каналу. Переконайтеся що ви:\n1. Додали бота @${selectedBot.bot_username || 'вашого_бота'} як адміністратора\n2. Вказали правильний chat_id`,
+            title: "РџРѕРјРёР»РєР° РґРѕСЃС‚СѓРїСѓ",
+            description: `Р‘РѕС‚ РЅРµ РјР°С” РґРѕСЃС‚СѓРїСѓ РґРѕ РєР°РЅР°Р»Сѓ. РџРµСЂРµРєРѕРЅР°Р№С‚РµСЃСЏ С‰Рѕ РІРё:\n1. Р”РѕРґР°Р»Рё Р±РѕС‚Р° @${selectedBot.bot_username || 'РІР°С€РѕРіРѕ_Р±РѕС‚Р°'} СЏРє Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°\n2. Р’РєР°Р·Р°Р»Рё РїСЂР°РІРёР»СЊРЅРёР№ chat_id`,
             variant: "destructive",
             duration: 6000,
           });
@@ -988,8 +948,8 @@ const BotSetup = () => {
         if (!memberData.ok || (memberData.result.status !== 'administrator' && memberData.result.status !== 'creator')) {
           setVerificationStatus({ isMember: true, hasPermissions: false });
           toast({
-            title: "Недостатньо прав",
-            description: "Бот доданий до каналу, але не має прав адміністратора. Надайте боту права адміністратора.",
+            title: "РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ",
+            description: "Р‘РѕС‚ РґРѕРґР°РЅРёР№ РґРѕ РєР°РЅР°Р»Сѓ, Р°Р»Рµ РЅРµ РјР°С” РїСЂР°РІ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°. РќР°РґР°Р№С‚Рµ Р±РѕС‚Сѓ РїСЂР°РІР° Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°.",
             variant: "destructive",
             duration: 5000,
           });
@@ -1007,8 +967,8 @@ const BotSetup = () => {
         setBotVerified(true);
         const channelTitle = checkData.result.title || channelIdentifier;
         toast({
-          title: "Успішно!",
-          description: `Бот підключений до приватного каналу "${channelTitle}"`,
+          title: "РЈСЃРїС–С€РЅРѕ!",
+          description: `Р‘РѕС‚ РїС–РґРєР»СЋС‡РµРЅРёР№ РґРѕ РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ "${channelTitle}"`,
           duration: 3000,
         });
         setIsCheckingBot(false);
@@ -1016,7 +976,7 @@ const BotSetup = () => {
         setVerificationCurrentStep(0);
       } else {
         // Handle as public channel with username
-        // Крок 1: Перевірка існування
+        // РљСЂРѕРє 1: РџРµСЂРµРІС–СЂРєР° С–СЃРЅСѓРІР°РЅРЅСЏ
         setVerificationCurrentStep(1);
         setVerificationProgress(steps[0]);
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -1028,10 +988,9 @@ const BotSetup = () => {
         
         console.log('getChat response:', getChatData);
         
-        if (!getChatData.ok) {
+        if (!getChatResponse.ok || !getChatData.ok) {
           console.log('Channel not found or error:', getChatData.description);
-          const errorMsg = `Канал не знайдено: ${getChatData.description || "Перевірте правильність username"}`;
-          setVerificationError(errorMsg);
+          setVerificationError(`РљР°РЅР°Р» РЅРµ Р·РЅР°Р№РґРµРЅРѕ: ${getChatData.description || "РџРµСЂРµРІС–СЂС‚Рµ РїСЂР°РІРёР»СЊРЅС–СЃС‚СЊ username Р°Р±Рѕ РїРѕСЃРёР»Р°РЅРЅСЏ"}`);
           setTimeout(() => {
             setIsCheckingBot(false);
             setVerificationSteps([]);
@@ -1040,53 +999,19 @@ const BotSetup = () => {
           return;
         }
         
-        // Крок 2: Перевірка на дублікат
+        // РљСЂРѕРє 2: Р’РёР·РЅР°С‡РµРЅРЅСЏ С‚РёРїСѓ
         setVerificationCurrentStep(2);
         setVerificationProgress(steps[1]);
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        // Check for duplicate channels
-        const { data: existingChannels, error: checkError } = await supabase
-          .from('bot_services')
-          .select('id, target_channel')
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .eq('bot_id', selectedBot);
-
-        if (checkError) {
-          console.error('Error checking duplicates:', checkError);
-        } else if (existingChannels && existingChannels.length > 0) {
-          const channelToCheck = targetChannel.startsWith('@') ? targetChannel : `@${targetChannel}`;
-          const isDuplicate = existingChannels.some(ch => 
-            ch.target_channel === channelToCheck || 
-            ch.target_channel === targetChannel ||
-            ch.target_channel === targetChannel.replace('@', '')
-          );
-
-          if (isDuplicate) {
-            const errorMsg = "Цей канал вже підключений до обраного бота";
-            setVerificationError(errorMsg);
-            setTimeout(() => {
-              setIsCheckingBot(false);
-              setVerificationSteps([]);
-              setVerificationCurrentStep(0);
-            }, 5000);
-            return;
-          }
-        }
-
-        // Крок 3: Визначення типу
-        setVerificationCurrentStep(3);
-        setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 500));
         
         if (getChatData.result.type !== 'channel') {
           const typeMap: Record<string, string> = {
-            'group': 'група',
-            'supergroup': 'супергрупа',
-            'private': 'приватний чат'
+            'group': 'РіСЂСѓРїР°',
+            'supergroup': 'СЃСѓРїРµСЂРіСЂСѓРїР°',
+            'private': 'РїСЂРёРІР°С‚РЅРёР№ С‡Р°С‚'
           };
           const typeName = typeMap[getChatData.result.type] || getChatData.result.type;
-          const errorMsg = `Це ${typeName}, а не канал. Вкажіть посилання на канал`;
+          const errorMsg = `Р¦Рµ ${typeName}, Р° РЅРµ РєР°РЅР°Р». Р’РєР°Р¶С–С‚СЊ РїРѕСЃРёР»Р°РЅРЅСЏ РЅР° РєР°РЅР°Р»`;
           
           setVerificationError(errorMsg);
           setTimeout(() => {
@@ -1097,9 +1022,9 @@ const BotSetup = () => {
           return;
         }
         
-        // Крок 4: Підключення до API
-        setVerificationCurrentStep(4);
-        setVerificationProgress(steps[3]);
+        // РљСЂРѕРє 3: РџС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ API
+        setVerificationCurrentStep(3);
+        setVerificationProgress(steps[2]);
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data, error } = await supabase.functions.invoke('check-bot-admin', {
@@ -1111,7 +1036,7 @@ const BotSetup = () => {
 
         if (error) throw error;
         
-        // Не викидаємо exception якщо бот просто не має прав - обробимо це окремо
+        // РќРµ РІРёРєРёРґР°С”РјРѕ exception СЏРєС‰Рѕ Р±РѕС‚ РїСЂРѕСЃС‚Рѕ РЅРµ РјР°С” РїСЂР°РІ - РѕР±СЂРѕР±РёРјРѕ С†Рµ РѕРєСЂРµРјРѕ
         if (data?.error && !data.isMember) {
           throw new Error(data.error);
         }
@@ -1122,51 +1047,75 @@ const BotSetup = () => {
         });
 
         if (data.isAdmin && data.isMember && data.canPostMessages) {
-          // Крок 5: Перевірка доступу пройдена
-          setVerificationCurrentStep(5);
+          setVerificationCurrentStep(4);
           setVerificationProgress(steps[4]);
           await new Promise(resolve => setTimeout(resolve, 600));
           
-          // Крок 6: Перевірка прав
-          setVerificationCurrentStep(6);
-          setVerificationProgress(steps[5]);
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
-          // Крок 7: Завершення
-          setVerificationCurrentStep(7);
-          setVerificationProgress(steps[6]);
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
           setBotVerified(true);
+          setIsCheckingBot(false);
+          setVerificationSteps([]);
+          setVerificationCurrentStep(0);
           toast({
-            title: "Успішно!",
-            description: "Бот підключений до каналу і має всі необхідні права",
+            title: "РЈСЃРїС–С€РЅРѕ!",
+            description: "Р‘РѕС‚ РїС–РґРєР»СЋС‡РµРЅРёР№ РґРѕ РєР°РЅР°Р»Сѓ С– РјР°С” РІСЃС– РЅРµРѕР±С…С–РґРЅС– РїСЂР°РІР°",
             duration: 2000,
           });
         } else {
-          // Перевірка доступу і прав
-          let errorMsg = "";
+          // РљСЂРѕРє 4: РџРµСЂРµРІС–СЂРєР° РґРѕСЃС‚СѓРїСѓ
           if (!data.isMember) {
-            errorMsg = "Бот не доданий до каналу. Додайте бота як адміністратора";
-          } else if (!data.isAdmin) {
-            errorMsg = "Бот не має прав адміністратора. Надайте боту права";
-          } else if (!data.canPostMessages) {
-            errorMsg = 'Бот не має права публікувати повідомлення. Увімкніть право "Керувати повідомленнями" в налаштуваннях адміністратора';
+            let errorMsg = "Р‘РѕС‚ РЅРµ РґРѕРґР°РЅРёР№ РґРѕ РєР°РЅР°Р»Сѓ. Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° СЏРє Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°";
+            
+            // РџРѕРєСЂР°С‰РµРЅС– РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ РґР»СЏ СЂС–Р·РЅРёС… СЃРёС‚СѓР°С†С–Р№
+            if (data.error?.includes('was kicked')) {
+              errorMsg = "Р‘РѕС‚ Р±СѓРІ РІРёРґР°Р»РµРЅРёР№ Р· РєР°РЅР°Р»Сѓ. Р’РёРґР°Р»С–С‚СЊ Р±РѕС‚Р° РїРѕРІРЅС–СЃС‚СЋ С‚Р° РґРѕРґР°Р№С‚Рµ Р№РѕРіРѕ Р·Р°РЅРѕРІРѕ СЏРє Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°";
+            } else if (data.error?.includes('chat not found')) {
+              errorMsg = "Р‘РѕС‚ РЅРµ РјР°С” РґРѕСЃС‚СѓРїСѓ РґРѕ РєР°РЅР°Р»Сѓ. Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° СЏРє Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°";
+            }
+            
+            setVerificationError(errorMsg);
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
           }
           
-          setVerificationError(errorMsg);
-          setTimeout(() => {
-            setIsCheckingBot(false);
-            setVerificationSteps([]);
-            setVerificationCurrentStep(0);
-          }, 5000);
-          return;
+          // РљСЂРѕРє 5: РџРµСЂРµРІС–СЂРєР° РїСЂР°РІ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°
+          if (!data.isAdmin) {
+            setVerificationCurrentStep(5);
+            setVerificationProgress(steps[4]);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            setVerificationError("Р‘РѕС‚ РЅРµ РјР°С” РїСЂР°РІ Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°. РќР°РґР°Р№С‚Рµ Р±РѕС‚Сѓ РїСЂР°РІР°");
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
+          
+          // РљСЂРѕРє 5: РџРµСЂРµРІС–СЂРєР° РїСЂР°РІР° РїСѓР±Р»С–РєР°С†С–С—
+          if (!data.canPostMessages) {
+            setVerificationCurrentStep(5);
+            setVerificationProgress(steps[4]);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            setVerificationError('Р‘РѕС‚ РЅРµ РјР°С” РїСЂР°РІР° РїСѓР±Р»С–РєСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ. РЈРІС–РјРєРЅС–С‚СЊ РїСЂР°РІРѕ "РљРµСЂСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏРјРё" РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏС… Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°');
+            setTimeout(() => {
+              setIsCheckingBot(false);
+              setVerificationSteps([]);
+              setVerificationCurrentStep(0);
+            }, 5000);
+            return;
+          }
         }
       }
     } catch (error: any) {
       console.error("Error verifying bot:", error);
       setVerificationStatus({ isMember: false, hasPermissions: false });
-      setVerificationError(error.message || "Не вдалося перевірити права бота. Перевірте підключення до інтернету");
+      setVerificationError(error.message || "РќРµ РІРґР°Р»РѕСЃСЏ РїРµСЂРµРІС–СЂРёС‚Рё РїСЂР°РІР° Р±РѕС‚Р°. РџРµСЂРµРІС–СЂС‚Рµ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РґРѕ С–РЅС‚РµСЂРЅРµС‚Сѓ");
       setTimeout(() => {
         setIsCheckingBot(false);
         setVerificationSteps([]);
@@ -1178,8 +1127,8 @@ const BotSetup = () => {
   const handleSaveBotService = async () => {
     if (!user || !selectedBotId || !botVerified) {
       toast({
-        title: "Помилка",
-        description: "Спочатку підтвердіть бота",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РЎРїРѕС‡Р°С‚РєСѓ РїС–РґС‚РІРµСЂРґС–С‚СЊ Р±РѕС‚Р°",
         variant: "destructive",
         duration: 1500,
       });
@@ -1189,8 +1138,8 @@ const BotSetup = () => {
     // Validate posts per day limit
     if (tariff && botService && botService.posts_per_day > tariff.posts_per_day) {
       toast({
-        title: "Помилка",
-        description: `Кількість постів на день не може перевищувати ${tariff.posts_per_day}`,
+        title: "РџРѕРјРёР»РєР°",
+        description: `РљС–Р»СЊРєС–СЃС‚СЊ РїРѕСЃС‚С–РІ РЅР° РґРµРЅСЊ РЅРµ РјРѕР¶Рµ РїРµСЂРµРІРёС‰СѓРІР°С‚Рё ${tariff.posts_per_day}`,
         variant: "destructive",
         duration: 3000,
       });
@@ -1213,8 +1162,8 @@ const BotSetup = () => {
         
         if (ownerCheck?.is_taken) {
           toast({
-            title: "Канал вже зайнятий",
-            description: "Цей канал вже використовується іншим користувачем",
+            title: "РљР°РЅР°Р» РІР¶Рµ Р·Р°Р№РЅСЏС‚РёР№",
+            description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ С–РЅС€РёРј РєРѕСЂРёСЃС‚СѓРІР°С‡РµРј",
             variant: "destructive",
             duration: 8000,
           });
@@ -1262,8 +1211,8 @@ const BotSetup = () => {
         
         if (ownerCheck?.is_taken) {
           toast({
-            title: "Канал вже зайнятий",
-            description: "Цей канал вже використовується іншим користувачем",
+            title: "РљР°РЅР°Р» РІР¶Рµ Р·Р°Р№РЅСЏС‚РёР№",
+            description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ С–РЅС€РёРј РєРѕСЂРёСЃС‚СѓРІР°С‡РµРј",
             variant: "destructive",
             duration: 8000,
           });
@@ -1316,7 +1265,7 @@ const BotSetup = () => {
             } else {
               console.log('[Bot Setup] Spy joined target channel for statistics');
               
-              // Зберегти в pending_spy_channels якщо це новий join
+              // Р—Р±РµСЂРµРіС‚Рё РІ pending_spy_channels СЏРєС‰Рѕ С†Рµ РЅРѕРІРёР№ join
               if (joinData?.success && joinData?.channelInfo?.id && !joinData.already_joined) {
                 try {
                   const { error: pendingError } = await supabase
@@ -1346,10 +1295,10 @@ const BotSetup = () => {
         }
 
         if (error) throw error;
-        console.log("? Bot service created via save:", data);
+        console.log("вњ… Bot service created via save:", data);
         setBotService(data);
         
-        // Підтвердити pending канал - змінити статус на "confirmed" щоб не видаляти
+        // РџС–РґС‚РІРµСЂРґРёС‚Рё pending РєР°РЅР°Р» - Р·РјС–РЅРёС‚Рё СЃС‚Р°С‚СѓСЃ РЅР° "confirmed" С‰РѕР± РЅРµ РІРёРґР°Р»СЏС‚Рё
         if (targetChannel) {
           try {
             const { error: confirmError } = await supabase
@@ -1368,7 +1317,7 @@ const BotSetup = () => {
           }
         }
         
-        // Додаємо всі pending джерела в БД
+        // Р”РѕРґР°С”РјРѕ РІСЃС– pending РґР¶РµСЂРµР»Р° РІ Р‘Р”
         if (pendingSourceChannels.length > 0) {
           const sourcesToInsert = pendingSourceChannels.map(ch => ({
             bot_service_id: data.id,
@@ -1387,15 +1336,15 @@ const BotSetup = () => {
           if (sourcesError) {
             console.error("Error adding sources:", sourcesError);
             toast({
-              title: "Попередження",
-              description: "Налаштування збережено, але деякі джерела не додались",
+              title: "РџРѕРїРµСЂРµРґР¶РµРЅРЅСЏ",
+              description: "РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ Р·Р±РµСЂРµР¶РµРЅРѕ, Р°Р»Рµ РґРµСЏРєС– РґР¶РµСЂРµР»Р° РЅРµ РґРѕРґР°Р»РёСЃСЊ",
               variant: "destructive",
               duration: 3000,
             });
           } else {
-            console.log(`? Added ${pendingSourceChannels.length} sources`);
+            console.log(`вњ… Added ${pendingSourceChannels.length} sources`);
             
-            // Підтвердити pending канали для джерел
+            // РџС–РґС‚РІРµСЂРґРёС‚Рё pending РєР°РЅР°Р»Рё РґР»СЏ РґР¶РµСЂРµР»
             for (const source of pendingSourceChannels) {
               if (source.is_private && source.spy_id) {
                 try {
@@ -1415,9 +1364,9 @@ const BotSetup = () => {
               }
             }
             
-            // Очищаємо pending список
+            // РћС‡РёС‰Р°С”РјРѕ pending СЃРїРёСЃРѕРє
             setPendingSourceChannels([]);
-            // Завантажуємо джерела з БД
+            // Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ РґР¶РµСЂРµР»Р° Р· Р‘Р”
             await loadSourceChannels(data.id);
           }
         }
@@ -1426,15 +1375,15 @@ const BotSetup = () => {
       }
 
       toast({
-        title: "Збережено",
-        description: "Налаштування бота успішно збережено",
+        title: "Р—Р±РµСЂРµР¶РµРЅРѕ",
+        description: "РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ Р±РѕС‚Р° СѓСЃРїС–С€РЅРѕ Р·Р±РµСЂРµР¶РµРЅРѕ",
         duration: 1500,
       });
     } catch (error: any) {
       console.error("Error saving bot service:", error);
       toast({
-        title: "Помилка",
-        description: "Не вдалося зберегти налаштування",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р±РµСЂРµРіС‚Рё РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ",
         variant: "destructive",
         duration: 1500,
       });
@@ -1449,14 +1398,14 @@ const BotSetup = () => {
   };
 
   const handleToggleBotStatus = async () => {
-    console.log('?? handleToggleBotStatus called!');
+    console.log('рџљЂ handleToggleBotStatus called!');
     console.log('Bot service:', botService);
     
     if (!botService) {
-      console.log('? No bot service');
+      console.log('вќЊ No bot service');
       toast({
-        title: "Помилка",
-        description: "Спочатку збережіть налаштування бота",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РЎРїРѕС‡Р°С‚РєСѓ Р·Р±РµСЂРµР¶С–С‚СЊ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ Р±РѕС‚Р°",
         variant: "destructive",
         duration: 1500,
       });
@@ -1465,8 +1414,8 @@ const BotSetup = () => {
 
     if (sourceChannels.length === 0) {
       toast({
-        title: "Помилка",
-        description: "Додайте хоча б один канал-джерело",
+        title: "РџРѕРјРёР»РєР°",
+        description: "Р”РѕРґР°Р№С‚Рµ С…РѕС‡Р° Р± РѕРґРёРЅ РєР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ",
         variant: "destructive",
         duration: 1500,
       });
@@ -1477,8 +1426,8 @@ const BotSetup = () => {
       const newStatus = !botService.is_running;
       const now = new Date().toISOString();
       
-      console.log('?? Toggling bot status to:', newStatus);
-      console.log('?? Started at will be:', now);
+      console.log('вљ™пёЏ Toggling bot status to:', newStatus);
+      console.log('рџ“… Started at will be:', now);
       
       const { error } = await supabase
         .from("bot_services")
@@ -1490,15 +1439,15 @@ const BotSetup = () => {
 
       if (error) throw error;
 
-      // Створюємо сповіщення через прямий INSERT
+      // РЎС‚РІРѕСЂСЋС”РјРѕ СЃРїРѕРІС–С‰РµРЅРЅСЏ С‡РµСЂРµР· РїСЂСЏРјРёР№ INSERT
       if (user) {
         const selectedBot = bots.find(b => b.id === selectedBotId);
-        const botName = selectedBot?.bot_name || 'Плагіатор';
+        const botName = selectedBot?.bot_name || 'РџР»Р°РіС–Р°С‚РѕСЂ';
         
-        console.log('?? Creating bot notification for user:', user.id);
-        console.log('?? Bot name:', botName, 'Channel:', botService.target_channel);
+        console.log('рџ”” Creating bot notification for user:', user.id);
+        console.log('рџ¤– Bot name:', botName, 'Channel:', botService.target_channel);
         
-        // Перевіряємо налаштування
+        // РџРµСЂРµРІС–СЂСЏС”РјРѕ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ
         const { data: settings } = await supabase
           .from('notification_settings')
           .select('bot_status_enabled')
@@ -1509,75 +1458,75 @@ const BotSetup = () => {
         
         if (isEnabled) {
           if (newStatus) {
-            // Бот запущено
-            console.log('?? Creating bot_started notification via INSERT...');
+            // Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅРѕ
+            console.log('в–¶пёЏ Creating bot_started notification via INSERT...');
             await supabase.from('notifications').insert({
               user_id: user.id,
               type: 'bot_started',
-              title: 'Бот запущено',
-              message: `Бот "${botName}" прив'язаний до каналу "${botService.target_channel}" розпочав свою роботу`,
+              title: 'Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅРѕ',
+              message: `Р‘РѕС‚ "${botName}" РїСЂРёРІ'СЏР·Р°РЅРёР№ РґРѕ РєР°РЅР°Р»Сѓ "${botService.target_channel}" СЂРѕР·РїРѕС‡Р°РІ СЃРІРѕСЋ СЂРѕР±РѕС‚Сѓ`,
               link: '/my-channels'
             });
-            console.log('? Notification created');
+            console.log('вњ… Notification created');
           } else {
-            // Бот зупинено
-            console.log('?? Creating bot_stopped notification via INSERT...');
+            // Р‘РѕС‚ Р·СѓРїРёРЅРµРЅРѕ
+            console.log('вЏёпёЏ Creating bot_stopped notification via INSERT...');
             const runtimeHours = botService.started_at 
               ? (Date.now() - new Date(botService.started_at).getTime()) / (1000 * 60 * 60)
               : 0;
-            console.log('?? Runtime hours:', runtimeHours);
+            console.log('вЏ±пёЏ Runtime hours:', runtimeHours);
             
             let runtimeText;
             if (runtimeHours >= 24) {
-              runtimeText = `${Math.floor(runtimeHours / 24)} днів ${Math.floor(runtimeHours % 24)} годин`;
+              runtimeText = `${Math.floor(runtimeHours / 24)} РґРЅС–РІ ${Math.floor(runtimeHours % 24)} РіРѕРґРёРЅ`;
             } else if (runtimeHours >= 1) {
-              runtimeText = `${Math.floor(runtimeHours)} годин ${Math.round((runtimeHours % 1) * 60)} хвилин`;
+              runtimeText = `${Math.floor(runtimeHours)} РіРѕРґРёРЅ ${Math.round((runtimeHours % 1) * 60)} С…РІРёР»РёРЅ`;
             } else {
-              runtimeText = `${Math.round(runtimeHours * 60)} хвилин`;
+              runtimeText = `${Math.round(runtimeHours * 60)} С…РІРёР»РёРЅ`;
             }
             
             await supabase.from('notifications').insert({
               user_id: user.id,
               type: 'bot_stopped',
-              title: 'Бот зупинено',
-              message: `Бот "${botName}" прив'язаний до каналу "${botService.target_channel}" припинив свою роботу, пропрацювавши ${runtimeText}`,
+              title: 'Р‘РѕС‚ Р·СѓРїРёРЅРµРЅРѕ',
+              message: `Р‘РѕС‚ "${botName}" РїСЂРёРІ'СЏР·Р°РЅРёР№ РґРѕ РєР°РЅР°Р»Сѓ "${botService.target_channel}" РїСЂРёРїРёРЅРёРІ СЃРІРѕСЋ СЂРѕР±РѕС‚Сѓ, РїСЂРѕРїСЂР°С†СЋРІР°РІС€Рё ${runtimeText}`,
               link: '/my-channels'
             });
-            console.log('? Notification created');
+            console.log('вњ… Notification created');
           }
         }
       } else {
-        console.warn('?? User not found, cannot create notification');
+        console.warn('вљ пёЏ User not found, cannot create notification');
       }
 
       setBotService({ ...botService, is_running: newStatus, started_at: newStatus ? now : botService.started_at });
       toast({
-        title: newStatus ? "Бот запущено" : "Бот зупинено",
+        title: newStatus ? "Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅРѕ" : "Р‘РѕС‚ Р·СѓРїРёРЅРµРЅРѕ",
         description: newStatus 
-          ? "Бот розпочав автоматичне копіювання постів" 
-          : "Бот призупинив свою роботу",
+          ? "Р‘РѕС‚ СЂРѕР·РїРѕС‡Р°РІ Р°РІС‚РѕРјР°С‚РёС‡РЅРµ РєРѕРїС–СЋРІР°РЅРЅСЏ РїРѕСЃС‚С–РІ" 
+          : "Р‘РѕС‚ РїСЂРёР·СѓРїРёРЅРёРІ СЃРІРѕСЋ СЂРѕР±РѕС‚Сѓ",
         duration: 1500,
       });
     } catch (error: any) {
       console.error("Error toggling bot status:", error);
       
-      // Створюємо сповіщення про помилку
+      // РЎС‚РІРѕСЂСЋС”РјРѕ СЃРїРѕРІС–С‰РµРЅРЅСЏ РїСЂРѕ РїРѕРјРёР»РєСѓ
       if (user && botService) {
         const selectedBot = bots.find(b => b.id === selectedBotId);
-        const botName = selectedBot?.bot_name || 'Плагіатор';
+        const botName = selectedBot?.bot_name || 'РџР»Р°РіС–Р°С‚РѕСЂ';
         
         await supabase.rpc('create_bot_error_notification', {
           p_user_id: user.id,
           p_bot_name: botName,
           p_channel_name: botService.target_channel,
-          p_error_message: error.message || 'Невідома помилка',
+          p_error_message: error.message || 'РќРµРІС–РґРѕРјР° РїРѕРјРёР»РєР°',
           p_service_type: 'plagiarist'
         });
       }
       
       toast({
-        title: "Помилка",
-        description: "Не вдалося змінити статус бота",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ Р·РјС–РЅРёС‚Рё СЃС‚Р°С‚СѓСЃ Р±РѕС‚Р°",
         variant: "destructive",
         duration: 1500,
       });
@@ -1588,8 +1537,8 @@ const BotSetup = () => {
     // Allow adding sources before botService exists
     if (!selectedBotId || !botVerified) {
       toast({
-        title: "Помилка",
-        description: "Спочатку підключіть бота до каналу",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РЎРїРѕС‡Р°С‚РєСѓ РїС–РґРєР»СЋС‡С–С‚СЊ Р±РѕС‚Р° РґРѕ РєР°РЅР°Р»Сѓ",
         variant: "destructive",
         duration: 2000,
       });
@@ -1598,8 +1547,8 @@ const BotSetup = () => {
 
     if (!newChannelUsername.trim()) {
       toast({
-        title: "Помилка",
-        description: "Введіть @username, посилання або chat_id каналу",
+        title: "РџРѕРјРёР»РєР°",
+        description: "Р’РІРµРґС–С‚СЊ @username, РїРѕСЃРёР»Р°РЅРЅСЏ Р°Р±Рѕ chat_id РєР°РЅР°Р»Сѓ",
         variant: "destructive",
         duration: 2000,
       });
@@ -1608,8 +1557,8 @@ const BotSetup = () => {
 
     if (!user) {
       toast({
-        title: "Помилка",
-        description: "Користувач не знайдено",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РљРѕСЂРёСЃС‚СѓРІР°С‡ РЅРµ Р·РЅР°Р№РґРµРЅРѕ",
         variant: "destructive",
         duration: 1500,
       });
@@ -1635,8 +1584,8 @@ const BotSetup = () => {
     // Check if source channel is same as target channel
     if (normalizedInput === normalizedTarget) {
       toast({
-        title: "Помилка",
-        description: "Канал-джерело не може співпадати з цільовим каналом. Виберіть інший канал.",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РљР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ РЅРµ РјРѕР¶Рµ СЃРїС–РІРїР°РґР°С‚Рё Р· С†С–Р»СЊРѕРІРёРј РєР°РЅР°Р»РѕРј. Р’РёР±РµСЂС–С‚СЊ С–РЅС€РёР№ РєР°РЅР°Р».",
         variant: "destructive",
         duration: 3000,
       });
@@ -1651,8 +1600,8 @@ const BotSetup = () => {
     
     if (isDuplicate) {
       toast({
-        title: "Помилка",
-        description: "Цей канал вже додано до списку джерел",
+        title: "РџРѕРјРёР»РєР°",
+        description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РґРѕРґР°РЅРѕ РґРѕ СЃРїРёСЃРєСѓ РґР¶РµСЂРµР»",
         variant: "destructive",
         duration: 2000,
       });
@@ -1662,8 +1611,8 @@ const BotSetup = () => {
     // Check tariff limits
     if (tariff && tariff.sources_limit && sourceChannels.length >= tariff.sources_limit) {
       toast({
-        title: "Досягнуто ліміту",
-        description: `Ваш тариф дозволяє лише ${tariff.sources_limit} каналів-джерел. Оновіть тариф для додавання більше каналів.`,
+        title: "Р”РѕСЃСЏРіРЅСѓС‚Рѕ Р»С–РјС–С‚Сѓ",
+        description: `Р’Р°С€ С‚Р°СЂРёС„ РґРѕР·РІРѕР»СЏС” Р»РёС€Рµ ${tariff.sources_limit} РєР°РЅР°Р»С–РІ-РґР¶РµСЂРµР». РћРЅРѕРІС–С‚СЊ С‚Р°СЂРёС„ РґР»СЏ РґРѕРґР°РІР°РЅРЅСЏ Р±С–Р»СЊС€Рµ РєР°РЅР°Р»С–РІ.`,
         variant: "destructive",
         duration: 3000,
       });
@@ -1673,50 +1622,50 @@ const BotSetup = () => {
     const selectedBot = bots.find(b => b.id === selectedBotId);
     if (!selectedBot) {
       toast({
-        title: "Помилка",
-        description: "Бот не знайдено",
+        title: "РџРѕРјРёР»РєР°",
+        description: "Р‘РѕС‚ РЅРµ Р·РЅР°Р№РґРµРЅРѕ",
         variant: "destructive",
         duration: 1500,
       });
       return;
     }
 
-    setIsCheckingBot(true);
+    setIsCheckingChannel(true);
     setChannelVerificationStatus({ canRead: null, isPublic: null });
 
     try {
-      // Якщо bot_service вже існує, перевіряємо чи джерело вже в БД
+      // РЇРєС‰Рѕ bot_service РІР¶Рµ С–СЃРЅСѓС”, РїРµСЂРµРІС–СЂСЏС”РјРѕ С‡Рё РґР¶РµСЂРµР»Рѕ РІР¶Рµ РІ Р‘Р”
       if (botService) {
-        // Перевірка на дублікат в БД
+        // РџРµСЂРµРІС–СЂРєР° РЅР° РґСѓР±Р»С–РєР°С‚ РІ Р‘Р”
         const existsInDb = sourceChannels.some(ch => 
           normalizeChannelId(ch.channel_username) === normalizedInput
         );
         
         if (existsInDb) {
           toast({
-            title: "Дублікат",
-            description: "Цей канал вже додано до джерел",
+            title: "Р”СѓР±Р»С–РєР°С‚",
+            description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РґРѕРґР°РЅРѕ РґРѕ РґР¶РµСЂРµР»",
             variant: "destructive",
             duration: 2000,
           });
-          setIsCheckingBot(false);
+          setIsCheckingChannel(false);
           return;
         }
       }
       
-      // Перевірка на дублікат в локальних pending джерелах
+      // РџРµСЂРµРІС–СЂРєР° РЅР° РґСѓР±Р»С–РєР°С‚ РІ Р»РѕРєР°Р»СЊРЅРёС… pending РґР¶РµСЂРµР»Р°С…
       const existsInPending = pendingSourceChannels.some(ch => 
         normalizeChannelId(ch.username) === normalizedInput
       );
       
       if (existsInPending) {
         toast({
-          title: "Дублікат",
-          description: "Цей канал вже додано до списку",
+          title: "Р”СѓР±Р»С–РєР°С‚",
+          description: "Р¦РµР№ РєР°РЅР°Р» РІР¶Рµ РґРѕРґР°РЅРѕ РґРѕ СЃРїРёСЃРєСѓ",
           variant: "destructive",
           duration: 2000,
         });
-        setIsCheckingBot(false);
+        setIsCheckingChannel(false);
         return;
       }
 
@@ -1735,15 +1684,15 @@ const BotSetup = () => {
         const inviteMatch = input.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(?:\+|joinchat\/)([A-Za-z0-9_-]+)/);
         if (inviteMatch) {
           inviteHash = inviteMatch[1];
-          channelId = `invite_${inviteHash}`; // Тимчасовий ID для збереження
+          channelId = `invite_${inviteHash}`; // РўРёРјС‡Р°СЃРѕРІРёР№ ID РґР»СЏ Р·Р±РµСЂРµР¶РµРЅРЅСЏ
         } else {
           toast({
-            title: "Помилка",
-            description: "Невірний формат invite-посилання",
+            title: "РџРѕРјРёР»РєР°",
+            description: "РќРµРІС–СЂРЅРёР№ С„РѕСЂРјР°С‚ invite-РїРѕСЃРёР»Р°РЅРЅСЏ",
             variant: "destructive",
             duration: 3000,
           });
-          setIsCheckingBot(false);
+          setIsCheckingChannel(false);
           return;
         }
       }
@@ -1763,15 +1712,15 @@ const BotSetup = () => {
         channelId = `@${input}`;
       }
       
-      // Для приватних invite-посилань використовуємо verify-source-channel
+      // Р”Р»СЏ РїСЂРёРІР°С‚РЅРёС… invite-РїРѕСЃРёР»Р°РЅСЊ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ verify-source-channel
       if (isPrivateInvite) {
         setChannelVerificationStatus({ canRead: null, isPublic: false });
         
         try {
-          // Викликаємо Edge Function для верифікації через спамера
+          // Р’РёРєР»РёРєР°С”РјРѕ Edge Function РґР»СЏ РІРµСЂРёС„С–РєР°С†С–С— С‡РµСЂРµР· СЃРїР°РјРµСЂР°
           const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-source-channel', {
             body: {
-              channel_input: input, // Edge Function очікує channel_input
+              channel_input: input, // Edge Function РѕС‡С–РєСѓС” channel_input
               is_private: true,
               invite_hash: inviteHash,
             }
@@ -1780,22 +1729,22 @@ const BotSetup = () => {
           if (verifyError) throw new Error(verifyError.message);
           if (!verifyData.success) throw new Error(verifyData.error);
 
-          // Отримуємо реальну інформацію про канал
+          // РћС‚СЂРёРјСѓС”РјРѕ СЂРµР°Р»СЊРЅСѓ С–РЅС„РѕСЂРјР°С†С–СЋ РїСЂРѕ РєР°РЅР°Р»
           const channelInfo = verifyData.channelInfo;
           const shortHash = inviteHash?.substring(0, 8) || 'unknown';
-          let channelTitle = `?? Приватний канал (${shortHash}...)`;
+          let channelTitle = `рџ”’ РџСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р» (${shortHash}...)`;
           let photoUrl: string | undefined = undefined;
           
-          // Якщо Edge Function повернула реальні дані
-          if (channelInfo && channelInfo.title && channelInfo.title !== '?? Приватний канал') {
+          // РЇРєС‰Рѕ Edge Function РїРѕРІРµСЂРЅСѓР»Р° СЂРµР°Р»СЊРЅС– РґР°РЅС–
+          if (channelInfo && channelInfo.title && channelInfo.title !== 'рџ”’ РџСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р»') {
             channelTitle = channelInfo.title;
           }
           
-          // Отримуємо реальну інформацію через read-private-channel
+          // РћС‚СЂРёРјСѓС”РјРѕ СЂРµР°Р»СЊРЅСѓ С–РЅС„РѕСЂРјР°С†С–СЋ С‡РµСЂРµР· read-private-channel
           if (channelInfo && channelInfo.spammerId) {
             toast({
-              title: "Підключаюсь до каналу...",
-              description: "Отримую інформацію через спамера",
+              title: "РџС–РґРєР»СЋС‡Р°СЋСЃСЊ РґРѕ РєР°РЅР°Р»Сѓ...",
+              description: "РћС‚СЂРёРјСѓСЋ С–РЅС„РѕСЂРјР°С†С–СЋ С‡РµСЂРµР· СЃРїР°РјРµСЂР°",
               duration: 2000,
             });
             
@@ -1805,39 +1754,39 @@ const BotSetup = () => {
                   spammerId: channelInfo.spammerId,
                   channelIdentifier: channelId,
                   inviteHash: inviteHash,
-                  limit: 10, // Отримуємо останні 10 постів
+                  limit: 10, // РћС‚СЂРёРјСѓС”РјРѕ РѕСЃС‚Р°РЅРЅС– 10 РїРѕСЃС‚С–РІ
                 }
               });
               
               if (!readError && readData?.success) {
-                // Отримали реальну інформацію про канал
+                // РћС‚СЂРёРјР°Р»Рё СЂРµР°Р»СЊРЅСѓ С–РЅС„РѕСЂРјР°С†С–СЋ РїСЂРѕ РєР°РЅР°Р»
                 if (readData.channelInfo) {
                   channelTitle = readData.channelInfo.title || channelTitle;
                   photoUrl = readData.channelInfo.photo || readData.channelInfo.photo_url;
                   console.log("Got channel info:", readData.channelInfo);
                 }
                 
-                // Якщо є пости, збережемо їх після створення bot_service
+                // РЇРєС‰Рѕ С” РїРѕСЃС‚Рё, Р·Р±РµСЂРµР¶РµРјРѕ С—С… РїС–СЃР»СЏ СЃС‚РІРѕСЂРµРЅРЅСЏ bot_service
                 if (readData.messages && readData.messages.length > 0) {
                   console.log(`Got ${readData.messages.length} messages from channel`);
                 }
               }
             } catch (err) {
               console.log("Could not read private channel:", err);
-              // Не критична помилка - канал все одно буде додано
+              // РќРµ РєСЂРёС‚РёС‡РЅР° РїРѕРјРёР»РєР° - РєР°РЅР°Р» РІСЃРµ РѕРґРЅРѕ Р±СѓРґРµ РґРѕРґР°РЅРѕ
             }
           }
           
           setChannelVerificationStatus({ canRead: true, isPublic: false });
           
           toast({
-            title: "Приватний канал додано",
-            description: `Спамер отримає доступ до каналу при першій синхронізації`,
+            title: "РџСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р» РґРѕРґР°РЅРѕ",
+            description: `РЎРїР°РјРµСЂ РѕС‚СЂРёРјР°С” РґРѕСЃС‚СѓРї РґРѕ РєР°РЅР°Р»Сѓ РїСЂРё РїРµСЂС€С–Р№ СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–С—`,
             duration: 3000,
           });
           
           if (botService) {
-            // Додаємо канал в БД
+            // Р”РѕРґР°С”РјРѕ РєР°РЅР°Р» РІ Р‘Р”
             const { data: newChannel, error } = await supabase
               .from("source_channels")
               .insert({
@@ -1853,10 +1802,10 @@ const BotSetup = () => {
 
             if (error) throw error;
             
-            // Викликаємо першу синхронізацію для отримання реальної назви та постів
+            // Р’РёРєР»РёРєР°С”РјРѕ РїРµСЂС€Сѓ СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЋ РґР»СЏ РѕС‚СЂРёРјР°РЅРЅСЏ СЂРµР°Р»СЊРЅРѕС— РЅР°Р·РІРё С‚Р° РїРѕСЃС‚С–РІ
             toast({
-              title: "Синхронізація...",
-              description: "Отримую інформацію про канал через спамера",
+              title: "РЎРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ...",
+              description: "РћС‚СЂРёРјСѓСЋ С–РЅС„РѕСЂРјР°С†С–СЋ РїСЂРѕ РєР°РЅР°Р» С‡РµСЂРµР· СЃРїР°РјРµСЂР°",
               duration: 2000,
             });
             
@@ -1873,15 +1822,15 @@ const BotSetup = () => {
               if (syncError) {
                 console.error("Sync error:", syncError);
                 toast({
-                  title: "Попередження",
-                  description: "Канал додано, але синхронізація відкладена",
+                  title: "РџРѕРїРµСЂРµРґР¶РµРЅРЅСЏ",
+                  description: "РљР°РЅР°Р» РґРѕРґР°РЅРѕ, Р°Р»Рµ СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ РІС–РґРєР»Р°РґРµРЅР°",
                   variant: "default",
                   duration: 3000,
                 });
               } else if (syncData?.success) {
                 toast({
-                  title: "Синхронізація завершена",
-                  description: `Отримано інформацію про канал`,
+                  title: "РЎРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ Р·Р°РІРµСЂС€РµРЅР°",
+                  description: `РћС‚СЂРёРјР°РЅРѕ С–РЅС„РѕСЂРјР°С†С–СЋ РїСЂРѕ РєР°РЅР°Р»`,
                   duration: 2000,
                 });
               }
@@ -1903,19 +1852,19 @@ const BotSetup = () => {
           
           setNewChannelUsername("");
           setChannelVerificationStatus({ canRead: null, isPublic: null });
-          setIsCheckingBot(false);
+          setIsCheckingChannel(false);
           return;
           
         } catch (error: any) {
           console.error("Error verifying private channel:", error);
           toast({
-            title: "Помилка перевірки",
-            description: error.message || "Не вдалося перевірити приватний канал. Перевірте налаштування спамера в адмінці.",
+            title: "РџРѕРјРёР»РєР° РїРµСЂРµРІС–СЂРєРё",
+            description: error.message || "РќРµ РІРґР°Р»РѕСЃСЏ РїРµСЂРµРІС–СЂРёС‚Рё РїСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р». РџРµСЂРµРІС–СЂС‚Рµ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ СЃРїР°РјРµСЂР° РІ Р°РґРјС–РЅС†С–.",
             variant: "destructive",
             duration: 5000,
           });
           setChannelVerificationStatus({ canRead: null, isPublic: null });
-          setIsCheckingBot(false);
+          setIsCheckingChannel(false);
           return;
         }
       }
@@ -1932,15 +1881,15 @@ const BotSetup = () => {
         setChannelVerificationStatus({ canRead: false, isPublic: false });
         const isPrivate = channelId.includes('+') || channelId.includes('joinchat');
         const errorMsg = isPrivate 
-          ? "Бот не має доступу до приватного каналу. Переконайтеся, що бот доданий як учасник каналу."
-          : "Канал не знайдено або недоступний. Перевірте правильність введених даних.";
+          ? "Р‘РѕС‚ РЅРµ РјР°С” РґРѕСЃС‚СѓРїСѓ РґРѕ РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ. РџРµСЂРµРєРѕРЅР°Р№С‚РµСЃСЏ, С‰Рѕ Р±РѕС‚ РґРѕРґР°РЅРёР№ СЏРє СѓС‡Р°СЃРЅРёРє РєР°РЅР°Р»Сѓ."
+          : "РљР°РЅР°Р» РЅРµ Р·РЅР°Р№РґРµРЅРѕ Р°Р±Рѕ РЅРµРґРѕСЃС‚СѓРїРЅРёР№. РџРµСЂРµРІС–СЂС‚Рµ РїСЂР°РІРёР»СЊРЅС–СЃС‚СЊ РІРІРµРґРµРЅРёС… РґР°РЅРёС….";
         toast({
-          title: "Помилка доступу",
+          title: "РџРѕРјРёР»РєР° РґРѕСЃС‚СѓРїСѓ",
           description: errorMsg,
           variant: "destructive",
           duration: 5000,
         });
-        setIsCheckingBot(false);
+        setIsCheckingChannel(false);
         return;
       }
 
@@ -1960,12 +1909,12 @@ const BotSetup = () => {
         if (!memberData.ok || memberData.result.status === 'left' || memberData.result.status === 'kicked') {
           setChannelVerificationStatus({ canRead: true, isPublic: false });
           toast({
-            title: "Бот не є учасником",
-            description: "Для приватного каналу бот повинен бути доданий як учасник для читання постів.",
+            title: "Р‘РѕС‚ РЅРµ С” СѓС‡Р°СЃРЅРёРєРѕРј",
+            description: "Р”Р»СЏ РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ Р±РѕС‚ РїРѕРІРёРЅРµРЅ Р±СѓС‚Рё РґРѕРґР°РЅРёР№ СЏРє СѓС‡Р°СЃРЅРёРє РґР»СЏ С‡РёС‚Р°РЅРЅСЏ РїРѕСЃС‚С–РІ.",
             variant: "destructive",
             duration: 5000,
           });
-          setIsCheckingBot(false);
+          setIsCheckingChannel(false);
           return;
         }
       }
@@ -1973,10 +1922,10 @@ const BotSetup = () => {
       setChannelVerificationStatus({ canRead: true, isPublic: true });
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Додаємо канал локально (не в БД)
+      // Р”РѕРґР°С”РјРѕ РєР°РЅР°Р» Р»РѕРєР°Р»СЊРЅРѕ (РЅРµ РІ Р‘Р”)
       const channelTitle = checkData.result.title || channelId;
       
-      // Отримуємо URL аватарки
+      // РћС‚СЂРёРјСѓС”РјРѕ URL Р°РІР°С‚Р°СЂРєРё
       let photoUrl: string | undefined = undefined;
       if (checkData.result.photo?.small_file_id) {
         try {
@@ -1993,7 +1942,7 @@ const BotSetup = () => {
       }
       
       if (botService) {
-        // Якщо bot_service вже існує, додаємо в БД
+        // РЇРєС‰Рѕ bot_service РІР¶Рµ С–СЃРЅСѓС”, РґРѕРґР°С”РјРѕ РІ Р‘Р”
         const { error } = await supabase
           .from("source_channels")
           .insert({
@@ -2006,7 +1955,7 @@ const BotSetup = () => {
         
         await loadSourceChannels(botService.id);
       } else {
-        // Додаємо в локальний список (до збереження)
+        // Р”РѕРґР°С”РјРѕ РІ Р»РѕРєР°Р»СЊРЅРёР№ СЃРїРёСЃРѕРє (РґРѕ Р·Р±РµСЂРµР¶РµРЅРЅСЏ)
         setPendingSourceChannels(prev => [...prev, { 
           username: channelId, 
           title: channelTitle,
@@ -2018,7 +1967,7 @@ const BotSetup = () => {
       setChannelVerificationStatus({ canRead: null, isPublic: null });
       
       toast({
-        title: "? Джерельний канал успішно додано!",
+        title: "вњ… Р”Р¶РµСЂРµР»СЊРЅРёР№ РєР°РЅР°Р» СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ!",
         description: channelTitle,
         duration: 3000,
       });
@@ -2026,19 +1975,19 @@ const BotSetup = () => {
       console.error("Error adding source channel:", error);
       setChannelVerificationStatus({ canRead: false, isPublic: false });
       toast({
-        title: "Помилка",
-        description: error.message || "Не вдалося додати канал",
+        title: "РџРѕРјРёР»РєР°",
+        description: error.message || "РќРµ РІРґР°Р»РѕСЃСЏ РґРѕРґР°С‚Рё РєР°РЅР°Р»",
         variant: "destructive",
         duration: 3000,
       });
     } finally {
-      setIsCheckingBot(false);
+      setIsCheckingChannel(false);
     }
   };
 
   const handleDeleteSourceChannel = async (channelId: string) => {
     try {
-      // Отримуємо дані каналу перед видаленням
+      // РћС‚СЂРёРјСѓС”РјРѕ РґР°РЅС– РєР°РЅР°Р»Сѓ РїРµСЂРµРґ РІРёРґР°Р»РµРЅРЅСЏРј
       const channelToDelete = sourceChannels.find(ch => ch.id === channelId);
       
       const { error } = await supabase
@@ -2048,7 +1997,7 @@ const BotSetup = () => {
 
       if (error) throw error;
 
-      // Відключаємо юзербота від каналу
+      // Р’С–РґРєР»СЋС‡Р°С”РјРѕ СЋР·РµСЂР±РѕС‚Р° РІС–Рґ РєР°РЅР°Р»Сѓ
       if (channelToDelete?.spy_id && channelToDelete?.channel_username) {
         console.log('[Bot Setup] Leaving spy from source channel:', channelToDelete.channel_username);
         const { leaveSpyFromChannel } = await import('@/lib/spy-manager');
@@ -2058,15 +2007,15 @@ const BotSetup = () => {
       setSourceChannels(sourceChannels.filter(ch => ch.id !== channelId));
       
       toast({
-        title: "Канал видалено",
-        description: "Канал-джерело видалено, юзербот відключено",
+        title: "РљР°РЅР°Р» РІРёРґР°Р»РµРЅРѕ",
+        description: "РљР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ РІРёРґР°Р»РµРЅРѕ, СЋР·РµСЂР±РѕС‚ РІС–РґРєР»СЋС‡РµРЅРѕ",
         duration: 1500,
       });
     } catch (error: any) {
       console.error("Error deleting source channel:", error);
       toast({
-        title: "Помилка",
-        description: "Не вдалося видалити канал",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ РІРёРґР°Р»РёС‚Рё РєР°РЅР°Р»",
         variant: "destructive",
         duration: 1500,
       });
@@ -2076,8 +2025,8 @@ const BotSetup = () => {
   const handleDeletePendingChannel = (username: string) => {
     setPendingSourceChannels(prev => prev.filter(ch => ch.username !== username));
     toast({
-      title: "Канал видалено",
-      description: "Канал видалено зі списку",
+      title: "РљР°РЅР°Р» РІРёРґР°Р»РµРЅРѕ",
+      description: "РљР°РЅР°Р» РІРёРґР°Р»РµРЅРѕ Р·С– СЃРїРёСЃРєСѓ",
       duration: 1500,
     });
   };
@@ -2097,8 +2046,8 @@ const BotSetup = () => {
     } catch (error: any) {
       console.error("Error toggling channel status:", error);
       toast({
-        title: "Помилка",
-        description: "Не вдалося змінити статус каналу",
+        title: "РџРѕРјРёР»РєР°",
+        description: "РќРµ РІРґР°Р»РѕСЃСЏ Р·РјС–РЅРёС‚Рё СЃС‚Р°С‚СѓСЃ РєР°РЅР°Р»Сѓ",
         variant: "destructive",
         duration: 1500,
       });
@@ -2116,10 +2065,10 @@ const BotSetup = () => {
         <div className="container mx-auto px-4 py-8">
           <PageHeader
             icon={Bot}
-            title="Мої боти"
-            description="Оберіть бота для налаштування або створіть новий бот для автоматизації публікацій"
+            title="РњРѕС— Р±РѕС‚Рё"
+            description="РћР±РµСЂС–С‚СЊ Р±РѕС‚Р° РґР»СЏ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ Р°Р±Рѕ СЃС‚РІРѕСЂС–С‚СЊ РЅРѕРІРёР№ Р±РѕС‚ РґР»СЏ Р°РІС‚РѕРјР°С‚РёР·Р°С†С–С— РїСѓР±Р»С–РєР°С†С–Р№"
             backTo="/dashboard"
-            backLabel="Назад до панелі"
+            backLabel="РќР°Р·Р°Рґ РґРѕ РїР°РЅРµР»С–"
           />
           <BotCategoriesPanel bots={bots} selectedBotId={selectedBotId} onSelectBot={handleSelectBot} />
         </div>
@@ -2139,10 +2088,10 @@ const BotSetup = () => {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <PageHeader
             icon={Zap}
-            title={`Налаштування AI бота ${selectedBot.bot_name || ''}`}
-            description="Налаштуйте автоматичну генерацію контенту за допомогою штучного інтелекту"
+            title={`РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ AI Р±РѕС‚Р° ${selectedBot.bot_name || ''}`}
+            description="РќР°Р»Р°С€С‚СѓР№С‚Рµ Р°РІС‚РѕРјР°С‚РёС‡РЅСѓ РіРµРЅРµСЂР°С†С–СЋ РєРѕРЅС‚РµРЅС‚Сѓ Р·Р° РґРѕРїРѕРјРѕРіРѕСЋ С€С‚СѓС‡РЅРѕРіРѕ С–РЅС‚РµР»РµРєС‚Сѓ"
             backTo="/my-channels"
-            backLabel="Повернутись до каналів"
+            backLabel="РџРѕРІРµСЂРЅСѓС‚РёСЃСЊ РґРѕ РєР°РЅР°Р»С–РІ"
           />
           <AIBotSetup 
             botId={selectedBotId} 
@@ -2160,60 +2109,62 @@ const BotSetup = () => {
     return (
       <>
         {isCheckingBot && (
-          <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-[90%] max-w-2xl p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold">Перевірка підключення</h3>
-                  <span className="text-sm text-muted-foreground">
-                    {Math.round((verificationCurrentStep / verificationSteps.length) * 100)}% завершено
-                  </span>
-                </div>
-                
-                <div className="space-y-2">
+          <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Card className="w-[90%] max-w-md border-2 shadow-2xl">
+              <div className="p-6">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                    <Sparkles className="w-12 h-12 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                  </div>
+                  
+                  <div className="text-center space-y-2">
+                    {verificationError ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+                          <XCircle className="w-8 h-8 text-destructive" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-destructive">РџРѕРјРёР»РєР° РїРµСЂРµРІС–СЂРєРё</h3>
+                        <p className="text-muted-foreground text-sm mt-2">
+                          {verificationError}
+                        </p>
+                        <p className="text-muted-foreground text-xs mt-2 opacity-70">
+                          РЎРїСЂРѕР±СѓС”РјРѕ С‰Рµ СЂР°Р· С‡РµСЂРµР· 5 СЃРµРєСѓРЅРґ...
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-semibold">РџРµСЂРµРІС–СЂСЏС”РјРѕ РєР°РЅР°Р»</h3>
+                        <p className="text-muted-foreground text-sm">
+                          {verificationSteps[verificationCurrentStep] || 'Р—Р°С‡РµРєР°Р№С‚Рµ, Р±СѓРґСЊ Р»Р°СЃРєР°...'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  
                   {verificationSteps.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="w-full space-y-2">
                       {verificationSteps.map((step, index) => (
-                        <div 
-                          key={index} 
-                          className={`flex items-center gap-3 p-2 rounded-lg transition-all ${
-                            index === verificationCurrentStep 
-                              ? 'bg-primary/10 border border-primary/30' 
-                              : index < verificationCurrentStep 
-                              ? 'opacity-60' 
-                              : 'opacity-40'
-                          }`}
-                        >
+                        <div key={index} className="flex items-center gap-2 text-sm">
                           {index < verificationCurrentStep ? (
-                            <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
                           ) : index === verificationCurrentStep ? (
-                            <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+                            <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
                           ) : (
                             <div className="w-5 h-5 rounded-full border-2 border-muted flex-shrink-0" />
                           )}
-                          <span className="text-sm">{step}</span>
+                          <span className={index <= verificationCurrentStep ? "text-foreground" : "text-muted-foreground"}>
+                            {step}
+                          </span>
                         </div>
                       ))}
                     </div>
                   )}
-                  
-                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden mt-4">
-                    <div 
-                      className="bg-primary h-full transition-all duration-500 ease-out"
-                      style={{ width: `${((verificationCurrentStep + 1) / verificationSteps.length) * 100}%` }}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Крок {verificationCurrentStep + 1} з {verificationSteps.length}
-                  </p>
                 </div>
-                
-                {verificationError && (
-                  <Alert variant="destructive" className="mt-4">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>{verificationError}</AlertDescription>
-                  </Alert>
-                )}
               </div>
             </Card>
           </div>
@@ -2223,8 +2174,8 @@ const BotSetup = () => {
         <div className="container mx-auto px-4 py-8 max-w-2xl">
           <PageHeader
             icon={Bot}
-            title="Підключення бота"
-            description="Додайте бота до цільового каналу та надайте необхідні права для публікації"
+            title="РџС–РґРєР»СЋС‡РµРЅРЅСЏ Р±РѕС‚Р°"
+            description="Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° РґРѕ С†С–Р»СЊРѕРІРѕРіРѕ РєР°РЅР°Р»Сѓ С‚Р° РЅР°РґР°Р№С‚Рµ РЅРµРѕР±С…С–РґРЅС– РїСЂР°РІР° РґР»СЏ РїСѓР±Р»С–РєР°С†С–С—"
           >
             <Button 
               variant="ghost" 
@@ -2232,22 +2183,22 @@ const BotSetup = () => {
               className="mt-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Обрати іншого бота
+              РћР±СЂР°С‚Рё С–РЅС€РѕРіРѕ Р±РѕС‚Р°
             </Button>
           </PageHeader>
           <Card className="p-8">
             <div className="space-y-6">
               <div className="text-center">
-                <h3 className="text-xl font-bold mb-2">Крок 1: Додайте бота до каналу</h3>
+                <h3 className="text-xl font-bold mb-2">РљСЂРѕРє 1: Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° РґРѕ РєР°РЅР°Р»Сѓ</h3>
                 <p className="text-muted-foreground">
-                  Додайте бота до свого каналу та надайте йому права адміністратора
+                  Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° РґРѕ СЃРІРѕРіРѕ РєР°РЅР°Р»Сѓ С‚Р° РЅР°РґР°Р№С‚Рµ Р№РѕРјСѓ РїСЂР°РІР° Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°
                 </p>
               </div>
               <Alert>
                 <AlertDescription>
                   <ol className="list-decimal list-inside space-y-3">
                     <li>
-                      Додайте бота{" "}
+                      Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р°{" "}
                       <a 
                         href={`https://t.me/${bots.find(b => b.id === selectedBotId)?.bot_username}`}
                         target="_blank"
@@ -2256,21 +2207,21 @@ const BotSetup = () => {
                       >
                         @{bots.find(b => b.id === selectedBotId)?.bot_username}
                       </a>
-                      {" "}до вашого каналу
+                      {" "}РґРѕ РІР°С€РѕРіРѕ РєР°РЅР°Р»Сѓ
                     </li>
                     <li>
-                      Надайте боту права адміністратора з наступними дозволами:
+                      РќР°РґР°Р№С‚Рµ Р±РѕС‚Сѓ РїСЂР°РІР° Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР° Р· РЅР°СЃС‚СѓРїРЅРёРјРё РґРѕР·РІРѕР»Р°РјРё:
                       <ul className="list-disc list-inside ml-4 mt-1 text-sm">
-                        <li>Публікувати повідомлення</li>
-                        <li>Редагувати повідомлення</li>
-                        <li>Видаляти повідомлення (опціонально)</li>
+                        <li>РџСѓР±Р»С–РєСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ</li>
+                        <li>Р РµРґР°РіСѓРІР°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ</li>
+                        <li>Р’РёРґР°Р»СЏС‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)</li>
                       </ul>
                     </li>
                     <li>
-                      <strong>Важливо:</strong> Якщо хочете, щоб пости публікувалися від імені каналу (а не від імені бота), зробіть бота <strong>анонімним адміністратором</strong>
+                      <strong>Р’Р°Р¶Р»РёРІРѕ:</strong> РЇРєС‰Рѕ С…РѕС‡РµС‚Рµ, С‰РѕР± РїРѕСЃС‚Рё РїСѓР±Р»С–РєСѓРІР°Р»РёСЃСЏ РІС–Рґ С–РјРµРЅС– РєР°РЅР°Р»Сѓ (Р° РЅРµ РІС–Рґ С–РјРµРЅС– Р±РѕС‚Р°), Р·СЂРѕР±С–С‚СЊ Р±РѕС‚Р° <strong>Р°РЅРѕРЅС–РјРЅРёРј Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂРѕРј</strong>
                     </li>
-                    <li>Вкажіть username вашого каналу нижче</li>
-                    <li>Натисніть "Перевірити підключення"</li>
+                    <li>Р’РєР°Р¶С–С‚СЊ username РІР°С€РѕРіРѕ РєР°РЅР°Р»Сѓ РЅРёР¶С‡Рµ</li>
+                    <li>РќР°С‚РёСЃРЅС–С‚СЊ "РџРµСЂРµРІС–СЂРёС‚Рё РїС–РґРєР»СЋС‡РµРЅРЅСЏ"</li>
                   </ol>
                 </AlertDescription>
               </Alert>
@@ -2278,7 +2229,7 @@ const BotSetup = () => {
               <div className="rounded-lg overflow-hidden border">
                 <img 
                   src={addBotInstruction} 
-                  alt="Інструкція як додати бота до каналу" 
+                  alt="Р†РЅСЃС‚СЂСѓРєС†С–СЏ СЏРє РґРѕРґР°С‚Рё Р±РѕС‚Р° РґРѕ РєР°РЅР°Р»Сѓ" 
                   className="w-full h-auto"
                 />
               </div>
@@ -2287,38 +2238,38 @@ const BotSetup = () => {
                 <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <AlertDescription>
                   <div className="text-sm space-y-2">
-                    <p className="font-semibold text-blue-700 dark:text-blue-300">Як підключити канал:</p>
+                    <p className="font-semibold text-blue-700 dark:text-blue-300">РЇРє РїС–РґРєР»СЋС‡РёС‚Рё РєР°РЅР°Р»:</p>
                     <div className="space-y-1 text-blue-600 dark:text-blue-400">
-                      <p className="break-words"><strong>Публічний:</strong> @username або https://t.me/username</p>
-                      <p className="break-words"><strong>Приватний:</strong> https://t.me/+xxx (userbot приєднається автоматично)</p>
+                      <p className="break-words"><strong>РџСѓР±Р»С–С‡РЅРёР№:</strong> @username Р°Р±Рѕ https://t.me/username</p>
+                      <p className="break-words"><strong>РџСЂРёРІР°С‚РЅРёР№:</strong> https://t.me/+xxx (userbot РїСЂРёС”РґРЅР°С”С‚СЊСЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ)</p>
                     </div>
                   </div>
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="targetChannel">Цільовий канал</Label>
+                <Label htmlFor="targetChannel">Р¦С–Р»СЊРѕРІРёР№ РєР°РЅР°Р»</Label>
                 <Input
                   id="targetChannel"
-                  placeholder="@channel, https://t.me/channel або https://t.me/+invite"
+                  placeholder="@channel, t.me/channel Р°Р±Рѕ t.me/+invite"
                   value={targetChannel}
                   onChange={(e) => {
                     const value = e.target.value;
                     setTargetChannel(value);
                     
-                    // Валідація формату
+                    // Р’Р°Р»С–РґР°С†С–СЏ С„РѕСЂРјР°С‚Сѓ
                     if (value.trim() === "") {
                       setTargetChannelError(null);
                     } else if (
                       value.match(/^@[a-zA-Z0-9_]{5,32}$/) || // @username
-                      value.match(/^-?\d{5,}$/) || // chat_id (мінімум 5 цифр)
+                      value.match(/^-?\d{5,}$/) || // chat_id (РјС–РЅС–РјСѓРј 5 С†РёС„СЂ)
                       value.match(/^https?:\/\/(t\.me|telegram\.me)\/[a-zA-Z0-9_]{5,}$/) || // https://t.me/username
                       value.match(/^https?:\/\/(t\.me|telegram\.me)\/\+[a-zA-Z0-9_-]{10,}$/) || // https://t.me/+invite
                       value.match(/^https?:\/\/(t\.me|telegram\.me)\/joinchat\/[a-zA-Z0-9_-]{10,}$/) // https://t.me/joinchat/xxx
                     ) {
                       setTargetChannelError(null);
                     } else {
-                      setTargetChannelError("Невірний формат. Використовуйте @username, chat_id або t.me посилання");
+                      setTargetChannelError("РќРµРІС–СЂРЅРёР№ С„РѕСЂРјР°С‚. Р’РёРєРѕСЂРёСЃС‚РѕРІСѓР№С‚Рµ @username, chat_id Р°Р±Рѕ t.me РїРѕСЃРёР»Р°РЅРЅСЏ");
                     }
                   }}
                   className={targetChannelError ? "border-destructive" : ""}
@@ -2332,12 +2283,12 @@ const BotSetup = () => {
                 {isCheckingBot ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Перевірка...
+                    РџРµСЂРµРІС–СЂРєР°...
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5 mr-2" />
-                    Перевірити підключення
+                    РџРµСЂРµРІС–СЂРёС‚Рё РїС–РґРєР»СЋС‡РµРЅРЅСЏ
                   </>
                 )}
               </Button>
@@ -2356,12 +2307,12 @@ const BotSetup = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <div className="mb-4">
-              <h2 className="text-xl font-bold mb-1">Канали-джерела</h2>
+              <h2 className="text-xl font-bold mb-1">РљР°РЅР°Р»Рё-РґР¶РµСЂРµР»Р°</h2>
               <p className="text-sm text-muted-foreground">
-                Канали, з яких бот копіює контент для публікації
+                РљР°РЅР°Р»Рё, Р· СЏРєРёС… Р±РѕС‚ РєРѕРїС–СЋС” РєРѕРЅС‚РµРЅС‚ РґР»СЏ РїСѓР±Р»С–РєР°С†С–С—
                 {tariff && (
                   <span className="ml-1">
-                    ({sourceChannels.length} з {tariff.sources_limit || '?'})
+                    ({sourceChannels.length} Р· {tariff.sources_limit || 'в€ћ'})
                   </span>
                 )}
               </p>
@@ -2372,15 +2323,15 @@ const BotSetup = () => {
               <Alert className="bg-blue-500/10 border-blue-500/20">
                 <AlertDescription>
                   <div className="text-sm space-y-2">
-                    <p className="font-medium mb-1.5">?? Підтримувані формати:</p>
+                    <p className="font-medium mb-1.5">рџ“‹ РџС–РґС‚СЂРёРјСѓРІР°РЅС– С„РѕСЂРјР°С‚Рё:</p>
                     <div className="space-y-1.5 text-xs">
                       <div className="flex gap-2">
-                        <span className="text-green-500">?</span>
-                        <span><strong>Публічні:</strong> @channel, t.me/channel, https://t.me/channel</span>
+                        <span className="text-green-500">вњ“</span>
+                        <span><strong>РџСѓР±Р»С–С‡РЅС–:</strong> @channel, t.me/channel, https://t.me/channel</span>
                       </div>
                       <div className="flex gap-2">
-                        <span className="text-blue-500">?</span>
-                        <span><strong>Приватні:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (invite-посилання)</span>
+                        <span className="text-blue-500">вњ“</span>
+                        <span><strong>РџСЂРёРІР°С‚РЅС–:</strong> t.me/+AbCdEf123, https://t.me/+AbCdEf123 (invite-РїРѕСЃРёР»Р°РЅРЅСЏ)</span>
                       </div>
                     </div>
                   </div>
@@ -2390,7 +2341,7 @@ const BotSetup = () => {
               {/* Input Field */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="sourceChannel">Username або посилання</Label>
+                  <Label htmlFor="sourceChannel">Username Р°Р±Рѕ РїРѕСЃРёР»Р°РЅРЅСЏ</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button type="button" className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-muted hover:bg-muted/80 transition-colors">
@@ -2400,28 +2351,28 @@ const BotSetup = () => {
                     <PopoverContent className="w-80 z-[100]" side="top" align="start">
                       <div className="space-y-3">
                         <div className="space-y-2">
-                          <p className="font-semibold text-sm">Приватний канал</p>
+                          <p className="font-semibold text-sm">РџСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р»</p>
                           <p className="text-xs text-muted-foreground">
-                            Для читання постів боту <strong>НЕ потрібні</strong> права адміністратора!
+                            Р”Р»СЏ С‡РёС‚Р°РЅРЅСЏ РїРѕСЃС‚С–РІ Р±РѕС‚Сѓ <strong>РќР• РїРѕС‚СЂС–Р±РЅС–</strong> РїСЂР°РІР° Р°РґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂР°!
                           </p>
                         </div>
                         
                         <div className="space-y-2 text-xs">
                           <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                            <p className="font-medium">Як підключити:</p>
+                            <p className="font-medium">РЇРє РїС–РґРєР»СЋС‡РёС‚Рё:</p>
                             <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                              <li>Додайте бота в приватний канал як звичайного учасника</li>
-                              <li>Отримайте числовий chat_id каналу</li>
-                              <li>Вкажіть chat_id нижче (формат: -1001234567890)</li>
+                              <li>Р”РѕРґР°Р№С‚Рµ Р±РѕС‚Р° РІ РїСЂРёРІР°С‚РЅРёР№ РєР°РЅР°Р» СЏРє Р·РІРёС‡Р°Р№РЅРѕРіРѕ СѓС‡Р°СЃРЅРёРєР°</li>
+                              <li>РћС‚СЂРёРјР°Р№С‚Рµ С‡РёСЃР»РѕРІРёР№ chat_id РєР°РЅР°Р»Сѓ</li>
+                              <li>Р’РєР°Р¶С–С‚СЊ chat_id РЅРёР¶С‡Рµ (С„РѕСЂРјР°С‚: -1001234567890)</li>
                             </ol>
                           </div>
                           
                           <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                            <p className="font-medium">Як отримати chat_id:</p>
+                            <p className="font-medium">РЇРє РѕС‚СЂРёРјР°С‚Рё chat_id:</p>
                             <ol className="list-decimal list-inside space-y-1 ml-2 text-muted-foreground">
-                              <li>Додайте @userinfobot або @JsonDumpBot у Telegram</li>
-                              <li>Перешліть повідомлення з приватного каналу в бота</li>
-                              <li>Бот покаже вам chat_id каналу</li>
+                              <li>Р”РѕРґР°Р№С‚Рµ @userinfobot Р°Р±Рѕ @JsonDumpBot Сѓ Telegram</li>
+                              <li>РџРµСЂРµС€Р»С–С‚СЊ РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ Р· РїСЂРёРІР°С‚РЅРѕРіРѕ РєР°РЅР°Р»Сѓ РІ Р±РѕС‚Р°</li>
+                              <li>Р‘РѕС‚ РїРѕРєР°Р¶Рµ РІР°Рј chat_id РєР°РЅР°Р»Сѓ</li>
                             </ol>
                             
                             <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -2431,14 +2382,14 @@ const BotSetup = () => {
                                 onClick={() => {
                                   window.open('https://t.me/userinfobot', '_blank');
                                   toast({
-                                    title: "Відкрито @userinfobot",
-                                    description: "Натисніть /start в боті",
+                                    title: "Р’С–РґРєСЂРёС‚Рѕ @userinfobot",
+                                    description: "РќР°С‚РёСЃРЅС–С‚СЊ /start РІ Р±РѕС‚С–",
                                     duration: 3000,
                                   });
                                 }}
                                 className="text-xs h-7"
                               >
-                                Відкрити @userinfobot
+                                Р’С–РґРєСЂРёС‚Рё @userinfobot
                               </Button>
                               <Button
                                 size="sm"
@@ -2446,14 +2397,14 @@ const BotSetup = () => {
                                 onClick={() => {
                                   window.open('https://t.me/JsonDumpBot', '_blank');
                                   toast({
-                                    title: "Відкрито @JsonDumpBot",
-                                    description: "Натисніть /start в боті",
+                                    title: "Р’С–РґРєСЂРёС‚Рѕ @JsonDumpBot",
+                                    description: "РќР°С‚РёСЃРЅС–С‚СЊ /start РІ Р±РѕС‚С–",
                                     duration: 3000,
                                   });
                                 }}
                                 className="text-xs h-7"
                               >
-                                Відкрити @JsonDumpBot
+                                Р’С–РґРєСЂРёС‚Рё @JsonDumpBot
                               </Button>
                             </div>
                           </div>
@@ -2465,7 +2416,7 @@ const BotSetup = () => {
                 <div className="flex gap-2">
                   <Input
                     id="sourceChannel"
-                    placeholder="@channel, t.me/channel або t.me/+invite"
+                    placeholder="@channel, t.me/channel Р°Р±Рѕ t.me/+invite"
                     value={newChannelUsername}
                     onChange={(e) => setNewChannelUsername(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !isCheckingChannel && newChannelUsername.trim() && handleAddSourceChannel()}
@@ -2482,12 +2433,12 @@ const BotSetup = () => {
                     {isCheckingChannel ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Перевіряю...
+                        РџРµСЂРµРІС–СЂСЏСЋ...
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        Додати джерело
+                        Р”РѕРґР°С‚Рё РґР¶РµСЂРµР»Рѕ
                       </>
                     )}
                   </Button>
@@ -2497,7 +2448,7 @@ const BotSetup = () => {
               {/* Channel Verification Progress */}
               {(isCheckingChannel || channelVerificationStatus.canRead !== null) && (
                 <Card className="p-4 bg-muted/30">
-                  <h3 className="font-semibold mb-3">Перевірка каналу:</h3>
+                  <h3 className="font-semibold mb-3">РџРµСЂРµРІС–СЂРєР° РєР°РЅР°Р»Сѓ:</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       {isCheckingChannel && channelVerificationStatus.canRead === null ? (
@@ -2505,10 +2456,10 @@ const BotSetup = () => {
                       ) : channelVerificationStatus.canRead === true ? (
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                       ) : channelVerificationStatus.canRead === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">?</span>
+                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">вњ•</span>
                       ) : null}
                       <span className={channelVerificationStatus.canRead === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Канал доступний
+                        РљР°РЅР°Р» РґРѕСЃС‚СѓРїРЅРёР№
                       </span>
                     </div>
                     
@@ -2518,10 +2469,10 @@ const BotSetup = () => {
                       ) : channelVerificationStatus.isPublic === true ? (
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                       ) : channelVerificationStatus.isPublic === false ? (
-                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">?</span>
+                        <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">вњ•</span>
                       ) : null}
                       <span className={channelVerificationStatus.isPublic === true ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                        Бот є учасником каналу
+                        Р‘РѕС‚ С” СѓС‡Р°СЃРЅРёРєРѕРј РєР°РЅР°Р»Сѓ
                       </span>
                     </div>
                   </div>
@@ -2532,7 +2483,7 @@ const BotSetup = () => {
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
                         <AlertDescription>
                           <div className="text-green-600 dark:text-green-400">
-                            Канал успішно перевірено і додано!
+                            РљР°РЅР°Р» СѓСЃРїС–С€РЅРѕ РїРµСЂРµРІС–СЂРµРЅРѕ С– РґРѕРґР°РЅРѕ!
                           </div>
                         </AlertDescription>
                       </Alert>
@@ -2541,7 +2492,7 @@ const BotSetup = () => {
                         <Info className="w-4 h-4 text-red-500" />
                         <AlertDescription>
                           <div className="text-red-600 dark:text-red-400 font-semibold">
-                            Не вдалося додати канал. Перевірте доступність.
+                            РќРµ РІРґР°Р»РѕСЃСЏ РґРѕРґР°С‚Рё РєР°РЅР°Р». РџРµСЂРµРІС–СЂС‚Рµ РґРѕСЃС‚СѓРїРЅС–СЃС‚СЊ.
                           </div>
                         </AlertDescription>
                       </Alert>
@@ -2556,14 +2507,14 @@ const BotSetup = () => {
                 <Info className="w-4 h-4 text-orange-500" />
                 <AlertDescription>
                   <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
-                    Ви досягли ліміту джерел ({tariff.sources_limit}). Не можна додати більше джерел. Оновіть тариф або видаліть існуюче джерело.
+                    Р’Рё РґРѕСЃСЏРіР»Рё Р»С–РјС–С‚Сѓ РґР¶РµСЂРµР» ({tariff.sources_limit}). РќРµ РјРѕР¶РЅР° РґРѕРґР°С‚Рё Р±С–Р»СЊС€Рµ РґР¶РµСЂРµР». РћРЅРѕРІС–С‚СЊ С‚Р°СЂРёС„ Р°Р±Рѕ РІРёРґР°Р»С–С‚СЊ С–СЃРЅСѓСЋС‡Рµ РґР¶РµСЂРµР»Рѕ.
                   </div>
                 </AlertDescription>
               </Alert>
             )}
             <Separator className="my-4" />
             <div className="space-y-3">
-              {/* Pending джерела (локальні, не збережені) */}
+              {/* Pending РґР¶РµСЂРµР»Р° (Р»РѕРєР°Р»СЊРЅС–, РЅРµ Р·Р±РµСЂРµР¶РµРЅС–) */}
               {pendingSourceChannels.map((channel, index) => (
                 <Card key={`pending-${index}`} className="p-4 bg-muted/30 border-dashed">
                   <div className="flex items-center gap-3">
@@ -2588,7 +2539,7 @@ const BotSetup = () => {
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{channel.title || channel.username}</div>
                       <div className="text-sm text-muted-foreground truncate">{channel.username}</div>
-                      <div className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Очікує збереження</div>
+                      <div className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">РћС‡С–РєСѓС” Р·Р±РµСЂРµР¶РµРЅРЅСЏ</div>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -2597,13 +2548,13 @@ const BotSetup = () => {
                       className="text-destructive hover:text-destructive flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
-                      Видалити
+                      Р’РёРґР°Р»РёС‚Рё
                     </Button>
                   </div>
                 </Card>
               ))}
 
-              {/* Збережені джерела (з БД) */}
+              {/* Р—Р±РµСЂРµР¶РµРЅС– РґР¶РµСЂРµР»Р° (Р· Р‘Р”) */}
               {sourceChannels.map((channel) => (
                 <Card key={channel.id} className="p-4 bg-background border-border">
                   <div className="flex flex-col gap-3">
@@ -2617,7 +2568,7 @@ const BotSetup = () => {
                       ) : (
                         <div className="flex-1">
                           <div className="font-medium">{channel.channel_username}</div>
-                          <div className="text-sm text-muted-foreground">Канал-джерело</div>
+                          <div className="text-sm text-muted-foreground">РљР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ</div>
                         </div>
                       )}
                     </div>
@@ -2625,7 +2576,7 @@ const BotSetup = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">
-                            {channel.is_active ? "Активний" : "Неактивний"}
+                            {channel.is_active ? "РђРєС‚РёРІРЅРёР№" : "РќРµР°РєС‚РёРІРЅРёР№"}
                           </span>
                           <Switch 
                             checked={channel.is_active} 
@@ -2639,7 +2590,7 @@ const BotSetup = () => {
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
-                          Видалити
+                          Р’РёРґР°Р»РёС‚Рё
                         </Button>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
@@ -2648,11 +2599,11 @@ const BotSetup = () => {
                             ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
                             : 'bg-green-500/10 text-green-600 dark:text-green-400'
                         }`}>
-                          {channel.is_private ? '?? Приватний' : '?? Публічний'}
+                          {channel.is_private ? 'рџ”’ РџСЂРёРІР°С‚РЅРёР№' : 'рџЊђ РџСѓР±Р»С–С‡РЅРёР№'}
                         </span>
                         {channel.spy_id && (
                           <span className="px-2 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">
-                            ??? Userbot
+                            рџ‘ЃпёЏ Userbot
                           </span>
                         )}
                       </div>
@@ -2665,19 +2616,19 @@ const BotSetup = () => {
                   <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                     <FileText className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground">Поки що немає джерел</p>
-                  <p className="text-sm text-muted-foreground mt-1">Додайте канал-джерело вище, щоб почати копіювання контенту</p>
+                  <p className="text-muted-foreground">РџРѕРєРё С‰Рѕ РЅРµРјР°С” РґР¶РµСЂРµР»</p>
+                  <p className="text-sm text-muted-foreground mt-1">Р”РѕРґР°Р№С‚Рµ РєР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ РІРёС‰Рµ, С‰РѕР± РїРѕС‡Р°С‚Рё РєРѕРїС–СЋРІР°РЅРЅСЏ РєРѕРЅС‚РµРЅС‚Сѓ</p>
                 </div>
               )}
             </div>
           </Card>
 
           <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4">Основні налаштування</h2>
+            <h2 className="text-xl font-bold mb-4">РћСЃРЅРѕРІРЅС– РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ</h2>
             <div className="space-y-6">
               {/* Channel Info */}
               <div className="space-y-2">
-                <Label>Цільовий канал</Label>
+                <Label>Р¦С–Р»СЊРѕРІРёР№ РєР°РЅР°Р»</Label>
                 {targetChannel && bots.find(b => b.id === selectedBotId)?.bot_token && (
                   <ChannelInfo 
                     channelUsername={targetChannel} 
@@ -2692,28 +2643,28 @@ const BotSetup = () => {
               <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                 <CollapsibleTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
-                    <span className="text-lg font-semibold">Налаштування фільтрів</span>
+                    <span className="text-lg font-semibold">РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ С„С–Р»СЊС‚СЂС–РІ</span>
                     {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent className="space-y-4 mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Доступність фільтрів залежить від вашого тарифу
+                    Р”РѕСЃС‚СѓРїРЅС–СЃС‚СЊ С„С–Р»СЊС‚СЂС–РІ Р·Р°Р»РµР¶РёС‚СЊ РІС–Рґ РІР°С€РѕРіРѕ С‚Р°СЂРёС„Сѓ
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Копіювання медіа */}
+                    {/* РљРѕРїС–СЋРІР°РЅРЅСЏ РјРµРґС–Р° */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_media ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="include_media" className="cursor-pointer font-medium">
-                          Копіювання медіа
+                          РљРѕРїС–СЋРІР°РЅРЅСЏ РјРµРґС–Р°
                         </Label>
-                        <p className="text-xs text-muted-foreground">Зображення та відео</p>
+                        <p className="text-xs text-muted-foreground">Р—РѕР±СЂР°Р¶РµРЅРЅСЏ С‚Р° РІС–РґРµРѕ</p>
                         {!tariff?.allow_media && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2724,17 +2675,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Тільки нові пости */}
+                    {/* РўС–Р»СЊРєРё РЅРѕРІС– РїРѕСЃС‚Рё */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_new_posts_only ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="publish_old_posts" className="cursor-pointer font-medium">
-                          Тільки нові пости
+                          РўС–Р»СЊРєРё РЅРѕРІС– РїРѕСЃС‚Рё
                         </Label>
-                        <p className="text-xs text-muted-foreground">Без старих постів</p>
+                        <p className="text-xs text-muted-foreground">Р‘РµР· СЃС‚Р°СЂРёС… РїРѕСЃС‚С–РІ</p>
                         {!tariff?.allow_new_posts_only && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2745,17 +2696,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Фільтр ключових слів */}
+                    {/* Р¤С–Р»СЊС‚СЂ РєР»СЋС‡РѕРІРёС… СЃР»С–РІ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_keyword_filter ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="use_keyword_filter" className="cursor-pointer font-medium">
-                          Фільтр ключових слів
+                          Р¤С–Р»СЊС‚СЂ РєР»СЋС‡РѕРІРёС… СЃР»С–РІ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Пошук по словам</p>
+                        <p className="text-xs text-muted-foreground">РџРѕС€СѓРє РїРѕ СЃР»РѕРІР°Рј</p>
                         {!tariff?.allow_keyword_filter && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2766,17 +2717,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Відкладена публікація */}
+                    {/* Р’С–РґРєР»Р°РґРµРЅР° РїСѓР±Р»С–РєР°С†С–СЏ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_scheduled_posting ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="publish_immediately" className="cursor-pointer font-medium">
-                          Відкладена публікація
+                          Р’С–РґРєР»Р°РґРµРЅР° РїСѓР±Р»С–РєР°С†С–СЏ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Інтервал між постами</p>
+                        <p className="text-xs text-muted-foreground">Р†РЅС‚РµСЂРІР°Р» РјС–Р¶ РїРѕСЃС‚Р°РјРё</p>
                         {!tariff?.allow_scheduled_posting && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2787,17 +2738,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Публікація від каналу */}
+                    {/* РџСѓР±Р»С–РєР°С†С–СЏ РІС–Рґ РєР°РЅР°Р»Сѓ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_post_as_channel ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="post_as_bot" className="cursor-pointer font-medium">
-                          Публікація від каналу
+                          РџСѓР±Р»С–РєР°С†С–СЏ РІС–Рґ РєР°РЅР°Р»Сѓ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Без підпису бота</p>
+                        <p className="text-xs text-muted-foreground">Р‘РµР· РїС–РґРїРёСЃСѓ Р±РѕС‚Р°</p>
                         {!tariff?.allow_post_as_channel && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2808,17 +2759,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Авто-видалення */}
+                    {/* РђРІС‚Рѕ-РІРёРґР°Р»РµРЅРЅСЏ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_auto_delete ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="allow_auto_delete" className="cursor-pointer font-medium">
-                          Авто-видалення
+                          РђРІС‚Рѕ-РІРёРґР°Р»РµРЅРЅСЏ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Видалення через час</p>
+                        <p className="text-xs text-muted-foreground">Р’РёРґР°Р»РµРЅРЅСЏ С‡РµСЂРµР· С‡Р°СЃ</p>
                         {!tariff?.allow_auto_delete && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2829,17 +2780,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Водяний знак */}
+                    {/* Р’РѕРґСЏРЅРёР№ Р·РЅР°Рє */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_custom_watermark ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="allow_custom_watermark" className="cursor-pointer font-medium">
-                          Водяний знак
+                          Р’РѕРґСЏРЅРёР№ Р·РЅР°Рє
                         </Label>
-                        <p className="text-xs text-muted-foreground">Додавання логотипу</p>
+                        <p className="text-xs text-muted-foreground">Р”РѕРґР°РІР°РЅРЅСЏ Р»РѕРіРѕС‚РёРїСѓ</p>
                         {!tariff?.allow_custom_watermark && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2850,17 +2801,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Попередній перегляд */}
+                    {/* РџРѕРїРµСЂРµРґРЅС–Р№ РїРµСЂРµРіР»СЏРґ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_link_preview ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="allow_link_preview" className="cursor-pointer font-medium">
-                          Попередній перегляд
+                          РџРѕРїРµСЂРµРґРЅС–Р№ РїРµСЂРµРіР»СЏРґ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Превью посилань</p>
+                        <p className="text-xs text-muted-foreground">РџСЂРµРІСЊСЋ РїРѕСЃРёР»Р°РЅСЊ</p>
                         {!tariff?.allow_link_preview && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2871,17 +2822,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Мітка пересилання */}
+                    {/* РњС–С‚РєР° РїРµСЂРµСЃРёР»Р°РЅРЅСЏ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_forward_tag ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="allow_forward_tag" className="cursor-pointer font-medium">
-                          Мітка пересилання
+                          РњС–С‚РєР° РїРµСЂРµСЃРёР»Р°РЅРЅСЏ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Збереження форварду</p>
+                        <p className="text-xs text-muted-foreground">Р—Р±РµСЂРµР¶РµРЅРЅСЏ С„РѕСЂРІР°СЂРґСѓ</p>
                         {!tariff?.allow_forward_tag && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2892,17 +2843,17 @@ const BotSetup = () => {
                       />
                     </div>
 
-                    {/* Редагування постів */}
+                    {/* Р РµРґР°РіСѓРІР°РЅРЅСЏ РїРѕСЃС‚С–РІ */}
                     <div className={`flex items-center justify-between p-4 border rounded-lg ${
                       tariff?.allow_edit_before_post ? '' : 'opacity-50 bg-muted/50'
                     }`}>
                       <div className="flex-1">
                         <Label htmlFor="allow_edit_before_post" className="cursor-pointer font-medium">
-                          Редагування постів
+                          Р РµРґР°РіСѓРІР°РЅРЅСЏ РїРѕСЃС‚С–РІ
                         </Label>
-                        <p className="text-xs text-muted-foreground">Перед публікацією</p>
+                        <p className="text-xs text-muted-foreground">РџРµСЂРµРґ РїСѓР±Р»С–РєР°С†С–С”СЋ</p>
                         {!tariff?.allow_edit_before_post && (
-                          <p className="text-xs text-destructive mt-1">Недоступно в тарифі</p>
+                          <p className="text-xs text-destructive mt-1">РќРµРґРѕСЃС‚СѓРїРЅРѕ РІ С‚Р°СЂРёС„С–</p>
                         )}
                       </div>
                       <Switch
@@ -2917,7 +2868,7 @@ const BotSetup = () => {
                 {/* Keyword Filter Input */}
                   {useKeywordFilter && tariff?.allow_keyword_filter && (
                     <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
-                      <Label htmlFor="keywords">Ключові слова (через кому)</Label>
+                      <Label htmlFor="keywords">РљР»СЋС‡РѕРІС– СЃР»РѕРІР° (С‡РµСЂРµР· РєРѕРјСѓ)</Label>
                       <Textarea
                         id="keywords"
                         value={keywords}
@@ -2925,11 +2876,11 @@ const BotSetup = () => {
                           setKeywords(e.target.value);
                           setHasUnsavedChanges(true);
                         }}
-                        placeholder="слово1, слово2, слово3"
+                        placeholder="СЃР»РѕРІРѕ1, СЃР»РѕРІРѕ2, СЃР»РѕРІРѕ3"
                         rows={3}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Бот буде копіювати тільки пости, що містять хоча б одне із цих слів
+                        Р‘РѕС‚ Р±СѓРґРµ РєРѕРїС–СЋРІР°С‚Рё С‚С–Р»СЊРєРё РїРѕСЃС‚Рё, С‰Рѕ РјС–СЃС‚СЏС‚СЊ С…РѕС‡Р° Р± РѕРґРЅРµ С–Р· С†РёС… СЃР»С–РІ
                       </p>
                     </div>
                   )}
@@ -2942,7 +2893,7 @@ const BotSetup = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="posts_per_day">
-                    Постів на день (макс: {tariff?.posts_per_day || 10})
+                    РџРѕСЃС‚С–РІ РЅР° РґРµРЅСЊ (РјР°РєСЃ: {tariff?.posts_per_day || 10})
                   </Label>
                   <Input
                     id="posts_per_day"
@@ -2964,7 +2915,7 @@ const BotSetup = () => {
                 {botService?.publish_old_posts !== false && (
                   <div className="space-y-2">
                     <Label htmlFor="post_interval">
-                      Інтервал між постами (хвилин)
+                      Р†РЅС‚РµСЂРІР°Р» РјС–Р¶ РїРѕСЃС‚Р°РјРё (С…РІРёР»РёРЅ)
                     </Label>
                     <Input
                       id="post_interval"
@@ -2992,7 +2943,7 @@ const BotSetup = () => {
                 <Alert>
                   <Info className="w-4 h-4" />
                   <AlertDescription>
-                    У вас є незбережені зміни. Натисніть "Зберегти налаштування".
+                    РЈ РІР°СЃ С” РЅРµР·Р±РµСЂРµР¶РµРЅС– Р·РјС–РЅРё. РќР°С‚РёСЃРЅС–С‚СЊ "Р—Р±РµСЂРµРіС‚Рё РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ".
                   </AlertDescription>
                 </Alert>
               )}
@@ -3006,12 +2957,12 @@ const BotSetup = () => {
                   {isSaving ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Збереження...
+                      Р—Р±РµСЂРµР¶РµРЅРЅСЏ...
                     </>
                   ) : (
                     <>
                       <Save className="w-5 h-5 mr-2" />
-                      Зберегти налаштування
+                      Р—Р±РµСЂРµРіС‚Рё РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ
                     </>
                   )}
                 </Button>
@@ -3020,8 +2971,8 @@ const BotSetup = () => {
                   <Info className="w-4 h-4" />
                   <AlertDescription>
                     {!botService 
-                      ? "Додайте хоча б 1 канал-джерело для збереження налаштувань"
-                      : "Немає джерел. Додайте канали для копіювання контенту"}
+                      ? "Р”РѕРґР°Р№С‚Рµ С…РѕС‡Р° Р± 1 РєР°РЅР°Р»-РґР¶РµСЂРµР»Рѕ РґР»СЏ Р·Р±РµСЂРµР¶РµРЅРЅСЏ РЅР°Р»Р°С€С‚СѓРІР°РЅСЊ"
+                      : "РќРµРјР°С” РґР¶РµСЂРµР». Р”РѕРґР°Р№С‚Рµ РєР°РЅР°Р»Рё РґР»СЏ РєРѕРїС–СЋРІР°РЅРЅСЏ РєРѕРЅС‚РµРЅС‚Сѓ"}
                   </AlertDescription>
                 </Alert>
               )}
